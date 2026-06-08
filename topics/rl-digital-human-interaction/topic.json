@@ -1,0 +1,16 @@
+{
+  "id": "rl-digital-human-interaction",
+  "title": "强化学习训练可与环境合理交互的数字人",
+  "idea": "如何在强化学习框架下训练一个数字人（虚拟人/具身智能体），使其能够与所处环境进行合理、自然且有目的的交互——涵盖物理仿真下的全身运动控制、感知-决策-动作闭环、与场景/物体/人的交互行为，以及行为的真实性与合理性。",
+  "queries": [
+    "reinforcement learning physics-based character animation humanoid control",
+    "reinforcement learning virtual human environment interaction",
+    "embodied agent reinforcement learning human-like behavior simulation",
+    "deep reinforcement learning motion control digital human avatar",
+    "imitation learning physics-based character controllers locomotion",
+    "reinforcement learning humanoid whole-body control object interaction",
+    "embodied conversational agent reinforcement learning virtual human"
+  ],
+  "window_years": 20,
+  "target": 40
+}

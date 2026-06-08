@@ -1,0 +1,19 @@
+# 大体积 / 版权全文 —— 绝不入库或推送
+store/pdfs/
+store/text/
+
+# sqlite 旁路文件（主 .sqlite 入库）
+db/*.sqlite-wal
+db/*.sqlite-shm
+
+# 可重建的运行中间产物
+topics/*/candidates.json
+topics/*/scores/
+topics/*/summarize_worklist.json
+topics/*/selected.json
+store/update_worklist.json
+store/cross_topic.json
+
+# 杂项
+node_modules/
+.DS_Store

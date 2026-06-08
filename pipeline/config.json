@@ -1,0 +1,30 @@
+{
+  "window_years": 20,
+  "first_run_target": 200,
+  "languages": ["en", "ja"],
+  "language_strict": false,
+  "sources": {
+    "openalex": true,
+    "semantic_scholar": true,
+    "arxiv": true,
+    "pubmed": true
+  },
+  "ranking": {
+    "relevance_weight": 0.6,
+    "citation_weight": 0.4,
+    "edge_citation_threshold": 5,
+    "keep_edge_papers": true
+  },
+  "download": {
+    "concurrency": 4,
+    "delay_ms": 1200,
+    "timeout_ms": 60000,
+    "retries": 2,
+    "user_agent": "ResearchAgent/0.1 (mailto:a0904251001@gmail.com)"
+  },
+  "paths": {
+    "pdfs": "store/pdfs",
+    "summaries": "store/summaries",
+    "topics": "topics"
+  }
+}
