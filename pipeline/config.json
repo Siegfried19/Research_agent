@@ -26,5 +26,13 @@
     "pdfs": "store/pdfs",
     "summaries": "store/summaries",
     "topics": "topics"
+  },
+  "tier_b": {
+    "_comment": "付费墙取全文（opencli + 你登录的 Chrome）。proxy_login_template 待你确认 NYU 实际格式。",
+    "enabled": false,
+    "proxy_login_template": "https://login.proxy.library.nyu.edu/login?url={URL}",
+    "chrome_profile": "library",
+    "notify_on_login": true,
+    "delay_ms": 4000
   }
 }

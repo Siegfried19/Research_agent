@@ -7,3 +7,13 @@
 2026-06-08T00:00:00Z	rl-digital-human-interaction	migrate:slugs rows=40 files=81
 2026-06-08T00:00:00Z	rl-digital-human-interaction	workflow:update paper=10.1109/iccv51070.2023.01354 v1->v2 based_on=2
 2026-06-08T00:00:00Z	rl-digital-human-interaction	state: 40 papers, 27 summarized (1 has v2), 13 cit edges
+2026-06-08T04:43:12Z	rl-digital-human-interaction	stage:worklist start
+2026-06-08T04:43:12Z	rl-digital-human-interaction	stage:worklist end(rc=0)
+2026-06-08T04:43:12Z	rl-digital-human-interaction	stage:sumargs start
+2026-06-08T04:43:12Z	rl-digital-human-interaction	stage:sumargs end(rc=0)
+2026-06-08T04:47:22Z	rl-digital-human-interaction	stage:finalize start
+2026-06-08T04:47:22Z	rl-digital-human-interaction	stage:finalize end(rc=0)
+2026-06-08T00:00:00Z	rl-digital-human-interaction	recover_oa: 3/13 free (SMP,UniPhys,SimulatingUserAgents) via unpaywall+arxiv
+2026-06-08T00:00:00Z	rl-digital-human-interaction	workflow:summarize recovered done=3
+2026-06-08T00:00:00Z	-	telegram bot @research_agentffbot configured (lightweight, non-daemon)
+2026-06-08T00:00:00Z	rl-digital-human-interaction	state: 40 papers, 30 summarized, 10 -> TierB paywall

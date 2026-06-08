@@ -47,6 +47,7 @@ bash pipeline/run.sh <id> finalize     # 回写库 + 渲染 topic.md
 
 ```bash
 # 增量跑：同一主题再跑一遍上面的流程，已总结的自动跳过，只加新命中
+node --experimental-sqlite pipeline/recover_oa.js <id>              # 免费补全没下到的全文（Unpaywall+arXiv，零登录）
 node --experimental-sqlite pipeline/suggest_updates.js <id>          # (5b) 建议哪些老总结该更新
 node --experimental-sqlite pipeline/prepare_update.js <paperId>      # (5a) 备更新（相关论文默认取引用邻居）
 #   → Claude 跑 update.workflow.js → 生成 vN+1（旧版保留）

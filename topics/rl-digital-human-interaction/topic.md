@@ -2,7 +2,7 @@
 
 > **研究思路**：如何在强化学习框架下训练一个数字人（虚拟人/具身智能体），使其能够与所处环境进行合理、自然且有目的的交互——涵盖物理仿真下的全身运动控制、感知-决策-动作闭环、与场景/物体/人的交互行为，以及行为的真实性与合理性。
 
-- 命中论文：40　已总结：27　最近更新：2026-06-08
+- 命中论文：40　已总结：30　最近更新：2026-06-08
 - 检索词：`reinforcement learning physics-based character animation humanoid control`、`reinforcement learning virtual human environment interaction`、`embodied agent reinforcement learning human-like behavior simulation`、`deep reinforcement learning motion control digital human avatar`、`imitation learning physics-based character controllers locomotion`、`reinforcement learning humanoid whole-body control object interaction`、`embodied conversational agent reinforcement learning virtual human`
 
 ## 命中清单（按相关性排序）
@@ -14,10 +14,10 @@
 | 3 | 96 | Synthesizing Diverse Human Motions in 3D Indoor Scenes | 2023 | 117 | ✅ 已总结 | [v1](../../store/summaries/Synthesizing_Diverse_Human_Motions_in_3D_Indoor_Scenes/v1.md) |
 | 4 | 95 | AMP | 2021 | 345 | ⛔ 取全文失败 | — |
 | 5 | 95 | PDP: Physics-Based Character Animation via Diffusion Policy | 2024 | 40 | ✅ 已总结 | [v1](../../store/summaries/PDP_Physics_Based_Character_Animation_via_Diffusion_Policy/v1.md) |
-| 6 | 94 | SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control | 2025 | 8 | ⚪ 待取 | — |
+| 6 | 94 | SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control | 2025 | 8 | ✅ 已总结 | [v1](../../store/summaries/SMP_Reusable_Score_Matching_Motion_Priors_for_Physics_Based_Character_Control/v1.md) |
 | 7 | 93 | A GAN-Like Approach for Physics-Based Imitation Learning and Interactive Control | 2021 | 24 | ✅ 已总结 | [v1](../../store/summaries/A_GAN_Like_Approach_for_Physics_Based_Imitation_Learning_and_Interactive_Control/v1.md) |
 | 8 | 93 | PARC: Physics-based Augmentation with Reinforcement Learning for Character Controllers | 2025 | 21 | ✅ 已总结 | [v1](../../store/summaries/PARC_Physics_based_Augmentation_with_Reinforcement_Learning_for_Character_Controllers/v1.md) |
-| 9 | 92 | UniPhys: Unified Planner and Controller with Diffusion for Flexible Physics-Based Character Control | 2025 | 21 | ⚪ 待取 | — |
+| 9 | 92 | UniPhys: Unified Planner and Controller with Diffusion for Flexible Physics-Based Character Control | 2025 | 21 | ✅ 已总结 | [v1](../../store/summaries/UniPhys_Unified_Planner_and_Controller_with_Diffusion_for_Flexible_Physics_Based/v1.md) |
 | 10 | 90 | PADL: Language-Directed Physics-Based Character Control | 2022 | 61 | ✅ 已总结 | [v1](../../store/summaries/PADL_Language_Directed_Physics_Based_Character_Control/v1.md) |
 | 11 | 88 | Walk This Way: Imitation-free Reinforcement Learning of Flexibly-Constrained Walking Controllers 60 🪨 | 2025 | 1 | ⛔ 取全文失败 | — |
 | 12 | 86 | AdaptNet: Policy Adaptation for Physics-Based Character Control | 2023 | 32 | ✅ 已总结 | [v1](../../store/summaries/AdaptNet_Policy_Adaptation_for_Physics_Based_Character_Control/v1.md) |
@@ -38,7 +38,7 @@
 | 27 | 58 | CHILD (Controller for Humanoid Imitation and Live Demonstration): a Whole-Body Humanoid Teleoperation System 🪨 | 2025 | 0 | ✅ 已总结 | [v1](../../store/summaries/CHILD_Controller_for_Humanoid_Imitation_and_Live_Demonstration_a_Whole_Body_Humanoid/v1.md) |
 | 28 | 55 | Recent Advances in Robot Learning from Demonstration | 2019 | 717 | ✅ 已总结 | [v1](../../store/summaries/Recent_Advances_in_Robot_Learning_from_Demonstration/v1.md) |
 | 29 | 55 | Embodied and Multi-Agent Reinforcement Learning: Advances, Challenges and Opportunities | 2025 | 5 | ⚪ 待取 | — |
-| 30 | 48 | Simulating User Agents for Embodied Conversational-AI | 2024 | 5 | ⚪ 待取 | — |
+| 30 | 48 | Simulating User Agents for Embodied Conversational-AI | 2024 | 5 | ✅ 已总结 | [v1](../../store/summaries/Simulating_User_Agents_for_Embodied_Conversational_AI/v1.md) |
 | 31 | 45 | Dynamical Movement Primitives: Learning Attractor Models for Motor Behaviors | 2012 | 1574 | ✅ 已总结 | [v1](../../store/summaries/Dynamical_Movement_Primitives_Learning_Attractor_Models_for_Motor_Behaviors/v1.md) |
 | 32 | 45 | MARL-Ped: A multi-agent reinforcement learning based framework to simulate pedestrian groups | 2014 | 62 | ⚪ 待取 | — |
 | 33 | 45 | Immersive machine learning for social attitude detection in virtual reality narrative games | 2022 | 35 | ⛔ 取全文失败 | — |
