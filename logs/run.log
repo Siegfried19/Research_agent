@@ -17,3 +17,41 @@
 2026-06-08T00:00:00Z	rl-digital-human-interaction	workflow:summarize recovered done=3
 2026-06-08T00:00:00Z	-	telegram bot @research_agentffbot configured (lightweight, non-daemon)
 2026-06-08T00:00:00Z	rl-digital-human-interaction	state: 40 papers, 30 summarized, 10 -> TierB paywall
+2026-06-09T00:00:00Z	rl-digital-human-interaction	cleanup: deleted 6 junk/off-topic papers (IJISRT predatory #29; off-topic #36/#33; misfit #38/#32/#39); rank recomputed -> 34 papers
+2026-06-09T00:00:00Z	rl-digital-human-interaction	recover_oa: 0/4 free (ASE/AMP unpaywall 403; WalkThisWay/plrev no free source) -> all 4 to TierB
+2026-06-09T00:00:00Z	rl-digital-human-interaction	state: 34 papers, 30 summarized (1 v2), 13 cit edges, 4 -> TierB (ASE,AMP,WalkThisWay,plrev)
+2026-06-09T00:00:00Z	rl-digital-human-interaction	tierb: design confirmed (opencli profile 8fnbkdfj + telegram Duo prompt + final report; PDF via browser download, no cookie); awaiting real proxy URL from user
+2026-06-09T00:00:00Z	rl-digital-human-interaction	FALSE-PAYWALL FIX: unpaywall says ASE/AMP/WalkThisWay are is_oa=true (earlier 403 was transient rate-limit). recover_oa bug: picks publisher PDF first (ACM->403) and arxiv title-match fails on truncated titles 'ASE'/'AMP'
+2026-06-09T00:00:00Z	rl-digital-human-interaction	tierb-free: ASE<-arxiv:2205.01906 (24M), AMP<-arxiv:2104.02180 (8.4M) downloaded+pdftotext -> status=pdf_downloaded
+2026-06-09T00:00:00Z	rl-digital-human-interaction	remaining: WalkThisWay (ACM OA but Cloudflare, needs browser, NO Duo); plrev (10.1016/j.plrev) is_oa=false -> true paywall needs NYU proxy+Duo
+2026-06-09T00:00:00Z	rl-digital-human-interaction	tierb-auto: self-launched OpenCLI Chrome (google-chrome-scrape/Profile2, DISPLAY=:1) per Stock_agent ensure_chrome pattern; bridge connected 3s
+2026-06-09T00:00:00Z	rl-digital-human-interaction	WalkThisWay GOT via browser: opencli drove Chrome past ACM Cloudflare; in-page fetch->base64 chunked out (3018227 bytes verified) -> pdf_downloaded. NO Duo (OA)
+2026-06-09T00:00:00Z	rl-digital-human-interaction	state: 34 papers, 30 summarized + 3 pdf_downloaded(ASE,AMP,WalkThisWay ready to summarize); remaining=1 plrev(true paywall, needs NYU proxy+Duo)
+2026-06-09T00:00:00Z	rl-digital-human-interaction	KEY: NYU migrated EZProxy->OpenAthens. Old proxy.library.nyu.edu/login?url= DEAD. New access path: https://go.openathens.net/redirector/nyu.edu?url=<doi>
+2026-06-09T00:00:00Z	rl-digital-human-interaction	plrev GOT: OpenAthens redirector -> ScienceDirect (user clicked Cloudflare Turnstile, NO Duo - profile had live NYU session) -> Full text access. PDF via navigate pdfft->signed S3 url->in-page fetch->base64 chunk. 30pp valid, status=pdf_downloaded
+2026-06-09T00:00:00Z	rl-digital-human-interaction	state: 34 papers, 30 summarized + 4 pdf_downloaded (ASE,AMP,WalkThisWay,plrev) ready to summarize. 0 lacking full text. TierB backlog CLEARED
+2026-06-09T05:35:31Z	rl-digital-human-interaction	stage:finalize start
+2026-06-09T05:35:31Z	rl-digital-human-interaction	stage:finalize end(rc=0)
+2026-06-09T00:00:00Z	rl-digital-human-interaction	PIPELINE AUTOMATED: new score_auto.js + summarize_auto.js (claude -p headless, via lib/claude.js) replace Workflow-tool agents; fetch_tierb.js codifies method ④ (self-launch Chrome + OpenAthens + human-clicks-challenge + in-page fetch). run.sh gains stages score/recover/tierb/sum + 'auto' one-shot.
+2026-06-09T00:00:00Z	rl-digital-human-interaction	summarize_auto: 4/4 ok (ASE,AMP,WalkThisWay,plrev) -> finalize: 34 v1 registered, topic.md rendered.
+2026-06-09T00:00:00Z	rl-digital-human-interaction	state: 34 papers ALL summarized (1 v2), 13 cit edges. Topic complete.
+2026-06-09T06:00:17Z	rl-digital-human-interaction	stage:finalize start
+2026-06-09T06:00:17Z	rl-digital-human-interaction	stage:finalize end(rc=0)
+2026-06-09T06:00:17Z	rl-digital-human-interaction	fetch_oa: 0 pdf, 0 text, 0 failed
+2026-06-09T06:00:17Z	rl-digital-human-interaction	recover_oa: 0/0 recovered free
+2026-06-09T06:02:04Z	_smoke	discover: start target=5 pool=60 queries=1
+2026-06-09T06:02:30Z	_smoke	discover: raw=188 merged=178 pool=60 oa=56
+2026-06-09T06:02:30Z	_smoke	stage:score start
+2026-06-09T06:02:52Z	_smoke	score_auto: 8 scored, 0 batches failed
+2026-06-09T06:02:52Z	_smoke	stage:score end(rc=0)
+2026-06-09T06:02:52Z	_smoke	stage:commit start
+2026-06-09T06:02:52Z	_smoke	commit[FIRST RUN]: added=5 total=5 edges=0
+2026-06-09T06:02:52Z	_smoke	stage:commit end(rc=0)
+2026-06-09T06:02:52Z	_smoke	stage:finalize start
+2026-06-09T06:02:53Z	_smoke	stage:finalize end(rc=0)
+2026-06-09T06:05:32Z	rl-digital-human-interaction	stage:tierb start
+2026-06-09T06:05:32Z	rl-digital-human-interaction	stage:tierb end(rc=0)
+2026-06-09T06:08:19Z	-	MIGRATION: entire pipeline rewritten Node/JS -> Python (20 JS+run.sh -> pipeline/*.py). JS deleted. DB reused as-is. Added lib/log.py (first-class logging), lib/claude.py (claude -p), RESEARCH_DB env for test isolation. recover_oa bug fixed (arxiv/repository-first + ext_ids.arxiv).
+2026-06-09T06:08:19Z	-	verified: lib smoke, 4 live sources, run.py wiring, render/register/worklist on real DB, full discover->score->commit->render on temp DB. fetch_tierb browser path NOT yet end-to-end in Python (no paywalled paper left; components verified).
+2026-06-09T06:08:59Z	rl-digital-human-interaction	stage:finalize start
+2026-06-09T06:08:59Z	rl-digital-human-interaction	stage:finalize end(rc=0)

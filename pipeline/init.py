@@ -1,0 +1,24 @@
+"""Phase 0: create directory structure + initialize the SQLite database.
+Usage: python3 pipeline/init.py
+"""
+from lib.db import open_db, ROOT, DB_PATH
+
+DIRS = ["db", "store/pdfs", "store/summaries", "store/text", "store/dl_tmp", "topics", "runs", "logs"]
+
+
+def main():
+    for d in DIRS:
+        (ROOT / d).mkdir(parents=True, exist_ok=True)
+    conn = open_db()
+    tables = [r["name"] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()]
+    conn.close()
+    print("Initialized research pipeline.")
+    print("  root :", ROOT)
+    print("  db   :", DB_PATH)
+    print("  dirs :", ", ".join(DIRS))
+    print("  tables:", ", ".join(tables))
+
+
+if __name__ == "__main__":
+    main()

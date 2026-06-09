@@ -1,0 +1,50 @@
+"""Find papers shared across topics + citation bridges between topics.
+Writes store/cross_topic.json. Usage: python3 pipeline/cross_topic.py
+"""
+import json
+
+from lib.db import open_db, ROOT
+
+
+def main():
+    conn = open_db()
+    topics = conn.execute("SELECT id, title FROM topics").fetchall()
+
+    topics_by_paper = {}
+    for r in conn.execute("SELECT paper_id, topic_id, relevance FROM paper_topic").fetchall():
+        topics_by_paper.setdefault(r["paper_id"], []).append({"topic": r["topic_id"], "relevance": r["relevance"]})
+    paper_meta = {p["id"]: p for p in conn.execute("SELECT id, title, year FROM papers").fetchall()}
+
+    shared = []
+    for pid, tps in topics_by_paper.items():
+        if len(tps) >= 2:
+            m = paper_meta.get(pid)
+            shared.append({"id": pid, "title": m["title"] if m else None,
+                           "year": m["year"] if m else None, "topics": tps})
+
+    def topics_of(pid):
+        return [x["topic"] for x in topics_by_paper.get(pid, [])]
+
+    bridges = []
+    for e in conn.execute("SELECT src_paper_id s, dst_paper_id d FROM citations").fetchall():
+        st, dt = set(topics_of(e["s"])), set(topics_of(e["d"]))
+        if st and dt and (st != dt):
+            bridges.append({"src": e["s"], "dst": e["d"],
+                            "src_title": (paper_meta.get(e["s"]) or {}).get("title") if paper_meta.get(e["s"]) else None,
+                            "dst_title": (paper_meta.get(e["d"]) or {}).get("title") if paper_meta.get(e["d"]) else None,
+                            "src_topics": list(st), "dst_topics": list(dt)})
+    conn.close()
+
+    out = {"generated_topics": len(topics), "shared_papers": shared, "citation_bridges": bridges}
+    (ROOT / "store").mkdir(parents=True, exist_ok=True)
+    (ROOT / "store" / "cross_topic.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"# Cross-topic analysis ({len(topics)} topics)")
+    print(f"  shared papers (in >=2 topics): {len(shared)}")
+    print(f"  cross-topic citation bridges: {len(bridges)}")
+    if len(topics) < 2:
+        print("  (need >=2 topics for meaningful cross-topic comparison)")
+    print("  -> store/cross_topic.json")
+
+
+if __name__ == "__main__":
+    main()

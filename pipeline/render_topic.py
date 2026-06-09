@@ -1,0 +1,77 @@
+"""Render a topic's view as Markdown: ranked hits + relevance + summary links + citations.
+Usage: python3 pipeline/render_topic.py <topicId>
+"""
+import json
+import re
+import sys
+
+from lib.db import open_db, ROOT
+
+STAT = {"discovered": "⚪ 待取", "pdf_downloaded": "📄 有全文",
+        "pdf_failed": "⛔ 取全文失败", "summarized": "✅ 已总结"}
+
+
+def file_id(pid):
+    return re.sub(r"[^a-z0-9._-]", "_", pid, flags=re.I)[:180]
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("usage: render_topic.py <topicId>", file=sys.stderr)
+        sys.exit(1)
+    topic_id = sys.argv[1]
+    conn = open_db()
+    t = conn.execute("SELECT * FROM topics WHERE id=?", (topic_id,)).fetchone()
+    if not t:
+        print("no such topic", file=sys.stderr)
+        sys.exit(1)
+    rows = conn.execute(
+        """SELECT p.*, pt.relevance, pt.relevance_reason, pt.rank
+             FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
+            WHERE pt.topic_id=? ORDER BY pt.rank""", (topic_id,)).fetchall()
+    ids = {r["id"] for r in rows}
+    edges = [(e["s"], e["d"]) for e in
+             conn.execute("SELECT src_paper_id s, dst_paper_id d FROM citations").fetchall()
+             if e["s"] in ids and e["d"] in ids]
+    title_by_id = {r["id"]: r["title"] for r in rows}
+    conn.close()
+
+    def latest_summary(r):
+        base = r["slug"] or file_id(r["id"])
+        sv = f"store/summaries/{base}/v1.md"
+        return sv if (ROOT / sv).exists() else None
+
+    n_sum = sum(1 for r in rows if r["status"] == "summarized")
+    queries = json.loads(t["queries"] or "[]")
+    md = [f"# 主题：{t['title']}\n",
+          f"> **研究思路**：{t['idea']}\n",
+          f"- 命中论文：{len(rows)}　已总结：{n_sum}　最近更新：{(t['last_run_at'] or '')[:10]}",
+          f"- 检索词：{'、'.join('`' + q + '`' for q in queries)}\n",
+          "## 命中清单（按相关性排序）\n",
+          "| # | 相关性 | 论文 | 年份 | 引用 | 状态 | 总结 |",
+          "|--:|--:|---|--:|--:|---|---|"]
+    for r in rows:
+        s = latest_summary(r)
+        link = f"[v1](../../{s})" if s else "—"
+        edge = " 🪨" if r["is_edge"] else ""
+        title = (r["title"] or "").replace("|", "/")
+        md.append(f"| {r['rank']} | {r['relevance'] if r['relevance'] is not None else '-'} | {title}{edge} | "
+                  f"{r['year'] or '-'} | {r['citation_count'] or 0} | {STAT.get(r['status'], r['status'])} | {link} |")
+    md.append("\n_🪨 = 边角文章（低引用，保留以备不同视角）_\n")
+    md.append("## 相关性理由\n")
+    for r in rows:
+        md.append(f"- **[{r['rank']}] {(r['title'] or '')[:70]}** （{r['relevance']}）：{r['relevance_reason'] or ''}")
+    md.append(f"\n## 库内引用关系（{len(edges)} 条）\n")
+    if not edges:
+        md.append("_暂无库内互相引用_")
+    else:
+        for s, d in edges:
+            md.append(f"- 《{(title_by_id.get(s) or '')[:45]}》→ 引用 →《{(title_by_id.get(d) or '')[:45]}》")
+
+    out = ROOT / "topics" / topic_id / "topic.md"
+    out.write_text("\n".join(md) + "\n", encoding="utf-8")
+    print(f"rendered -> topics/{topic_id}/topic.md  ({len(rows)} papers, {len(edges)} citation edges)")
+
+
+if __name__ == "__main__":
+    main()

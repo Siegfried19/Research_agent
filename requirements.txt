@@ -1,0 +1,5 @@
+# Research pipeline (Python). Stdlib covers sqlite3/json/subprocess/urllib.
+# Only one third-party dep:
+requests>=2.25
+# External CLIs (not pip): claude (Claude Code, logged in), opencli (npm @jackwener/opencli),
+# poppler-utils (pdftotext, pdfinfo). google-chrome for Tier B.

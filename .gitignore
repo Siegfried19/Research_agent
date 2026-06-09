@@ -1,6 +1,7 @@
 # 大体积 / 版权全文 —— 绝不入库或推送
 store/pdfs/
 store/text/
+store/dl_tmp/
 
 # sqlite 旁路文件（主 .sqlite 入库）
 db/*.sqlite-wal
@@ -17,6 +18,15 @@ store/cross_topic.json
 # 密钥（绝不入库）
 config/telegram.json
 
+# 详细/可重建日志（run.log 入库，详细日志不入库）
+logs/pipeline-*.log
+logs/tierb-*.log
+
+# 第三方参考库（体积大，不入库）
+ref/
+
 # 杂项
 node_modules/
+__pycache__/
+*.pyc
 .DS_Store
