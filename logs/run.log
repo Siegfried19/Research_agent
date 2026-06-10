@@ -159,3 +159,10 @@
 2026-06-10T17:27:14Z	rl-general-toolbox	RESCUE+UPGRADE: 2 pdf_failed (PPG Reloaded/Lazy Agents) rescued from PMLR (ICML 2023, free) -> topic2 100/100 summarized. recover_oa += dblp-oa channel (PMLR/ACL/OpenReview via DBLP title search). NEW stage hunt=recover_agent.py (claude -p + WebSearch/WebFetch hunts legit free PDFs before tierb); e2e tested on temp DB (found PPG on PMLR, 10MB, validated).
 2026-06-10T17:54:15Z	rl-general-toolbox	stage:tierb start
 2026-06-10T17:54:15Z	rl-general-toolbox	stage:tierb end(rc=0)
+2026-06-10T18:25:09Z	rl-general-toolbox	verify_summaries: checked=10 pass=2 minor=4 major=4 errors=0
+2026-06-10T18:26:46Z	rl-digital-human-interaction	verify_summaries: checked=13 pass=2 minor=4 major=7 errors=0
+2026-06-10T18:28:46Z	-	RAG stage1 SHIPPED: ask.py (FTS5) — fts.sqlite(trigram总结层+porter全文层,增量索引221篇), 中英混合查询, quality_tier 出口降权/标注, --answer=claude -p 带引用综合回答。坑:FTS5虚拟表LIKE静默0行->用instr;中文长段拆滑窗trigram。发现重复入库:Bipedal Robots x2 待去重。
+2026-06-10T18:31:52Z	rl-general-toolbox	verify_summaries: checked=10 pass=2 minor=4 major=4 errors=0
+2026-06-10T18:58:17Z	-	correct_summaries: 3/3 corrected
+2026-06-10T19:06:29Z	rl-general-toolbox	verify_summaries: checked=25 pass=6 minor=13 major=6 errors=0
+2026-06-10T19:11:31Z	-	correct_summaries: 6/6 corrected
