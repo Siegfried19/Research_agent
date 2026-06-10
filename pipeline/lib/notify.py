@@ -1,10 +1,15 @@
 """Telegram notification + simple two-way control for the pipeline.
 
 Config: config/telegram.json (gitignored) = {"token": "...", "chat_id": "..."}
-No daemon — notify() pushes once; wait_for_reply() only polls while a run is
-blocked waiting for the user (e.g. after a Cloudflare/Duo prompt).
+notify() pushes once; wait_for_reply() only polls while a run is blocked
+waiting for the user (e.g. after a Cloudflare/Duo prompt).
+
+Optional daemon: pipeline/bot.py (chat relay to claude -p). While it runs it
+owns getUpdates (Telegram allows one consumer per token), so wait_for_reply()
+switches to reading the bot's message spool (logs/bot_inbox.jsonl) instead.
 """
 import json
+import os
 import time
 
 import requests
@@ -12,6 +17,17 @@ import requests
 from .db import ROOT
 
 CFG = ROOT / "config" / "telegram.json"
+BOT_PID = ROOT / "logs" / "bot.pid"
+BOT_INBOX = ROOT / "logs" / "bot_inbox.jsonl"
+BOT_WAIT = ROOT / "logs" / "bot_wait.json"
+
+
+def _bot_alive():
+    try:
+        os.kill(int(BOT_PID.read_text(encoding="utf-8").strip()), 0)
+        return True
+    except Exception:
+        return False
 
 
 def _load():
@@ -53,11 +69,40 @@ def fetch_chat_id(token=None):
     return {"chat_id": chat.get("id"), "from": chat.get("username") or chat.get("first_name")}
 
 
+def _wait_via_inbox(keyword, timeout, poll):
+    """bot.py is polling getUpdates for us — watch its spool file instead."""
+    BOT_WAIT.write_text(json.dumps({"keyword": keyword, "ts": time.time()}),
+                        encoding="utf-8")
+    pos = BOT_INBOX.stat().st_size if BOT_INBOX.exists() else 0
+    deadline = time.time() + timeout
+    try:
+        while time.time() < deadline:
+            if not _bot_alive():
+                return wait_for_reply(keyword, max(1, int(deadline - time.time())), poll)
+            if BOT_INBOX.exists() and BOT_INBOX.stat().st_size > pos:
+                with BOT_INBOX.open("r", encoding="utf-8") as f:
+                    f.seek(pos)
+                    chunk = f.read()
+                    pos = f.tell()
+                for line in chunk.splitlines():
+                    try:
+                        if keyword.lower() in json.loads(line).get("text", "").lower():
+                            return True
+                    except Exception:
+                        pass
+            time.sleep(poll)
+        return False
+    finally:
+        BOT_WAIT.unlink(missing_ok=True)
+
+
 def wait_for_reply(keyword, timeout=600, poll=3):
     """Block until the user sends a message containing `keyword` (case-insensitive)."""
     c = _load()
     if not c or not c.get("token"):
         return False
+    if _bot_alive():
+        return _wait_via_inbox(keyword, timeout, poll)
     offset = 0
     deadline = time.time() + timeout
     try:

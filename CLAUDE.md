@@ -16,7 +16,7 @@
 
 ```bash
 python3 pipeline/run.py <id> auto      # 或 bash pipeline/run.sh <id> auto（等价薄壳）
-# = discover → score → commit → fetch → recover → hunt → tierb → worklist → sum → finalize
+# = discover → score → commit → fetch → recover → hunt → tierb → worklist → sum → finalize → verify
 ```
 全程唯一需要人:**`tierb` 阶段遇 Cloudflare/Duo 验证时会暂停 + Telegram 喊你,你在 Chrome 里点一下即自动续跑**。也可单跑某阶段调试:
 ```bash
@@ -30,6 +30,7 @@ python3 pipeline/run.py <id> tierb       # fetch_tierb.py: 浏览器+OpenAthens 
 python3 pipeline/run.py <id> worklist    # build_worklist.py: 建总结清单（status=pdf_downloaded 的）
 python3 pipeline/run.py <id> sum         # summarize_auto.py: claude -p 逐篇写 v1.md
 python3 pipeline/run.py <id> finalize    # register_summaries.py + render_topic.py
+python3 pipeline/run.py <id> verify      # escalate_verify.py --start-pct 100: Codex 全量核查新总结+自动修正 major,再 render
 ```
 > `claude` CLI 必须已登录。测试可设 `RESEARCH_DB=/tmp/x.sqlite` 用临时库,不碰生产 `db/papers.sqlite`。
 
@@ -57,7 +58,7 @@ python3 pipeline/run.py <id> finalize    # register_summaries.py + render_topic.
 init, discover, **score_auto**, commit, fetch_oa, recover_oa, **recover_agent**(hunt,agent联网猎免费源), **fetch_tierb**, build_worklist,
 **summarize_auto**, register_summaries, render_topic, migrate_slugs, cross_topic,
 prepare_update, **update_auto**, register_updates, suggest_updates, notify, **audit_quality**,
-**verify_summaries**(Codex 核查总结幻觉), run.py, run.sh(薄壳)
+**verify_summaries**(Codex 核查总结幻觉), **correct_summaries**(幻觉修正出 vN+1), **escalate_verify**(升级阶梯驱动=verify阶段), run.py, run.sh(薄壳)
 lib/: db, **log**(一等公民日志), http, sources, merge, store, slug, notify, **claude**(claude -p 调用器+并发池), **quality**(硬信号质量评估), **codex**(codex exec 调用器,跨模型第二引擎)
 > `score_auto`/`summarize_auto`/`update_auto` 用 `claude -p` 取代了旧的 Workflow agent。
 > `fetch_tierb` = 方法④付费墙抓取（自启 Chrome→OpenAthens→人点验证→混合 B/A 抓 PDF）。
@@ -68,7 +69,7 @@ lib/: db, **log**(一等公民日志), http, sources, merge, store, slug, notify
 python3 pipeline/recover_oa.py <id>        # 免费补全(Unpaywall repository优先 + arXiv)
 python3 pipeline/suggest_updates.py <id>   # (5b)建议哪些老总结该更新
 python3 pipeline/prepare_update.py <doi>   # (5a)备更新 → python3 update_auto.py → register_updates.py
-python3 pipeline/cross_topic.py            # (6)跨主题（需≥2主题）
+python3 pipeline/cross_topic.py            # (6)跨主题（需≥2主题;自带全库引用边重建——commit 只建主题内的边）
 python3 pipeline/audit_quality.py <id>     # 质量审计:回查已入库论文(拉OpenAlex最新撤稿/DOAJ);--apply 移除block级
 ```
 
@@ -81,16 +82,23 @@ python3 pipeline/audit_quality.py <id>     # 质量审计:回查已入库论文(
 - 名单来源：Beall's 衍生 stop-predatory-journals（1309刊+1161出版商，**2017年停更，新水刊靠 `local_blocklist.txt`/`doi_prefix_blocklist.txt` 手工补**，IJISRT=10.38124 已收录）。
 - 回溯审计：`audit_quality.py <id>` 拉 OpenAlex 最新撤稿/DOAJ → 出报告 `topics/<id>/quality_audit.md` + **verdict 回写 DB**（dry-run 也回写）；`--apply` 只删 block 级+重算 rank。2026-06-10 对 129 篇跑过：block=0 / suspect=0 / flag=34(全是真预印本) / trusted=36 / ok=59，标记已落库。
 
-## 跨模型评审团（Codex，2026-06-10 上线）
+## 跨模型评审团（Codex，2026-06-10 上线；同日升级为质量闭环）
 Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex exec --output-last-message`,镜像 lib/claude.py）。**Codex 永远没有否决权,只提异议/出报告**：
-- **打分魔鬼代言人**（`quality.codex_panel`,**默认 false**,开了才生效）：score 阶段 Codex 拿同批论文专找"该拒"理由(跑题/水文/无方法),异议写进 scores/batch_*.json 的 `panel_objection`；commit 合议：**边界分(<60)+异议=挡下;高分+异议=入库但异议追进 relevance_reason**。实测 3 篇试金石全对(放过 DeepMimic,咬掉关键词碰瓷的土木论文和 metaverse 水文)。
-- **总结核查** `verify_summaries.py <id> [pct] [并发] [--limit N]`：suspect 必核 + 随机抽 10%,Codex 对照原文核数字/论断,**只出报告不改总结** → `topics/<id>/summary_verification.md`。首测 2 篇即抓到 1 个 major(总结把"行为未预先指定"写成"下坡训练中未见")——幻觉率不是零,抽检值得保留。注入的元信息行(引用数等)已在 prompt 里豁免。
-- Codex 偶发限流/超时:panel 失败自动跳过不挡打分;verify 重跑即可。换机器需重新 `npm i -g @openai/codex` + `codex login`。
+- **打分魔鬼代言人**（`quality.codex_panel`,**默认 false**）：score 阶段 Codex 专找"该拒"理由,异议进 `panel_objection`；commit 合议:边界分(<60)+异议=挡下。实测 3 篇试金石全对。**用户已拍板(2026-06-10):打分侧异议保持关,异议火力集中在总结侧。**
+- **质量闭环（总结侧,已集成进 run auto 的 `verify` 阶段）**——核心:写的人(claude)和查的人(Codex)不是同一个模型:
+  1. **核查** `verify_summaries.py <id> [pct] [并发] [--limit N]`:必核=suspect+修正过的(v≥2 未复核),其余按 pct 抽;Codex 对照原文(上限40万字符,截断时"核不到≠编造")核数字/论断;豁免元信息行+总结者评注("局限与我的质疑"里的判断)。**只出报告** → `summary_verification.md`;`topics/<id>/verified.json` 记"每篇核到哪个版本"。
+  2. **修正** `correct_summaries.py [并发]`(读 `store/correction_worklist.json`):claude -p 拿**全文+当前总结+问题清单**重写 → vN+1 注册入 summary_versions,版本史保留;幂等。
+  3. **升级阶梯** `escalate_verify.py <id> [--start-pct 10] [--threshold 10] [--max-rounds 6] [--max-attempts 2]`:抽样→fresh major率≥阈值→**自动修正 major+抽样翻倍**→循环至收敛/全量;修正过的下轮自动必复核;修 2 次仍 major 标"需人工分诊"。`--start-pct 100`=全量模式,即 run.py `verify` 阶段(新总结入库即全量核查)。
+- **实测(topic2,2026-06-10)**:真实幻觉率 **~25% major**(两轮 32 篇抽出 8 篇:梯度方向写反/消融结论说反/"全部任务大幅超越"夸大等);修正闭环有效——9 篇修正后复核全部脱离 major(TD3/DAPG/Multimodal 等 pass;AFU 修 2 次到 v3)。minor 级("表述略强")不自动修,留报告存档。
+- Codex 偶发限流/超时:panel 失败自动跳过;verify/escalate 重跑即可(verified.json 按轮落盘,进度不丢)。换机器需重新 `npm i -g @openai/codex` + `codex login`。
 
-## Telegram 通知（轻量、非常驻）
+## Telegram 通知 + 对话 bot
 - bot @research_agentffbot；配置在 `config/telegram.json`（**gitignore，不入库**；token 是密钥）。
-- 设计：`notify()` 一次性推送；`waitForReply()` 仅在一次运行卡住等用户时轮询。**没有守护进程**，跑完就停。
+- 基础层：`notify()` 一次性推送；`wait_for_reply()` 仅在一次运行卡住等用户时轮询。
 - 用途：Tier B 登录/Duo 提醒、进度、报错。CLI：`python3 pipeline/notify.py settoken|chatid|test`。
+- **对话 bot（2026-06-10 临时升级，照 Stock_agent/daily-digest/bot.py 移植）**：`pipeline/bot.py` 常驻长轮询，用户在 Telegram 上发任何话 → 转本机 `claude -p --resume`（opus、`--dangerously-skip-permissions`、cwd=仓库根，多轮记忆存 `logs/bot_session.txt`）；命令 `help`/`new`(清会话)/`log [N]`(看 run.log)。只认配置里的 chat_id。
+  - 启动：`cd ~/Projects/Research_agent && setsid nohup python3 -u pipeline/bot.py >> logs/bot.log 2>&1 &`；停：`kill $(cat logs/bot.pid)`。单例（bot.pid 活着就拒启）。**不随开机自启**——机器重启后要手动拉起。
+  - ⚠️ 与 tierb 协作：bot 常驻时独占 getUpdates，所以每条消息落一份 `logs/bot_inbox.jsonl`；`wait_for_reply()` 检测到 bot 在跑（logs/bot.pid 进程活着）就改读 inbox 并写 `logs/bot_wait.json` 声明关键词，bot 对命中关键词的消息只转交不回 claude。bot 死了自动回退老的 getUpdates 轮询。
 - 若换机器：`config/telegram.json` 不在仓库里，需要用户重新 `settoken` + `chatid`。
 
 ## 当前状态（截至 2026-06-09）

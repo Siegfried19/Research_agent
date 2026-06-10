@@ -4,16 +4,25 @@ Writes store/cross_topic.json. Usage: python3 pipeline/cross_topic.py
 import json
 
 from lib.db import open_db, ROOT
+from lib.store import build_citations
 
 
 def main():
     conn = open_db()
     topics = conn.execute("SELECT id, title FROM topics").fetchall()
 
+    # commit.py only builds citation edges within each topic's own paper set,
+    # so cross-topic edges are missing until we rebuild over the whole library.
+    all_papers = [{"id": r["id"], "ext_ids": json.loads(r["ext_ids"] or "{}"),
+                   "ref_ext_ids": json.loads(r["ref_ext_ids"] or "[]")}
+                  for r in conn.execute("SELECT id, ext_ids, ref_ext_ids FROM papers").fetchall()]
+    new_edges = build_citations(conn, all_papers)
+    conn.commit()
+
     topics_by_paper = {}
     for r in conn.execute("SELECT paper_id, topic_id, relevance FROM paper_topic").fetchall():
         topics_by_paper.setdefault(r["paper_id"], []).append({"topic": r["topic_id"], "relevance": r["relevance"]})
-    paper_meta = {p["id"]: p for p in conn.execute("SELECT id, title, year FROM papers").fetchall()}
+    paper_meta = {p["id"]: dict(p) for p in conn.execute("SELECT id, title, year FROM papers").fetchall()}
 
     shared = []
     for pid, tps in topics_by_paper.items():

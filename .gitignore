@@ -23,6 +23,8 @@ config/x11vnc.plain
 # 详细/可重建日志（run.log 入库，详细日志不入库）
 logs/pipeline-*.log
 logs/tierb-*.log
+# bot 运行时文件（pid/inbox/会话/日志）
+logs/bot*
 logs/x11vnc.log
 logs/websockify.log
 

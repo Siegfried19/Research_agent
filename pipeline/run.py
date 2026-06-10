@@ -13,6 +13,8 @@ Stages:
   worklist  build summarize worklist
   sum       summaries (claude -p) -> v1.md
   finalize  register summaries + render topic.md
+  verify    cross-model fact-check ALL unverified summaries (Codex), auto-correct
+            majors (claude -p, vN+1) + re-check, then re-render topic.md
   auto      run all of the above, in order
 
 Only `tierb` ever needs you (to click a Cloudflare/Duo challenge).
@@ -40,10 +42,12 @@ def steps(stage, tid):
         "worklist": [("build_worklist.py", [tid])],
         "sum":      [("summarize_auto.py", [tid])],
         "finalize": [("register_summaries.py", [tid]), ("render_topic.py", [tid])],
+        "verify":   [("escalate_verify.py", [tid, "--start-pct", "100"]),
+                     ("render_topic.py", [tid])],
     }.get(stage)
 
 
-AUTO = ["discover", "score", "commit", "fetch", "recover", "hunt", "tierb", "worklist", "sum", "finalize"]
+AUTO = ["discover", "score", "commit", "fetch", "recover", "hunt", "tierb", "worklist", "sum", "finalize", "verify"]
 
 
 def run_stage(stage, tid):
