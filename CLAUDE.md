@@ -126,6 +126,15 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
   - 验证必须点在机器那个 Chrome 上(cf_clearance 绑指纹+IP),只能远程看屏、不能手机本地解。
   - **遗留问题**(若日后解封要先解决):①手机端双指缩放用户反馈仍放不大(noVNC 1.4.0 已装,URL `resize=scale`,待查 viewport/手势);②用户安全顾虑(虽已 localhost-only+tailnet+2FA)。
 
+## 🌟 总蓝图（最 high level 的 idea，用户 2026-06-10 定稿）
+三层架构，下层喂上层；做任何决策先对齐这个：
+1. **论文自动下载+总结流水线**（已建成）：每周 `run auto`——多源发现→打分→四级取全文→中文总结→质量标记→Codex 核查修正。
+2. **相互关联、有方便接口的知识库**（建设中）：SQLite 库 + 引用图 + 检索接口（`ask.py` FTS5 已有；向量/引用图扩展/合成知识层按需再上）。
+3. **知识库的三个出口（按近→远）**：
+   - ① **用户本人来查答案**——`ask.py "<问题>" --answer`（已有）。
+   - ② **别的项目里的 agent 做任务卡住时来查**——`ask.py --json` + 全局 `~/.claude/CLAUDE.md` 发现机制（已有）。
+   - ③ **🎯 idea→论文流水线**——用 academic agent（`ref/academic-research-skills`，ARS，CC BY-NC）吃这个库，从研究想法走到论文成稿。接口已勘察：ARS deep-research 的 **corpus-first 模式**接收 `literature_corpus[]`(citation_key/title/authors/year/source_pointer)，先吃本地语料、外搜只补缺口；从我们库导出该格式是小工作量。**未动手；这是知识库建设的终极验收标准。**
+
 ## 待办 / 下一步
 - ✅ **(2026-06-09 完成)** 4 篇全文+总结;`fetch_tierb` 固化;`score_auto`/`summarize_auto`(claude -p);`run auto` 一条龙;**整套迁移到 Python**;**修了 recover_oa**(arxiv/repository 优先 + 用 ext_ids.arxiv 不只靠标题)。
 1. **端到端实跑验证 `fetch_tierb.py`**：本主题已无待抓篇,脚本只测过"无事可做"+语法+各零件(手动验证过)。下个有付费墙的主题要盯一次完整 tierb 跑(尤其 findPdfUrl 跨出版商、challenge 检测、混合 B/A 抓取)。
