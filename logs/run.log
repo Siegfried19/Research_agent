@@ -55,3 +55,72 @@
 2026-06-09T06:08:19Z	-	verified: lib smoke, 4 live sources, run.py wiring, render/register/worklist on real DB, full discover->score->commit->render on temp DB. fetch_tierb browser path NOT yet end-to-end in Python (no paywalled paper left; components verified).
 2026-06-09T06:08:59Z	rl-digital-human-interaction	stage:finalize start
 2026-06-09T06:08:59Z	rl-digital-human-interaction	stage:finalize end(rc=0)
+2026-06-10T03:10:26Z	rl-digital-human-interaction	stage:discover start
+2026-06-10T03:10:26Z	rl-digital-human-interaction	discover: start target=100 pool=200 queries=7
+2026-06-10T03:13:29Z	rl-digital-human-interaction	discover: raw=1560 merged=1158 pool=200 oa=182
+2026-06-10T03:13:29Z	rl-digital-human-interaction	stage:discover end(rc=0)
+2026-06-10T03:13:29Z	rl-digital-human-interaction	stage:score start
+2026-06-10T03:15:47Z	rl-digital-human-interaction	score_auto: 200 scored, 0 batches failed
+2026-06-10T03:15:47Z	rl-digital-human-interaction	stage:score end(rc=0)
+2026-06-10T03:15:47Z	rl-digital-human-interaction	stage:commit start
+2026-06-10T03:15:47Z	rl-digital-human-interaction	commit[INCREMENTAL]: added=95 total=129 edges=49
+2026-06-10T03:15:47Z	rl-digital-human-interaction	stage:commit end(rc=0)
+2026-06-10T03:15:47Z	rl-digital-human-interaction	stage:fetch start
+2026-06-10T03:19:00Z	rl-digital-human-interaction	fetch_oa: 68 pdf, 68 text, 19 failed
+2026-06-10T03:19:00Z	rl-digital-human-interaction	stage:fetch end(rc=0)
+2026-06-10T03:19:00Z	rl-digital-human-interaction	stage:recover start
+2026-06-10T03:33:47Z	rl-digital-human-interaction	recover_oa: 12/27 recovered free
+2026-06-10T03:33:47Z	rl-digital-human-interaction	stage:recover end(rc=0)
+2026-06-10T03:33:47Z	rl-digital-human-interaction	stage:tierb start
+2026-06-10T03:41:50Z	rl-digital-human-interaction	fetch_tierb: Tier B done: 11 fetched, 4 failed (of 15)
+2026-06-10T03:41:51Z	rl-digital-human-interaction	stage:tierb end(rc=0)
+2026-06-10T03:41:51Z	rl-digital-human-interaction	stage:worklist start
+2026-06-10T03:41:51Z	rl-digital-human-interaction	stage:worklist end(rc=0)
+2026-06-10T03:41:51Z	rl-digital-human-interaction	stage:sum start
+2026-06-10T03:46:27Z	rl-digital-human-interaction	stage:tierb start
+2026-06-10T03:49:10Z	rl-digital-human-interaction	fetch_tierb: Tier B done: 4 fetched, 0 failed (of 4)
+2026-06-10T03:49:10Z	rl-digital-human-interaction	stage:tierb end(rc=0)
+2026-06-10T03:50:12Z	_qtest	commit[FIRST RUN]: added=3 total=3 edges=0 qblock=1 qflagout=1
+2026-06-10T03:50:21Z	rl-digital-human-interaction	audit_quality: block=0 flag=46 applied=no
+2026-06-10T03:51:16Z	rl-digital-human-interaction	audit_quality: block=0 flag=34 applied=no
+2026-06-10T04:07:21Z	_qtest2	commit[FIRST RUN]: added=2 total=2 edges=0 qblock=1 qflagout=1
+2026-06-10T04:07:44Z	rl-digital-human-interaction	audit_quality: block=0 suspect=0 flag=34 applied=no
+2026-06-10T04:12:31Z	rl-training-tricks	stage:discover start
+2026-06-10T04:12:31Z	rl-training-tricks	discover: start target=100 pool=200 queries=14
+2026-06-10T04:17:10Z	rl-training-tricks	discover: raw=3407 merged=2269 pool=200 oa=150 quality_blocked=1
+2026-06-10T04:17:10Z	rl-training-tricks	stage:discover end(rc=0)
+2026-06-10T04:19:55Z	rl-digital-human-interaction	summarize_auto: 91 ok, 0 failed/skipped
+2026-06-10T04:19:55Z	rl-digital-human-interaction	stage:sum end(rc=0)
+2026-06-10T04:19:55Z	rl-digital-human-interaction	stage:finalize start
+2026-06-10T04:19:55Z	rl-digital-human-interaction	stage:finalize end(rc=0)
+2026-06-10T04:20:18Z	rl-digital-human-interaction	stage:worklist start
+2026-06-10T04:20:18Z	rl-digital-human-interaction	stage:worklist end(rc=0)
+2026-06-10T04:20:18Z	rl-digital-human-interaction	stage:sum start
+2026-06-10T04:22:21Z	rl-digital-human-interaction	summarize_auto: 4 ok, 0 failed/skipped
+2026-06-10T04:22:21Z	rl-digital-human-interaction	stage:sum end(rc=0)
+2026-06-10T04:22:21Z	rl-digital-human-interaction	stage:finalize start
+2026-06-10T04:22:21Z	rl-digital-human-interaction	stage:finalize end(rc=0)
+2026-06-10T04:22:21Z	rl-general-toolbox	stage:score start
+2026-06-10T04:25:31Z	rl-general-toolbox	score_auto: 200 scored, 0 batches failed
+2026-06-10T04:25:31Z	rl-general-toolbox	stage:score end(rc=0)
+2026-06-10T04:25:31Z	rl-general-toolbox	stage:commit start
+2026-06-10T04:25:31Z	rl-general-toolbox	commit[FIRST RUN]: added=100 total=100 edges=31 qblock=0 qflagout=3 qsuspect=1
+2026-06-10T04:25:31Z	rl-general-toolbox	stage:commit end(rc=0)
+2026-06-10T04:25:31Z	rl-general-toolbox	stage:fetch start
+2026-06-10T04:27:44Z	rl-general-toolbox	fetch_oa: 62 pdf, 62 text, 5 failed
+2026-06-10T04:27:44Z	rl-general-toolbox	stage:fetch end(rc=0)
+2026-06-10T04:27:44Z	rl-general-toolbox	stage:recover start
+2026-06-10T04:29:09Z	rl-general-toolbox	recover_oa: 10/30 recovered free
+2026-06-10T04:29:09Z	rl-general-toolbox	stage:recover end(rc=0)
+2026-06-10T04:29:09Z	rl-general-toolbox	stage:tierb start
+2026-06-10T04:30:34Z	_ptest	commit[FIRST RUN]: added=2 total=2 edges=0 qblock=0 qflagout=0 qsuspect=0
+2026-06-10T04:31:50Z	rl-digital-human-interaction	verify_summaries: checked=2 pass=0 minor=1 major=1 errors=0
+2026-06-10T04:43:02Z	rl-general-toolbox	fetch_tierb: Tier B done: 14 fetched, 6 failed (of 20)
+2026-06-10T04:43:02Z	rl-general-toolbox	stage:tierb end(rc=0)
+2026-06-10T04:43:03Z	rl-general-toolbox	stage:worklist start
+2026-06-10T04:43:03Z	rl-general-toolbox	stage:worklist end(rc=0)
+2026-06-10T04:43:03Z	rl-general-toolbox	stage:sum start
+2026-06-10T04:59:36Z	-	SESSION(评价体系线): quality硬信号+suspect标记优先全链路上线(质疑模式总结/渲染⚠️/审计回写); Codex评审团上线(lib/codex.py+打分魔鬼代言人默认关+verify_summaries); 首测2篇抓1个major幻觉; 详见 logs/SESSION-2026-06-10.md
+2026-06-10T05:01:19Z	-	remote_view: 手机过验证方案上线。pipeline/remote_view.sh = x11vnc(:1,localhost-only)+websockify/noVNC(绑 Tailscale IP,VNC密码,不开Funnel)。fetch_tierb 弹验证时 Telegram 带 noVNC 链接,手机点链接看屏点掉挑战即自动续跑。幂等;密钥 config/x11vnc.* gitignored。
+2026-06-10T05:09:50Z	-	remote_view: 用户决定封存(MOTHBALLED)。默认关(ensure_remote_view 返回空,除非 tier_b.remote_view=true 或 RESEARCH_REMOTE_VIEW=1)。x11vnc/websockify 已停、端口已关。代码+vendor/novnc 保留。遗留:手机端放大仍不灵+安全顾虑,解封前先解决。
+2026-06-10T05:11:40Z	-	CODE FREEZE 2026-06-10: 今日代码改动到此为止,提交代码+文档+配置(不含正写中的 db/summaries,留待数据commit)。

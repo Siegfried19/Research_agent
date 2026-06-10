@@ -20,24 +20,28 @@ def upsert_paper(conn, p):
     refs = _j(p.get("ref_ext_ids") or [])
     authors = _j(p.get("authors") or [])
     srcs = _j(p.get("sources") or [])
+    q = p.get("quality") or {}
+    q_tier, q_sig = q.get("tier"), ",".join(q.get("signals") or []) or None
     if not existing:
         slug = unique_slug(conn, p["title"], p["id"])
         conn.execute(
             """INSERT INTO papers (id,doi,slug,title,authors,year,venue,abstract,language,citation_count,
-                is_oa,oa_url,landing_url,sources,ext_ids,ref_ext_ids,status,is_edge,discovered_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'discovered', ?, ?)""",
+                is_oa,oa_url,landing_url,sources,ext_ids,ref_ext_ids,status,is_edge,discovered_at,
+                quality_tier,quality_signals)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'discovered', ?, ?, ?, ?)""",
             (p["id"], p.get("doi"), slug, p["title"], authors, p.get("year"), p.get("venue"),
              p.get("abstract"), p.get("language"), p.get("citation_count") or 0,
              1 if p.get("is_oa") else 0, p.get("oa_url"), p.get("landing_url"), srcs, ext, refs,
-             1 if p.get("is_edge") else 0, now_iso()))
+             1 if p.get("is_edge") else 0, now_iso(), q_tier, q_sig))
         return "new"
     merged_sources = _j(sorted(set(json.loads(existing["sources"] or "[]")) | set(p.get("sources") or [])))
     conn.execute(
         """UPDATE papers SET citation_count=MAX(citation_count,?), is_oa=MAX(is_oa,?),
              oa_url=COALESCE(oa_url,?), abstract=COALESCE(abstract,?), venue=COALESCE(venue,?),
-             sources=?, ext_ids=? WHERE id=?""",
+             sources=?, ext_ids=?, quality_tier=COALESCE(?,quality_tier),
+             quality_signals=COALESCE(?,quality_signals) WHERE id=?""",
         (p.get("citation_count") or 0, 1 if p.get("is_oa") else 0, p.get("oa_url"),
-         p.get("abstract"), p.get("venue"), merged_sources, ext, p["id"]))
+         p.get("abstract"), p.get("venue"), merged_sources, ext, q_tier, q_sig, p["id"]))
     return "existing"
 
 

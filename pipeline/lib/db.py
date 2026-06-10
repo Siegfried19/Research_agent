@@ -87,7 +87,9 @@ CREATE INDEX IF NOT EXISTS idx_pt_paper      ON paper_topic(paper_id);
 CREATE INDEX IF NOT EXISTS idx_cit_dst       ON citations(dst_paper_id);
 """
 
-ADD_COLUMNS = [("papers", "slug", "TEXT")]
+ADD_COLUMNS = [("papers", "slug", "TEXT"),
+               ("papers", "quality_tier", "TEXT"),      # block/suspect/flag/ok/trusted (lib/quality.py)
+               ("papers", "quality_signals", "TEXT")]   # 逗号分隔的命中信号
 
 
 def _ensure_columns(conn):

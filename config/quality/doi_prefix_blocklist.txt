@@ -1,0 +1,3 @@
+# 掠夺性出版商的 DOI 前缀,一行一个(# 后是注释)。匹配=paper.doi 以该前缀开头。
+# 这是最硬的信号:名单匹配可能被改名躲掉,DOI 前缀跑不掉。
+10.38124  # IJISRT (International Journal of Innovative Science and Research Technology) — 2026-06-09 库里清出过

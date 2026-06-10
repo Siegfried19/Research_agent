@@ -17,13 +17,20 @@ store/cross_topic.json
 
 # 密钥（绝不入库）
 config/telegram.json
+config/x11vnc.pass
+config/x11vnc.plain
 
 # 详细/可重建日志（run.log 入库，详细日志不入库）
 logs/pipeline-*.log
 logs/tierb-*.log
+logs/x11vnc.log
+logs/websockify.log
 
 # 第三方参考库（体积大，不入库）
 ref/
+
+# 远程看屏用的 noVNC 静态文件（第三方,可重新下载,不入库）
+vendor/
 
 # 杂项
 node_modules/

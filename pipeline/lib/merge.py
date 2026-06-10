@@ -34,6 +34,9 @@ def _merge_into(dst, rec):
     dst["doi"] = dst["doi"] or rec.get("doi")
     dst["year"] = dst["year"] or rec.get("year")
     dst["venue"] = dst["venue"] or rec.get("venue")
+    dst["publisher"] = dst["publisher"] or rec.get("publisher")
+    dst["is_in_doaj"] = dst["is_in_doaj"] or bool(rec.get("is_in_doaj"))
+    dst["is_retracted"] = dst["is_retracted"] or bool(rec.get("is_retracted"))
     dst["abstract"] = _longer(dst["abstract"], rec.get("abstract"))
     dst["language"] = dst["language"] or rec.get("language")
     dst["citation_count"] = max(dst["citation_count"] or 0, rec.get("citation_count") or 0)
@@ -64,7 +67,8 @@ def merge_all(records):
         if cid not in by_id:
             by_id[cid] = {
                 "id": cid, "title": "", "doi": None, "authors": [], "year": None,
-                "venue": None, "abstract": None, "language": None, "citation_count": 0,
+                "venue": None, "publisher": None, "is_in_doaj": False, "is_retracted": False,
+                "abstract": None, "language": None, "citation_count": 0,
                 "is_oa": False, "oa_url": None, "landing_url": None,
                 "sources": set(), "relRankBySource": {}, "ext_ids": {},
                 "refSet": set(), "queries": set(),

@@ -1,0 +1,39 @@
+# 信任 venue 白名单(本领域:RL/数字人/动画/机器人/HCI)。命中 => tier=trusted,且永不被黑名单误杀。
+# 匹配规则:单词条目=规范化后全等;多词条目=规范化后子串包含。按需增删。
+neural information processing systems
+neurips
+international conference on machine learning
+international conference on learning representations
+journal of machine learning research
+transactions on machine learning research
+acm transactions on graphics
+siggraph
+computer graphics forum
+eurographics
+symposium on computer animation
+motion interaction and games
+ieee transactions on visualization and computer graphics
+international conference on robotics and automation
+intelligent robots and systems
+robotics science and systems
+conference on robot learning
+ieee transactions on robotics
+ieee robotics and automation letters
+international journal of robotics research
+science robotics
+aaai conference on artificial intelligence
+international joint conference on artificial intelligence
+computer vision and pattern recognition
+international conference on computer vision
+european conference on computer vision
+ieee transactions on pattern analysis and machine intelligence
+conference on human factors in computing systems
+human robot interaction
+autonomous agents and multiagent systems
+ieee transactions on games
+ieee transactions on affective computing
+artificial intelligence
+nature
+science
+nature machine intelligence
+nature communications

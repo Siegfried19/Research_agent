@@ -34,6 +34,7 @@ def main():
             "year": r["year"], "venue": r["venue"], "citation_count": r["citation_count"],
             "doi": r["doi"], "landing_url": r["landing_url"], "is_edge": bool(r["is_edge"]),
             "relevance": r["relevance"], "relevance_reason": r["relevance_reason"],
+            "quality_tier": r["quality_tier"], "quality_signals": r["quality_signals"],
             "text_path": str(ROOT / r["text_path"]) if r["text_path"] else None,
             "pdf_path": str(ROOT / r["pdf_path"]) if r["pdf_path"] else None,
             "summary_dir": str(sdir),

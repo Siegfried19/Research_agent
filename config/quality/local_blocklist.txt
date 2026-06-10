@@ -1,0 +1,4 @@
+# 本地追加的掠夺刊/低质量 venue 名单(Beall's 衍生名单 2017 年后停更,新水刊靠这里手动补)。
+# 一行一个,匹配=规范化(小写去标点)后全等。加新条目直接 append。
+international journal of innovative science and research technology
+ijisrt

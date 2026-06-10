@@ -158,9 +158,39 @@ def is_challenge(st):
     return bool(CHALLENGE_TITLE.search(st["title"])) or bool(CHALLENGE_URL.search(st["url"]))
 
 
+REMOTE_VIEW_URL = None
+
+
+def ensure_remote_view():
+    """Idempotently start the phone-accessible view of :1 (x11vnc+noVNC over
+    Tailscale) and cache its URL, so the challenge can be cleared from a phone.
+
+    MOTHBALLED (2026-06-10, user's call): OFF by default. The remote-view code is
+    kept but never activates unless explicitly enabled via config tier_b.remote_view
+    = true (or env RESEARCH_REMOTE_VIEW=1). When off, tierb behaves as before — you
+    clear challenges at the machine."""
+    if not (TB.get("remote_view", False) or os.environ.get("RESEARCH_REMOTE_VIEW") == "1"):
+        return ""
+    global REMOTE_VIEW_URL
+    if REMOTE_VIEW_URL is not None:
+        return REMOTE_VIEW_URL
+    REMOTE_VIEW_URL = ""
+    try:
+        out = subprocess.run(["bash", str(ROOT / "pipeline" / "remote_view.sh")],
+                             capture_output=True, text=True, timeout=30)
+        lines = [l for l in (out.stdout or "").splitlines() if l.startswith("http")]
+        if lines:
+            REMOTE_VIEW_URL = lines[-1].strip()
+    except Exception:  # noqa: BLE001
+        pass
+    return REMOTE_VIEW_URL
+
+
 def wait_human(paper, st):
+    url = ensure_remote_view()
+    link = f"\n📱 手机点这里过验证: {url}" if url else ""
     msg = (f"🔐 Tier B 需要你手动过验证/登录(research agent 在抓「{(paper['title'] or '')[:40]}」)。\n"
-           f"请在 Chrome 里点掉 Cloudflare/Duo,我会自动继续。")
+           f"请点掉 Cloudflare/Duo,我会自动继续。{link}")
     tlog(f"  CHALLENGE: {st['title'] or st['url']} — pausing for human")
     notify(msg)
     deadline = time.time() + TB.get("human_wait_ms", 300000) / 1000
@@ -174,17 +204,28 @@ def wait_human(paper, st):
 
 
 def find_pdf_url(doi):
+    # Publisher overrides FIRST: for these, the generic <a> scan finds a link that
+    # serves an HTML interstitial instead of the PDF, so go straight to the real one.
+    cur0 = get_state()["url"]
+    if "wiley.com" in cur0:  # /doi/pdf/ is an interstitial; pdfdirect is the file
+        return f"https://onlinelibrary.wiley.com/doi/pdfdirect/{doi}?download=true"
     js = ("(()=>{const abs=u=>u?new URL(u,location.href).href:null;"
           "const meta=document.querySelector('meta[name=\"citation_pdf_url\"]');if(meta&&meta.content)return abs(meta.content);"
-          "const sel=['a[href*=\"/pdfft\"]','a[href*=\"/doi/pdf\"]','a[href*=\"/epdf\"]','a[href*=\"pdf\"][href*=\"download\"]','a[href$=\".pdf\"]'];"
+          "const sel=['a[href*=\"/pdfft\"]','a[href*=\"/doi/pdf\"]','a[href*=\"/epdf\"]','a[href*=\"pdf\"][href*=\"download\"]','a[href$=\".pdf\"]','a[href*=\"/bitstream\"]','a[href*=\".pdf?\"]'];"
           "for(const s of sel){const a=document.querySelector(s);if(a&&a.getAttribute('href'))return abs(a.getAttribute('href'));}"
           "return null;})()")
-    url = clean_eval(br("eval", js)[1])
-    if url and url != "null":
-        return url
-    host = get_state()["url"]
-    if "dl.acm.org" in host:
-        return f"https://dl.acm.org/doi/pdf/{doi}"
+    for attempt in range(2):
+        url = clean_eval(br("eval", js)[1])
+        if url and url != "null":
+            return url
+        cur = get_state()["url"]
+        if "dl.acm.org" in cur:
+            return f"https://dl.acm.org/doi/pdf/{doi}"
+        m = re.search(r"^(https?://[^/]*ieeexplore[^/]*)(?:/abstract)?/document/(\d+)", cur)
+        if m:
+            return f"{m.group(1)}/stampPDF/getPDF.jsp?tp=&arnumber={m.group(2)}"
+        if attempt == 0:
+            time.sleep(5)  # SPA 页面(Xplore/DSpace7)可能还没渲染完,等一轮再试
     return None
 
 
@@ -337,7 +378,9 @@ def main():
 
     tlog(f"Tier B: {len(rows)} papers need full text. log -> {LOG_FILE.relative_to(ROOT)}")
     ensure_chrome()
-    notify(f"📚 Tier B 开始抓 {len(rows)} 篇付费墙全文。遇验证我会喊你。")
+    rv = ensure_remote_view()
+    rv_line = f"\n📱 验证时可手机点: {rv}" if rv else ""
+    notify(f"📚 Tier B 开始抓 {len(rows)} 篇付费墙全文。遇验证我会喊你。{rv_line}")
 
     ok = fail = 0
     for r in rows:

@@ -55,6 +55,26 @@ def unpaywall_pdfs(doi):
     return out
 
 
+def arxiv_pdf_candidates(ax):
+    """Candidate arXiv PDF urls, most-likely first. arXiv is quirky: the bare
+    /pdf/<id> path sometimes 404s, and even the 'latest' version can 404 while an
+    earlier one serves (e.g. 2211.15205: bare & v2 404, only v1 works). So we
+    enumerate bare + v1..v<latest> and let the download loop pick whichever is a
+    real PDF."""
+    ax = re.sub(r"v[0-9]+$", "", ax)  # strip any version we were handed
+    latest = 0
+    try:
+        xml = get_text(f"http://export.arxiv.org/api/query?id_list={ax}", timeout=30)
+        ent = xml.split("<entry>")[1] if "<entry>" in xml else ""
+        m = re.search(r"<id>https?://arxiv\.org/abs/[^<]*v([0-9]+)</id>", ent, re.I)
+        if m:
+            latest = int(m.group(1))
+    except Exception:
+        pass
+    vers = list(range(1, latest + 1)) if latest else [1, 2, 3]
+    return [f"https://arxiv.org/pdf/{ax}"] + [f"https://arxiv.org/pdf/{ax}v{i}" for i in vers]
+
+
 def arxiv_pdf_by_title(title):
     try:
         xml = get_text(
@@ -65,10 +85,11 @@ def arxiv_pdf_by_title(title):
     for e in xml.split("<entry>")[1:]:
         t = (re.search(r"<title>([\s\S]*?)</title>", e, re.I) or [None, ""])[1]
         idm = re.search(r"<id>([\s\S]*?)</id>", e, re.I)
+        # Keep the version suffix — bare ids sometimes 404 (see arxiv_versioned_url).
         if idm and norm_title(t) == norm_title(title):
-            ax = re.sub(r"v[0-9]+$", "", re.sub(r"^https?://arxiv\.org/abs/", "", idm.group(1)))
-            if ax:
-                return f"https://arxiv.org/pdf/{ax}"
+            vid = re.sub(r"^https?://arxiv\.org/abs/", "", idm.group(1)).strip()
+            if vid:
+                return f"https://arxiv.org/pdf/{vid}"
     return None
 
 
@@ -76,7 +97,8 @@ def candidate_urls(r):
     urls, vias = [], []
     ax = arxiv_id_of(r)
     if ax:
-        urls.append(f"https://arxiv.org/pdf/{ax}"); vias.append("arxiv-id")
+        for u in arxiv_pdf_candidates(ax):
+            urls.append(u); vias.append("arxiv-id")
     if r["doi"]:
         for u in unpaywall_pdfs(r["doi"]):
             urls.append(u); vias.append("unpaywall")

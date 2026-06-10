@@ -1,0 +1,23 @@
+{
+  "id": "rl-general-toolbox",
+  "title": "RL 通用工具箱与诊断箱：reward设计、训练trick、算法谱系与安全增强",
+  "idea": "训练强化学习策略（目前主要用 SAC 和 PPO）时经常遇到训不出来的瓶颈，怀疑是 reward 设计或算法超参的问题。需要一批实战导向的论文来构建'RL 训练工具箱'：(1) reward 设计与 shaping 的原则、常见坑（reward hacking/specification gaming）；(2) 训练稳定性 trick、实现细节与超参敏感性的 empirical study；(3) 稀疏奖励下的探索、课程学习；(4) SAC/PPO 之外更丰富的算法（off-policy 改进、模型基方法、约束优化等）及横向比较；(5) control barrier function 等安全增强方法与 RL 的结合（非常重要）；(6) 具体任务（人形/全身控制/数字人/locomotion）上的 reward 工程实例。偏好可操作、有实验对比、给出 do/don't 的论文，而非纯理论。",
+  "queries": [
+    "reward shaping deep reinforcement learning continuous control",
+    "reward design reinforcement learning robotics locomotion",
+    "deep reinforcement learning training stability tricks implementation details",
+    "PPO implementation details hyperparameters empirical study",
+    "on-policy reinforcement learning what matters empirical study",
+    "sparse reward exploration intrinsic motivation reinforcement learning",
+    "reward hacking specification gaming reinforcement learning",
+    "curriculum learning reinforcement learning robot control",
+    "control barrier function reinforcement learning safe control",
+    "safe reinforcement learning constrained policy optimization",
+    "off-policy actor critic continuous control TD3 SAC improvements",
+    "model-based reinforcement learning continuous control sample efficiency",
+    "reinforcement learning humanoid whole-body control reward design",
+    "deep reinforcement learning continuous control benchmark algorithms comparison"
+  ],
+  "window_years": 12,
+  "target": 100
+}

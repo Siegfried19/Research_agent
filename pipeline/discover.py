@@ -12,6 +12,7 @@ from lib import sources
 from lib.merge import merge_all
 from lib.http import sleep
 from lib.log import get_logger, run_log
+from lib import quality
 
 config = load_config()
 log = get_logger("discover")
@@ -84,16 +85,32 @@ def main():
     log.info("\n".join(lines))
 
     papers = [p for p in merge_all(all_recs) if language_ok(p)]
-    papers = prefilter_rank(papers)
+
+    # 硬信号挡板:掠夺刊/撤稿在进池前就丢弃(不浪费打分 token)
+    kept, blocked = [], []
+    for p in papers:
+        p["quality"] = quality.assess(p)
+        (blocked if p["quality"]["tier"] == "block" else kept).append(p)
+    if blocked:
+        log.info(f"\n# Quality gate: blocked {len(blocked)}")
+        for p in blocked:
+            log.info(f"  BLOCK [{','.join(p['quality']['signals'])}] {p['title'][:70]}  ({p.get('venue') or '-'})")
+    for p in kept:
+        if p["quality"]["tier"] == "suspect":
+            log.info(f"  SUSPECT(入池带标记) [{','.join(p['quality']['signals'])}] {p['title'][:70]}  ({p.get('venue') or '-'})")
+    papers = prefilter_rank(kept)
+
     edge_thr = config["ranking"]["edge_citation_threshold"]
     pool = [{
         "id": p["id"], "doi": p["doi"], "title": p["title"], "authors": p["authors"], "year": p["year"],
-        "venue": p["venue"], "abstract": p["abstract"], "language": p["language"],
+        "venue": p["venue"], "publisher": p.get("publisher"), "is_in_doaj": bool(p.get("is_in_doaj")),
+        "is_retracted": bool(p.get("is_retracted")), "abstract": p["abstract"], "language": p["language"],
         "citation_count": p["citation_count"], "is_oa": p["is_oa"], "oa_url": p["oa_url"],
         "landing_url": p["landing_url"], "sources": p["sources"], "ext_ids": p["ext_ids"],
         "ref_ext_ids": p["ref_ext_ids"], "matched_queries": p["queries"],
         "is_edge": (p["citation_count"] or 0) < edge_thr,
         "prefilter": round(p["_pre"], 3),
+        "quality": p["quality"],
     } for p in papers[:pool_size]]
 
     d = ROOT / "topics" / topic["id"]
@@ -110,7 +127,7 @@ def main():
     log.info(f"\n# Result\n  raw {len(all_recs)}  merged-unique {len(papers)}  pool {len(pool)}")
     log.info(f"  pool has-abstract {with_abs}  OA-downloadable {oa}")
     log.info(f"  -> topics/{topic['id']}/candidates.json  (next: relevance scoring)")
-    run_log(topic["id"], f"discover: raw={len(all_recs)} merged={len(papers)} pool={len(pool)} oa={oa}")
+    run_log(topic["id"], f"discover: raw={len(all_recs)} merged={len(papers)} pool={len(pool)} oa={oa} quality_blocked={len(blocked)}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1310 @@
+# stop-predatory-journals (Beall's 衍生) 期刊名,已规范化(小写去标点)。匹配=规范化后全等。
+academic exchange quarterly
+academic research reviews
+academy of contemporary research journal
+acme intellects
+acta advances in agricultural sciences
+acta de gerencia ciencia
+acta kinesiologica
+acta medica international
+acta scientiae et intellectus
+acta velit
+advance journals of engineering mathematics and computer sciences
+advance research journal of multidisciplinary discoveries
+advanced science journal
+advances in aerospace science and technology
+advances in biomedicine and pharmacy
+advances in forestry letter
+advances in science technology and engineering systems journal
+afrasian journal of humanities and social sciences
+african journal of traditional complementary and alternative medicines
+aging
+ahead international journal of recent research review
+al ameen journal of medical sciences
+aloy journal of soft computing and applications
+american based research journal
+american international journal of contemporary research
+american international journal of contemporary scientific research
+american journal of advanced agricultural research
+american journal of advanced drug delivery
+american journal of advanced scientific research
+american journal of advances in medical science
+american journal of biotechnology and medical research
+american journal of engineering research
+american journal of essential oils and natural products
+american journal of innovative research and applied sciences
+american journal of pharmacy and health research
+american journal of pharmtech research
+american journal of phytomedicine and clinical therapeutics
+american journal of research communication
+american journal of scientific research
+american journal of social issues and humanities
+american research thoughts
+american scientific research journal for engineering technology and sciences
+american transactions on engineering applied sciences
+anglisticum international journal of literature linguistics interdisciplinary studies
+annals of british medical sciences
+annals of clinical case reports
+annals of eurasian medicine
+annals of international medical and dental research
+annals of medical and biomedical sciences
+annals of phytomedicine
+applied research journal
+archives des sciences journal
+archives of clinical and experimental surgery
+arnaca american journal of advances in medical science
+arpn journal of science and technology
+arpn journal of systems and software
+asia pacific journal of education arts and sciences
+asia pacific journal of multidisciplinary research
+asia pacific journal of research
+asian journal of applied science and engineering
+asian journal of biomedical and pharmaceutical sciences
+asian journal of business and management sciences
+asian journal of chemistry
+asian journal of health and medical sciences
+asian journal of humanities and social sciences
+asian journal of mathematics and applications
+asian journal of multidisciplinary studies
+asian journal of pharmaceutical and health sciences
+asian journal of pharmaceutical research and health care
+asian journal of pharmacy and life science
+asian journal of science and technology
+asian pacific journal of health sciences
+asian pacific journal of natural products
+asian pacific journal of pharmacy and phytochemistry
+asian pacific journal of tropical disease
+asian research journal of business management
+astronomical review
+australasian journal of herpetology
+australasian medical journal
+australian journal of basic and applied sciences
+australian journal of business and management research
+averroes european medical journal
+ayupharm international journal of ayurveda and allied sciences
+ayushdhar
+bio bulletin
+bioinformation
+biointerface research in applied chemistry
+biomaterials and tissue engineering bulletin
+biomedical engineering review
+biomedical pharmacology journal
+bionano frontier
+biopharm journal
+bioresearch bulletin
+bioscan
+bioscience and bioengineering communications
+bioscience biotechnology research communications
+bioscience discovery
+biosciences biotechnology research asia
+biosciences international
+biotechnological research
+botany journal
+british biomedical bulletin
+british journal of economics finance and management sciences
+british journal of interdisciplinary studies
+british journal of medical and health research
+british journal of science
+buletin teknologi makanan
+bulletin of applied and research science
+bulletin of environment pharmacology and life sciences
+bulletin of mathematical sciences applications
+bulletin of pharmaceutical research
+bulletin of society for mathematical services and standards
+business and economics journal
+business review cambridge
+calodema
+canadian chemical transactions
+canadian international journal of science and technology
+canadian journal of basic and applied sciences
+canadian journal of biotechnology
+canadian journal of pure and applied sciences
+canadian scientific journal
+cancer research frontiers
+cardiology and cardiovascular medicine
+caribbean journal of science and technology
+case study and case report
+caspian sea journal
+cellular and molecular biology
+cellular and molecular biology alt
+centrum
+chemical science transactions
+chemistry research journal
+clinics in oncology
+clinics in surgery
+columban journal of life sciences
+communications on applied electronics
+computational research progress in applied science engineering
+computer science chronicle
+computer science journal
+contemporary research in india
+contemporary sociological global review
+criterion an international journal in english
+cumhuriyet science journal
+current biotica
+current botany
+current discovery
+current trends in technology and sciences
+dav international journal of science
+dawn journal
+der pharma chemica
+direct research journals
+diyala journal for pure science
+e library science research journal
+east european science journal
+eastern academic journal
+eastern european scientific journal
+ecoforum
+ecoletra com scientific ejournal
+education reform journal
+eduved global management research
+eduved international journal of interdisciplinary research
+electronic journal of biology
+electronic journal of engineering and technology
+electronic journal of geotechnical engineering
+electronic journal of vocational colleges
+elixir international journal
+elixir online journal
+engineering it journal
+engineering physics and thermodynamics journal
+engineering research journal
+entomology and applied science letters
+essence international journal for environmental rehabilitation and conservation
+euro afro journal of arts and social sciences
+european academic research
+european chemical bulletin
+european environmental sciences and ecology journal
+european international journal of science and humanities
+european international journal of science and technology
+european journal of academic essays
+european journal of advanced computer science
+european journal of advances in engineering technology
+european journal of biomedical and pharmaceutical sciences
+european journal of biotechnology and bioscience
+european journal of business and social sciences
+european journal of chemistry
+european journal of contemporary economics and management
+european journal of economics finance and administrative sciences
+european journal of educational research
+european journal of educational sciences
+european journal of engineering research and science
+european journal of natural history
+european journal of pharmaceutical and medical research
+european journal of science and theology
+european journal of scientific research
+european journal of social sciences
+european journal of sustainable development
+european law and politics journal
+european online journal of natural and social sciences
+european scientific journal
+experiment
+first independent scientific journal
+fluids international journal of medical fluid management
+food biology
+forex technical journal library
+frontiers in aerospace engineering
+functional analysis theory method applications
+g journal of education social science and humanities
+g journal of environmental science and technology
+galaxy international multidisciplinary research journal
+generics and biosimilars initiative journal
+genes cancer
+genetics and molecular research
+geodynamics research international bulletin
+global business finance review
+global journal for research analysis
+global journal of advanced engineering technologies and sciences
+global journal of advanced research
+global journal of animal scientific research
+global journal of business and social science
+global journal of business and social science review
+global journal of engineering science and research management
+global journal of management science and technology
+global journal of medical and health sciences
+global journal of medicine and public health
+global journal of multidisciplinary studies
+global media journal
+global scholastic research journal
+golden research thoughts
+hctl open international journal of technology innovations and research
+hiperboreea journal
+hortflora research spectrum
+hygeia journal for drugs and medicines
+iars international research journal
+ideal journal of arts and humanities
+ideal journal of economics and management sciences
+ideal journal of education and policy studies
+ideal journal of engineering and applied sciences
+ideal journal of psychology and theology
+ideal journal of pure and applied sciences
+indian journal of advanced nursing
+indian journal of advances in chemical science
+indian journal of applied basic medical sciences
+indian journal of applied research
+indian journal of drugs
+indian journal of medical research and pharmaceutical sciences
+indian journal of natural sciences
+indian journal of pharmaceutical and biological research
+indian journal of pharmaceutical science research
+indian journal of research anvikshiki
+indian journal of research in pharmacy and biotechnology
+indian journal of scientific research
+indian journal of scientific research and technology
+indian research journal of pharmacy and science
+indian scholar
+indian streams research journal
+indo american journal of pharmaceutical research
+indo american journal of pharmaceutical sciences
+indo global journal of pharmaceutical sciences
+industrial science journal
+information an international interdisciplinary journal
+innovations in pharmaceuticals and pharmacotherapy
+institute of electrical electronics engineers advanced journal
+integrated journal of british
+interdisciplinary journal of contemporary research in business
+interdisciplinary journal of research in business
+interdisciplinary toxicology
+internal medicine review
+international advanced research journal in science engineering and technology
+international archives of biomedical and clinical research
+international archives of medicine
+international asian research journal
+international ayurvedic medical journal
+international biology review
+international bulletin of business administration
+international cardiovascular forum
+international cardiovascular forum alt
+international chemistry review
+international design journal
+international economic letters
+international education and research journal
+international educational e journal
+international educational scientific research journal
+international interdisciplinary journal of education
+international interdisciplinary journal of scientific research
+international journal advances in social science and humanities
+international journal and bulletin of multidisciplinary research
+international journal for advanced review and research in pharmacy
+international journal for development of computer science and technology
+international journal for innovation education and research
+international journal for innovative research in multidisciplinary field
+international journal for innovative research in science and technology
+international journal for modern trends in science and technology
+international journal for pharmaceutical research scholars
+international journal for research development in technology
+international journal for research in applied science and engineering technology
+international journal for research in emerging science and technology
+international journal for research in engineering application management
+international journal for scientific research development
+international journal for technological research in engineering
+international journal magazine of engineering technology management and research
+international journal of abdominal research
+international journal of academic research
+international journal of academic studies
+international journal of advance computing techniques and applications
+international journal of advance engineering and research development
+international journal of advance foundation and research in computer
+international journal of advance foundation and research in science and engineering
+international journal of advance research and innovation
+international journal of advance research and innovative ideas in education
+international journal of advance research ideas and innovations in technology
+international journal of advance research in computer science and management studies
+international journal of advance research in science and engineering
+international journal of advanced academic research
+international journal of advanced and applied sciences
+international journal of advanced and innovative research
+international journal of advanced computer technology
+international journal of advanced education and research
+international journal of advanced engineering and management research
+international journal of advanced engineering and nano technology
+international journal of advanced engineering applications
+international journal of advanced engineering management and science
+international journal of advanced engineering research and applications
+international journal of advanced engineering research and science
+international journal of advanced engineering science and technological research
+international journal of advanced information in arts science and management
+international journal of advanced information science and technology
+international journal of advanced life sciences
+international journal of advanced multidisciplinary research
+international journal of advanced networking and applications
+international journal of advanced research
+international journal of advanced research and review
+international journal of advanced research in applied science and technology
+international journal of advanced research in biological sciences
+international journal of advanced research in biology ecology science and technology
+international journal of advanced research in computer and communication engineering
+international journal of advanced research in computer science and electronics engineering
+international journal of advanced research in computer science and software engineering
+international journal of advanced research in computer science technology
+international journal of advanced research in education technology
+international journal of advanced research in electrical electronics and instrumentation engineering
+international journal of advanced research in engineering and science
+international journal of advanced research in engineering management
+international journal of advanced research in mechanical engineering technology
+international journal of advanced research in science and technology
+international journal of advanced research in science engineering and technology
+international journal of advanced science and engineering technology
+international journal of advanced scientific research development
+international journal of advanced technology and engineering research
+international journal of advanced technology and innovative research
+international journal of advanced technology and science
+international journal of advanced technology in engineering and science
+international journal of advanced trends in computer applications
+international journal of advancement in engineering technology management applied science
+international journal of advancements in mechanical and aeronautical engineering
+international journal of advancements in research technology
+international journal of advances in applied mathematics and mechanics
+international journal of advances in engineering
+international journal of advances in engineering technology
+international journal of advances in interdisciplinary research
+international journal of advances in management and economics
+international journal of advances in management economics and entrepreneurship
+international journal of advances in mathematics
+international journal of advances in pharmaceutical research
+international journal of advances in power systems
+international journal of advances in social science and humanities
+international journal of advent research in computer and electronics
+international journal of aerospace and medical engineering
+international journal of agricultural forestry plantation
+international journal of agricultural sciences and veterinary medicine
+international journal of agriculture and crop sciences
+international journal of agriculture and environmental research
+international journal of agriculture innovations and research
+international journal of agronomy plant production
+international journal of all research education scientific methods
+international journal of application or innovation in engineering management
+international journal of applied and pure science and agriculture
+international journal of applied biology and pharmaceutical technology
+international journal of applied dental sciences
+international journal of applied economic studies
+international journal of applied information systems
+international journal of applied linguistics english literature
+international journal of applied pharmaceutical biological research
+international journal of applied pharmaceutical sciences and biological sciences
+international journal of applied research
+international journal of applied research in natural products
+international journal of applied research studies
+international journal of applied science engineering and management
+international journal of applied sciences and biotechnology
+international journal of applied sciences and engineering
+international journal of architecture civil engineering and urban design
+international journal of art and humanity science
+international journal of artificial intelligence and mechatronics
+international journal of arts and commerce
+international journal of arts and entrepreneurship
+international journal of arts humanities and management studies
+international journal of arts humanities and social sciences
+international journal of ayurveda and pharma research
+international journal of ayurveda and pharmaceutical chemistry
+international journal of basic and applied science
+international journal of basic medical sciences and pharmacy
+international journal of basic sciences and applied computing
+international journal of basic sciences and applied research
+international journal of bio
+international journal of bioassays
+international journal of biological and chemical sciences
+international journal of biological pharmaceutical research
+international journal of biology pharmacy and allied sciences
+international journal of biomedical science
+international journal of biosciences and nanosciences
+international journal of business and administration research review
+international journal of business and commerce
+international journal of business and management invention
+international journal of business and social research
+international journal of business management
+international journal of business management and economic research
+international journal of business management and economic studies
+international journal of business marketing and management
+international journal of business quantitative economics and applied management research
+international journal of business tourism applied sciences
+international journal of case studies
+international journal of chemical and pharmaceutical sciences
+international journal of chemical science and technology
+international journal of chemical studies
+international journal of civil mechanical and energy science
+international journal of clinical and diagnostic research
+international journal of clinical cases and investigations
+international journal of collaborative research on internal medicine public health
+international journal of commerce and management research
+international journal of communication and health
+international journal of communication networks and information security
+international journal of comprehensive research in biological sciences
+international journal of computation and applied sciences
+international journal of computational engineering research
+international journal of computational science mathematics and engineering
+international journal of computer and information technology
+international journal of computer application and engineering technology
+international journal of computer applications
+international journal of computer applications in engineering sciences
+international journal of computer applications technology and research
+international journal of computer communication engineering research
+international journal of computer electronics research
+international journal of computer engineering applications
+international journal of computer engineering in research trends
+international journal of computer networks and applications
+international journal of computer networks and communications security
+international journal of computer science and business informatics
+international journal of computer science and communication networks
+international journal of computer science and information security
+international journal of computer science and information technologies
+international journal of computer science and mobile computing
+international journal of computer science and network
+international journal of computer science and network security
+international journal of computer science and software engineering
+international journal of computer science and technology
+international journal of computer science and telecommunications
+international journal of computer science communication security
+international journal of computer science engineering
+international journal of computer science engineering and technology
+international journal of computer science information technology security
+international journal of computer science issues
+international journal of computer science trends and technology
+international journal of computer systems
+international journal of computer technology and applications
+international journal of computer technology and electronics engineering
+international journal of computing academic research
+international journal of computing and corporate research
+international journal of computing science and information technology
+international journal of conference proceedings
+international journal of contemporary applied sciences
+international journal of contemporary medical research
+international journal of contemporary research and review
+international journal of core engineering and management
+international journal of current advanced research
+international journal of current agricultural sciences
+international journal of current business and social sciences
+international journal of current engineering sciences
+international journal of current innovation research
+international journal of current medical and pharmaceutical research
+international journal of current medical sciences
+international journal of current microbiology and applied sciences
+international journal of current multidisciplinary studies
+international journal of current pharmaceutical review and research
+international journal of current research
+international journal of current research and academic review
+international journal of current research and review
+international journal of current research in chemistry and pharmaceutical sciences
+international journal of current research in life sciences
+international journal of current research in multidisciplinary
+international journal of current science
+international journal of current science and technology
+international journal of dental and health sciences
+international journal of dermatopathology and surgery
+international journal of development and sustainability
+international journal of development research
+international journal of digital communication and networks
+international journal of digital library services
+international journal of drug development and research
+international journal of e computer science evolution
+international journal of economics and finance
+international journal of economics and research
+international journal of economics commerce and management
+international journal of economics finance and management
+international journal of education and applied research
+international journal of education and psychological research
+international journal of education and research
+international journal of education and social science
+international journal of educational and psychological assessment
+international journal of educational investigations
+international journal of electrical and electronics engineers
+international journal of electrical electronics and computers
+international journal of electrical electronics and mechanical controls
+international journal of electrical energy
+international journal of electrochemical science
+international journal of electronics and information engineering
+international journal of electronics communication and computer engineering
+international journal of electronics communication and computer technology
+international journal of electronics communication technology
+international journal of emerging engineering research and technology
+international journal of emerging research in management and technology
+international journal of emerging science and engineering
+international journal of emerging sciences
+international journal of emerging technologies and innovative research
+international journal of emerging technology and advanced engineering
+international journal of emerging technology research
+international journal of emerging trends in electrical and electronics
+international journal of emerging trends in pharmaceutical sciences
+international journal of emerging trends in research
+international journal of emerging trends in science and technology
+international journal of energy and water resources
+international journal of energy technology
+international journal of engineering and advanced research technology
+international journal of engineering and advanced technology
+international journal of engineering and applied sciences
+international journal of engineering and computer science
+international journal of engineering and innovative technology
+international journal of engineering and management research
+international journal of engineering and science
+international journal of engineering and science invention
+international journal of engineering and technology
+international journal of engineering applied science and technology
+international journal of engineering associates
+international journal of engineering development and research
+international journal of engineering innovations and research
+international journal of engineering inventions
+international journal of engineering maths and computer science
+international journal of engineering research
+international journal of engineering research and applications
+international journal of engineering research and computer science
+international journal of engineering research and development
+international journal of engineering research and general science
+international journal of engineering research and science technology
+international journal of engineering research management
+international journal of engineering research science
+international journal of engineering research technology
+international journal of engineering researches and management studies
+international journal of engineering science advanced technology
+international journal of engineering science and computing
+international journal of engineering science and generic research
+international journal of engineering science and innovative technology
+international journal of engineering science and technology
+international journal of engineering science invention research development
+international journal of engineering science research
+international journal of engineering sciences management
+international journal of engineering sciences research technology
+international journal of engineering technologies and management research
+international journal of engineering technology
+international journal of engineering technology and computer research
+international journal of engineering technology and management
+international journal of engineering technology and scientific innovation
+international journal of engineering technology management and applied sciences
+international journal of engineering trends and applications
+international journal of engineering trends and technology
+international journal of english and education
+international journal of english language literature and translation studies
+international journal of english language literature humanities
+international journal of english language translation studies
+international journal of english research
+international journal of enterprise computing and business systems
+international journal of environment
+international journal of environment agriculture and biotechnology
+international journal of environmental agriculture research
+international journal of environmental science and development
+international journal of farming and allied sciences
+international journal of fauna and biological studies
+international journal of fisheries and aquatic studies
+international journal of food and nutritional sciences
+international journal of fundamental applied sciences
+international journal of global communications
+international journal of global ideas
+international journal of governance
+international journal of green and herbal chemistry
+international journal of health research
+international journal of health research in modern integrated medical sciences
+international journal of health sciences and research
+international journal of herbal medicine
+international journal of hindi research
+international journal of history arts and culture
+international journal of home science
+international journal of human resource and procurement
+international journal of human sciences
+international journal of humanities and cultural studies
+international journal of humanities and religion
+international journal of humanities and social science invention
+international journal of humanities and social science research
+international journal of humanities engineering and pharmaceutical sciences
+international journal of humanities social sciences
+international journal of humanities social studies
+international journal of indian psychology
+international journal of information and communication technology research
+international journal of information and communication technology trends
+international journal of information and education technology
+international journal of information research
+international journal of information research and review
+international journal of information sources and services a research journal in library science
+international journal of information technology and electrical engineering
+international journal of information technology business management
+international journal of information technology computer science
+international journal of informative and futuristic research
+international journal of innovation and research in educational sciences
+international journal of innovation in science and mathematics
+international journal of innovation research
+international journal of innovation science and research
+international journal of innovations in engineering and technology
+international journal of innovations in engineering research and technology
+international journal of innovative and applied research
+international journal of innovative and emerging research in engineering
+international journal of innovative computer science engineering
+international journal of innovative concepts in research
+international journal of innovative ideas
+international journal of innovative interdisciplinary research
+international journal of innovative pharmaceutical research
+international journal of innovative research advanced studies
+international journal of innovative research and creative technology
+international journal of innovative research and development
+international journal of innovative research and studies
+international journal of innovative research in advanced engineering
+international journal of innovative research in computer and communication engineering
+international journal of innovative research in computer science technology
+international journal of innovative research in electrical electronics instrumentation and control engineering
+international journal of innovative research in engineering and management
+international journal of innovative research in engineering multidisciplinary physical sciences
+international journal of innovative research in medical science
+international journal of innovative research in science and engineering
+international journal of innovative research in science engineering and technology
+international journal of innovative research in technology
+international journal of innovative research in technology science
+international journal of innovative science and modern engineering
+international journal of innovative science engineering and technology
+international journal of innovative studies in sciences and engineering technology
+international journal of innovative technologies
+international journal of innovative technology and exploring engineering
+international journal of innovative technology and research
+international journal of innovative trends in engineering
+international journal of integrated computer applications research
+international journal of integrated medical research
+international journal of interdisciplinary and multidisciplinary studies
+international journal of interdisciplinary research in science society and culture
+international journal of interdisciplinary scientific research
+international journal of inventions in pharmaceutical sciences
+international journal of inventive engineering and sciences
+international journal of knowledge innovation and entreprenurship
+international journal of language and applied linguistics
+international journal of language learning and applied linguistics world
+international journal of language sciences
+international journal of languages literature and linguistics
+international journal of latest research in engineering and computing
+international journal of latest research in engineering and technology
+international journal of latest technology in engineering management applied science
+international journal of latest trends in engineering and technology
+international journal of latest trends in engineering science and technology
+international journal of law and legal jurisprudence studies
+international journal of law and management studies
+international journal of law research
+international journal of learning teaching and educational research
+international journal of liberal arts social science last word also appears as sciences
+international journal of life science and pharma research
+international journal of life sciences biotechnology and pharma research
+international journal of life sciences scientific research
+international journal of linguistics social and natural sciences
+international journal of livestock research
+international journal of management
+international journal of management accounting economics
+international journal of management and business studies
+international journal of management and research
+international journal of management and social science research review
+international journal of management economics and social sciences
+international journal of management research and business strategy
+international journal of management research and review
+international journal of management sciences and business research
+international journal of mathematical archive
+international journal of mathematical research science
+international journal of mathematical sciences applications
+international journal of mathematics and computer research
+international journal of mathematics and soft computing
+international journal of mathematics and statistics invention
+international journal of mechanical engineering and information technology
+international journal of medical and health research
+international journal of medical and health sciences
+international journal of medical research
+international journal of medical research and pharmaceutical sciences
+international journal of medical research health sciences
+international journal of medical research professionals
+international journal of medical research review
+international journal of medical science and education
+international journal of medical science and public health
+international journal of medical science research and practice
+international journal of medical sciences and health care
+international journal of medical students
+international journal of medicine and biosciences
+international journal of medicobiologial research
+international journal of medipharm research
+international journal of modern chemistry and applied science
+international journal of modern engineering research
+international journal of modern sciences and engineering technology
+international journal of mosquito research
+international journal of multidisciplinary and current research
+international journal of multidisciplinary and scientific emerging research
+international journal of multidisciplinary and scientific emerging research alt
+international journal of multidisciplinary education and research
+international journal of multidisciplinary educational research
+international journal of multidisciplinary health sciences
+international journal of multidisciplinary research and development
+international journal of multidisciplinary research and information
+international journal of multidisciplinary research and modern education
+international journal of multidisciplinary research and review
+international journal of multidisciplinary research review
+international journal of multidisciplinary sciences and engineering
+international journal of nanofluids and nanoparticles
+international journal of network security
+international journal of network service and technologies
+international journal of new innovations in engineering and technology
+international journal of new technologies in science and engineering
+international journal of new technology and research
+international journal of new trends in arts sports science education
+international journal of novel trends in pharmaceutical sciences
+international journal of nursing
+international journal of obstetrics and gynaecology research
+international journal of oncology science
+international journal of oral health and medical research
+international journal of orthopaedics sciences
+international journal of pediatrics
+international journal of pharma and bio sciences
+international journal of pharma professional s research
+international journal of pharmaceutical and biological science archive
+international journal of pharmaceutical and biomedical research
+international journal of pharmaceutical and clinical research
+international journal of pharmaceutical and phytopharmacological research
+international journal of pharmaceutical quality assurance and pharmaceutical analysis
+international journal of pharmaceutical research and applications
+international journal of pharmaceutical research and bioscience
+international journal of pharmaceutical research and development
+international journal of pharmaceutical research science
+international journal of pharmaceutical science invention
+international journal of pharmaceutical sciences and business management
+international journal of pharmaceutical sciences and drug research
+international journal of pharmaceutical sciences and research
+international journal of pharmaceutical sciences letters
+international journal of pharmaceutical sciences review and research
+international journal of pharmaceuticals and health care research
+international journal of pharmacognosy
+international journal of pharmacognosy and phytochemical research
+international journal of pharmacology and physiology
+international journal of pharmacy
+international journal of pharmacy and pharmaceutical research
+international journal of pharmacy and pharmaceutical sciences
+international journal of pharmacy and technology
+international journal of pharmacy industrial research
+international journal of physical education sports and health
+international journal of physiotherapy
+international journal of plant animal and environmental sciences
+international journal of power electronics engineering
+international journal of precious engineering research and applications
+international journal of printing packaging allied sciences
+international journal of psycho educational sciences
+international journal of psychology and behavioral research
+international journal of psychology and educational studies
+international journal of pure and applied zoology
+international journal of pure applied bioscience
+international journal of recent advances in multidisciplinary research
+international journal of recent development in engineering and technology
+international journal of recent engineering research and development
+international journal of recent research and applied studies
+international journal of recent research in science engineering and technology
+international journal of recent scientific research
+international journal of recent surgical and medical sciences
+international journal of recent technology and engineering
+international journal of recent trends in engineering research
+international journal of remote sensing and geoscience
+international journal of renewable energy research
+international journal of research and current development
+international journal of research and development in pharmacy life sciences
+international journal of research and development in technology management sciences kailash
+international journal of research and engineering
+international journal of research and innovation in computer engineering
+international journal of research and science publication
+international journal of research culture society
+international journal of research development
+international journal of research granthaalayah
+international journal of research in advanced engineering and technology
+international journal of research in advanced engineering technologies
+international journal of research in aeronautical and mechanical engineering
+international journal of research in agricultural sciences
+international journal of research in agriculture and forestry
+international journal of research in ayurveda and pharmacy ijrap
+international journal of research in business studies and management
+international journal of research in computer and communication technology
+international journal of research in computer engineering electronics
+international journal of research in computer science
+international journal of research in computer technology
+international journal of research in education and science
+international journal of research in education and social science
+international journal of research in electronics communication technology
+international journal of research in engineering and advanced technology
+international journal of research in engineering and science
+international journal of research in engineering and technology
+international journal of research in humanities and social sciences
+international journal of research in library science
+international journal of research in management business studies
+international journal of research in mechanical engineering and technology
+international journal of research in medical and dental sciences
+international journal of research in medical applied sciences
+international journal of research in pharmacy and biosciences
+international journal of research in pharmacy and science
+international journal of research in science engineering
+international journal of research in science technology
+international journal of research in wireless systems
+international journal of research methodology
+international journal of research publications in engineering and technology
+international journal of research science and management
+international journal of review in applied and social sciences
+international journal of review in life sciences
+international journal of review in life sciences hijacked version
+international journal of reviews in computing
+international journal of reviews surveys and research
+international journal of sanskrit research
+international journal of science and advanced technology
+international journal of science and engineering applications
+international journal of science and engineering investigations
+international journal of science and research
+international journal of science and research methodology
+international journal of science and technology
+international journal of science commerce and humanities
+international journal of science culture and sport
+international journal of science engineering and advance technology
+international journal of science engineering and technology research
+international journal of science engineering development research
+international journal of science environment and technology
+international journal of science innovations and discoveries
+international journal of science technoledge
+international journal of science technology
+international journal of science technology and engineering
+international journal of science technology management
+international journal of sciences
+international journal of sciences and applied research
+international journal of scientific and engineering research
+international journal of scientific and research
+international journal of scientific and research publications
+international journal of scientific and technical advancements
+international journal of scientific engineering and applied science
+international journal of scientific engineering and technology
+international journal of scientific engineering and technology research
+international journal of scientific progress research
+international journal of scientific research
+international journal of scientific research and application
+international journal of scientific research and education
+international journal of scientific research and engineering trends
+international journal of scientific research and innovative technology
+international journal of scientific research and management
+international journal of scientific research in education
+international journal of scientific research in information systems and engineering
+international journal of scientific research management studies
+international journal of scientific study
+international journal of scientific technology research
+international journal of signal processing systems
+international journal of social and applied sciences
+international journal of social science and humanity
+international journal of social science economic research
+international journal of social sciences
+international journal of social sciences and education
+international journal of social sciences and entrepreneurship
+international journal of society and technology
+international journal of society culture language
+international journal of soft computing and engineering
+international journal of sport studies
+international journal of teacher educational research
+international journal of technical research and applications
+international journal of technical research and innovation
+international journal of technology and computing
+international journal of technology education and resource management
+international journal of technology enhancements and emerging engineering research
+international journal of technology management and humanities
+international journal of therapeutic applications
+international journal of toxicological and pharmacological research
+international journal of trend in research and development
+international journal of trends in economics management and technology
+international journal of universal pharmacy and bio sciences
+international journal of veterinary science
+international journal of wind and renewable energy
+international journal of wisdom based computing
+international journal of world research
+international journal on recent and innovation trends in computing and communication
+international journal on recent technologies in mechanical and electrical engineering
+international journal on recent trends in life science and mathematics
+international journal on research methodologies in physics and chemistry
+international journal online of humanities
+international letters of chemistry physics and astronomy
+international letters of natural sciences
+international letters of social and humanistic sciences
+international multidisciplinary research journal
+international multispeciality journal of health
+international online journal of primary education
+international proceedings of chemical biological and environmental engineering
+international refereed journal of architecture and design
+international refereed journal of engineering and science
+international research and publications in medical sciences
+international research journal of advanced engineering in frontiers
+international research journal of applied and basic sciences
+international research journal of applied finance
+international research journal of engineering and technology
+international research journal of finance and economics
+international research journal of management sciences
+international research journal of multidisciplinary science technology
+international research journal of pharmaceutical and applied sciences
+international research journal of pharmaceutical sciences
+international research journal of pharmacy
+international research journal of sustainable science engineering
+international researchers
+international review of basic and applied sciences
+international review of management and business research
+international review of social sciences and humanities
+international science and investigation journal
+international scientific investigations
+international scientific journal theoretical applied science
+international scientific research journal
+international technical sciences journal
+invention journal of research technology in engineering management
+iosr journal of engineering
+italian journal of science engineering
+jai maa saraswati gyandayini
+journal de afrikana
+journal der pharmazie forschung
+journal for research
+journal francophone de cas clinique
+journal of academic social science studies
+journal of accounting ethics public policy
+journal of advanced agricultural technologies
+journal of advanced computing and communication technologies
+journal of advanced studies in agricultural biological and environmental sciences
+journal of advanced veterinary and animal research
+journal of advances in civil engineering
+journal of advances in electronics and communication engineering
+journal of advances in information technology
+journal of advances in internal medicine
+journal of advances in science and technology
+journal of advances in social science and humanities
+journal of agriculture forestry environmental sciences
+journal of american academic research
+journal of american academy of business cambridge
+journal of american business review cambridge
+journal of american physicians and surgeons
+journal of anaesthesia and critical care case reports
+journal of analytical research
+journal of animal and plant sciences
+journal of animal and poultry sciences
+journal of applicable chemistry
+journal of applied biology biotechnology
+journal of applied economics and business
+journal of applied linguistics
+journal of applied linguistics and language research
+journal of applied management and investments
+journal of applied pharmaceutical science
+journal of applied pharmacy
+journal of arts and humanities
+journal of automation and control engineering
+journal of ayurveda and holistic medicine
+journal of ayurveda and integrated medical sciences
+journal of basic and environmental sciences
+journal of behavioral health
+journal of behavioral sciences in asia
+journal of bio innovation
+journal of biological and scientific opinion
+journal of biological sciences and medicine
+journal of biomedical and pharmaceutical research
+journal of bioscience and technology
+journal of biospectracal
+journal of business management and applied economics
+journal of business management and economic studies
+journal of business studies quarterly
+journal of chemical and pharmaceutical research
+journal of chemical and pharmaceutical sciences
+journal of chemical biological and physical sciences
+journal of clean energy technologies
+journal of clinical and analytical medicine
+journal of coastal life medicine
+journal of communications technology electronics and computer science
+journal of computers
+journal of computing
+journal of computing technologies
+journal of contemporary issues in business research
+journal of contemporary management sciences
+journal of contemporary medical education
+journal of cosmology
+journal of current pharma research
+journal of current research in science
+journal of current trends in big data analytics
+journal of drug discovery and therapeutics
+journal of economics and banking
+journal of economics and engineering
+journal of economics and political economy
+journal of economics business and management
+journal of education and social science
+journal of education and sociology
+journal of electrical engineering
+journal of electrical engineering and science
+journal of elt and applied linguistics
+journal of emerging trends in computing and information sciences
+journal of engineering and applied mathematics
+journal of engineering innovation research
+journal of english language and literature
+journal of entomology and zoology studies
+journal of environment and life sciences
+journal of environmental and occupational science
+journal of environmental biology
+journal of environmental hydrology
+journal of environmental nanotechnology
+journal of environmental research and development
+journal of environmental science computer science and engineering technology
+journal of evidence based medicine and healthcare
+journal of evolution of research in dermatology and venerology
+journal of evolution of research in human physiology
+journal of evolution of research in medical microbiology
+journal of evolution of research in medical pharmacology
+journal of evolution of research in paediatrics and neonatology
+journal of excellence in computer science and engineering
+journal of experimental biology and agricultural sciences
+journal of experimental sciences
+journal of financial education
+journal of food agriculture and environment
+journal of fundamental and applied sciences
+journal of genetic and environmental resources conservation
+journal of geotechnical and transportation engineering
+journal of global biosciences
+journal of global business management
+journal of global innovations in agricultural and social sciences
+journal of global research in computer science
+journal of health economics and outcomes research
+journal of health sport and tourism
+journal of herbmed pharmacology
+journal of human resource and adult learning
+journal of humanities and cultural studies r d
+journal of hydrology and environment research
+journal of imab
+journal of industrial and intelligent information
+journal of information management
+journal of innovations in applied pharmaceutical science
+journal of innovations in pharmaceuticals and biological sciences
+journal of innovative biology
+journal of innovative engineering
+journal of innovative research and solutions
+journal of intercultural ethnopharmacology
+journal of interdisciplinary histopathology
+journal of international academic research for multidisciplinary
+journal of international anatolia sport science
+journal of international environmental application science
+journal of international management studies
+journal of internet banking and commerce
+journal of investigational biochemistry
+journal of knowledge management economics and information technology
+journal of language and literature
+journal of law and ethics
+journal of materials and environmental science
+journal of mathematics and computer science
+journal of mathematics and technology
+journal of media critiques
+journal of media mass communication
+journal of medical biomedical and applied sciences
+journal of medical pharmaceutical and allied sciences
+journal of medical research
+journal of medical research and practice
+journal of medical science and clinical research
+journal of medical science and technology
+journal of microbiology and antimicrobial agents
+journal of middle east and north africa sciences
+journal of middle east applied science and technology
+journal of modern science and technology
+journal of modern science heritage
+journal of molecular pathophysiology
+journal of multidisciplinary developments
+journal of multidisciplinary engineering science and technology
+journal of multidisciplinary engineering science studies
+journal of nano innovation
+journal of natural products
+journal of nature and science
+journal of neurology neuromedicine
+journal of new sciences
+journal of nonlinear science and applications
+journal of novel applied sciences
+journal of pharmaceutical and bioanalytical science
+journal of pharmaceutical and biological sciences
+journal of pharmaceutical and biomedical sciences
+journal of pharmaceutical and scientific innovation
+journal of pharmaceutical chemical and biological sciences
+journal of pharmacognosy and phytochemistry
+journal of pharmacy practice and community medicine
+journal of pharmacy research
+journal of physical education research
+journal of physical therapy science
+journal of postharvest technology
+journal of process management new technologies international
+journal of psychology and theology
+journal of rare diseases research treatment
+journal of reading and literacy
+journal of research in anaesthesology and pain medicine
+journal of research in biology
+journal of research in computers and technology
+journal of research in forensic medicine and toxicology
+journal of research in general surgery and laparoscopy
+journal of research in human anatomy and embryology
+journal of research in obstetrics gynaecology and infertility
+journal of research in preventive and social medicine
+journal of research in psychiatry and behavioural sciences
+journal of research in radiodiagnosis teleradiology and imaging
+journal of research in traditional medicine
+journal of science
+journal of science and its applications
+journal of science and technology advances
+journal of science editing
+journal of scientific and engineering research
+journal of scientific letters
+journal of scientific research and development
+journal of scientific research and development alt
+journal of scientific research in pharmacy
+journal of scientific research in physical mathematical sciences
+journal of scientific theory and methods
+journal of social issues humanities
+journal of software
+journal of spectroscopy and molecular physics
+journal of studies in social sciences and humanities
+journal of surgery patient care
+journal of telecommunications
+journal of the international association of advanced technology and science
+journal of theoretical and applied information technology
+journal of translational science
+journal of trends in the development of machinery and associated technology
+jundishapur journal of health sciences
+junior scientific researcher
+kashmir economic review
+langlit
+lecture notes on software engineering
+legal research development
+letters in applied nanobioscience
+libri linguistic and literary broad research and innovation
+lingua international journal of linguistics literature and culture
+lokavishkar international e journal
+macrotheme review
+malti international hindi e research journal
+mathematical and computational applications
+mechanics materials science engineering journal
+medical research archives
+medico research chronicles
+mediterranean journal of biosciences
+mediterranean journal of chemistry
+mediterranean journal of modeling simulation
+mediterranean journal of physics
+medlife clinics
+modern behavioral science
+modern journal of applied linguistics
+modern journal of language teaching methods
+multidisciplinary scientific reviewer
+munis entomology zoology
+nanoworld journal
+national journal of basic medical sciences
+national journal of community medicine
+national journal of medical and dental research
+national journal of physiology pharmacy and pharmacology
+norwegian journal of development of the international science
+nternational journal of research in engineering and science
+oida international journal of sustainable development
+oncoscience
+oncotarget
+online international interdisciplinary research journal
+online journal of communication and media technologies
+online journal of distance education and e learning
+online journal of library information science
+online journal of new horizons in education
+online journal of science and technology
+open access journal of science and technology
+open journal of clinical medical case reports
+open journal of clinical medical sciences
+oriental journal of computer science and technology
+paripex indian journal of research
+path of science
+pattern recognition in physics
+people s journal of scientific research
+pharma innovation
+pharma research
+pharmaceutical and biological evaluations
+pharmaceutical and chemical journal
+pharmacie globale international journal of comprehensive pharmacy
+pharmacognosy journal of pharmacognosy and phytochemistry
+pharmacologia
+pharmacologyonline
+pharmanest an international journal of advances in pharmaceutical sciences
+physical education and sports research journal
+plant digest
+plants journal journal of medicinal plants studies
+professionals center for business research
+progress in physics
+punarnav
+pyxis journal
+quarterly physics review
+reef resources assessment and management technical paper
+remedy open access
+research
+research ambition
+research chronicler
+research chronicles
+research dimension
+research directions international multidisciplinary research journal
+research in biotechnology
+research in pharmacy and health sciences
+research innovator
+research inspiration
+research inventy international journal of engineering and science
+research journal of life sciences bioinformatics pharmaceutical and chemical sciences
+research journal of pharmaceutical biological and chemical sciences
+research opinions in animal and veterinary sciences
+research revolution
+research scholar
+researchdesk
+researchers world journal of arts science commerce
+review of research
+reviews of progress
+revista electro nica de las ciencias computacionales e informa tica
+revista iberoamericana de ciencas
+revista iberoamericana de contaduri a economi a y administracio n
+revista iberoamericana de las ciencias biolo gicas y agropecuarias
+revista iberoamericana de las ciencias de la salud
+revista iberoamericana de las ciencias sociales y humani sticas
+revista iberoamericana para la investigacio n y el desarrollo educativo
+romanian biotechnological letters
+sanskruti international multidisciplinary research journal
+scholarly research exchange
+scholars world international refereed multidisciplinary journal of contemporary research
+science and engineering applications
+science international
+science park
+science postprint
+science research reporter
+science reuters
+scientific light
+scientific research journal
+scientific research journal of india
+scientific researches
+scientific transactions in environment and technovation
+scientific world
+scitech journal
+scottish journal of arts social sciences and scientific studies
+scro annual report journal
+sensors transducers journal
+seventh sense research group journal
+shiraz e medical journal
+shiv rudraksha international journal of advanced research in engineering management
+smart nanosystems in engineering and medicine
+smart young
+south asian journal of food technology and environment
+south asian journal of mathematics
+south indian journal of biological sciences
+south pacific journal of pharma and bio sciences
+south pacific journal of technology and science
+sport science
+swedish journal of scientific research
+swiss journal of research in business and social science
+tactful management research journal
+technical journal of engineering and applied sciences
+technics technologies education management
+tehnic ki vjesnik technical gazette
+translational medicine and biotechnology
+transnational journal of science and technology
+transworld medical journal
+trends journal of sciences research
+tropical plant research
+turkish journal of scientific research
+turkish online journal of educational technology
+ultra engineer
+ulutas genetic research journal
+ulutas medical journal
+universal journal of applied computer science and technology
+universal journal of computer science and engineering technology
+universal journal of pharmaceutical research
+universal journal of pharmacy
+universe of emerging technology and science
+visi jurnal akademik
+weberbauerella
+weekly science international research journal
+world academy of informatics and management sciences
+world applied sciences journal
+world essays journal
+world journal of engineering research and technology
+world journal of innovative research
+world journal of pharmaceutical and life sciences
+world journal of pharmaceutical and medical research
+world journal of pharmaceutical research
+world journal of pharmaceutical sciences
+world journal of pharmacy and pharmaceutical sciences
+world journal of research and review
+world journal of science and technology
+world medical student journal
+world scientific news
+world wide journal of multidisciplinary research and development

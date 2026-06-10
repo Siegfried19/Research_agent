@@ -50,14 +50,23 @@ def main():
           "## 命中清单（按相关性排序）\n",
           "| # | 相关性 | 论文 | 年份 | 引用 | 状态 | 总结 |",
           "|--:|--:|---|--:|--:|---|---|"]
+    suspects = [r for r in rows if r["quality_tier"] == "suspect"]
     for r in rows:
         s = latest_summary(r)
         link = f"[v1](../../{s})" if s else "—"
         edge = " 🪨" if r["is_edge"] else ""
+        warn = " ⚠️" if r["quality_tier"] == "suspect" else ""
         title = (r["title"] or "").replace("|", "/")
-        md.append(f"| {r['rank']} | {r['relevance'] if r['relevance'] is not None else '-'} | {title}{edge} | "
+        md.append(f"| {r['rank']} | {r['relevance'] if r['relevance'] is not None else '-'} | {title}{edge}{warn} | "
                   f"{r['year'] or '-'} | {r['citation_count'] or 0} | {STAT.get(r['status'], r['status'])} | {link} |")
-    md.append("\n_🪨 = 边角文章（低引用，保留以备不同视角）_\n")
+    md.append("\n_🪨 = 边角文章（低引用，保留以备不同视角）"
+              + ("　⚠️ = 来源可疑（掠夺刊名单命中，总结为质疑模式，引用前需独立验证）" if suspects else "") + "_\n")
+    if suspects:
+        md.append("## ⚠️ 低可信来源（带标记入库）\n")
+        for r in suspects:
+            md.append(f"- **[{r['rank']}] {(r['title'] or '')[:70]}**（{r['venue'] or '-'}；{r['quality_signals'] or ''}）"
+                      f"——结论未经可信同行评审，仅作视角参考。")
+        md.append("")
     md.append("## 相关性理由\n")
     for r in rows:
         md.append(f"- **[{r['rank']}] {(r['title'] or '')[:70]}** （{r['relevance']}）：{r['relevance_reason'] or ''}")

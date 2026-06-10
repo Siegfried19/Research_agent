@@ -9,6 +9,11 @@
     "arxiv": true,
     "pubmed": true
   },
+  "quality": {
+    "_comment": "硬信号质量挡板。名单在 config/quality/。flag 级(预印本/无venue)需 relevance>=flag_min_relevance 才入选。codex_panel=打分时 Codex 魔鬼代言人(需 codex login;默认关,测稳后开)。",
+    "flag_min_relevance": 45,
+    "codex_panel": false
+  },
   "ranking": {
     "relevance_weight": 0.6,
     "citation_weight": 0.4,

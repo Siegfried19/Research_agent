@@ -1,21 +1,27 @@
 """Automated relevance scoring: one `claude -p` call per batch of candidates.
 Parses the JSON score array from stdout, writes scores/batch_<start>.json in the
-format commit.py expects: [{id, relevance, reason, edge_insight}].
+format commit.py expects: [{id, relevance, reason, edge_insight, panel_objection?}].
+
+Cross-model panel (config quality.codex_panel, default false): Codex reviews the
+same batch as a devil's advocate (reject reasons only, no veto); objections ride
+along in the batch files and are weighed at commit time.
 Usage: python3 pipeline/score_auto.py <topicId> [batchSize] [concurrency]
 """
 import json
 import sys
 
-from lib.db import ROOT
+from lib.db import ROOT, load_config
 from lib.claude import run_claude, pool
 from lib.log import get_logger, run_log
 
+config = load_config()
 log = get_logger("score")
 
 
 def prompt(idea, batch):
     lst = "\n".join(
-        f"- id: {c['id']}\n  title: {c['title']}\n  abstract: {(c.get('abstract') or '(无摘要)')[:1200]}"
+        f"- id: {c['id']}\n  title: {c['title']}\n  venue: {c.get('venue') or '(未知)'}\n"
+        f"  abstract: {(c.get('abstract') or '(无摘要)')[:1200]}"
         for c in batch)
     return f"""你在为一个学术研究流水线做"相关性打分"。研究思路:
 
@@ -35,6 +41,33 @@ def prompt(idea, batch):
 
 **只输出一个 JSON 数组**,不要任何解释、不要代码围栏。每篇一项,格式:
 {{"id":"<原样照抄的 id>","relevance":<0-100整数>,"reason":"<一句话中文理由>","edge_insight":<true|false>}}"""
+
+
+def panel_prompt(idea, batch):
+    lst = "\n".join(
+        f"- id: {c['id']}\n  title: {c['title']}\n  venue: {c.get('venue') or '(未知)'}\n"
+        f"  abstract: {(c.get('abstract') or '(无摘要)')[:1200]}"
+        for c in batch)
+    return f"""You are the DEVIL'S ADVOCATE on a paper-screening panel for a curated research corpus.
+The research idea (in Chinese):
+
+\"\"\"{idea}\"\"\"
+
+Below are {len(batch)} candidate papers. Your ONLY job is to find papers that should be
+REJECTED from the corpus. For each paper, decide reject=true ONLY if you have a concrete,
+specific reason, e.g.:
+- clearly off-topic for the research idea above (despite keyword overlap)
+- survey/review-mill or paper-mill smell: vague methodless abstract, buzzword stuffing
+- predatory-journal style: grandiose claims, no concrete method or experiment
+- abstract promises results but names no method, no data, no evaluation
+Do NOT reject merely for being a preprint, low-cited, or narrow in scope.
+If unsure, reject=false. Be strict but fair: typically 0-3 rejects per batch.
+
+Candidates:
+{lst}
+
+Output ONLY a JSON array, no explanation, no code fences. One item per paper:
+{{"id":"<id copied verbatim>","reject":<true|false>,"reason":"<one concise sentence in Chinese, empty if reject=false>"}}"""
 
 
 def parse_scores(out):
@@ -61,8 +94,10 @@ def main():
     for f in score_dir.glob("*.json"):
         f.unlink()
 
+    panel_on = bool((config.get("quality") or {}).get("codex_panel"))
     batches = [(s, allc[s:s + batch_size]) for s in range(0, len(allc), batch_size)]
-    log.info(f"score_auto: {len(allc)} candidates in {len(batches)} batches (size {batch_size}), concurrency={concurrency}")
+    log.info(f"score_auto: {len(allc)} candidates in {len(batches)} batches (size {batch_size}), "
+             f"concurrency={concurrency}, codex_panel={'ON' if panel_on else 'off'}")
 
     def worker(item, _i):
         start, batch = item
@@ -70,6 +105,19 @@ def main():
         arr = parse_scores(out)
         clean = [{"id": s["id"], "relevance": int(float(s.get("relevance") or 0)),
                   "reason": s.get("reason") or "", "edge_insight": bool(s.get("edge_insight"))} for s in arr]
+        if panel_on:
+            try:  # 评审团只提异议,失败不挡打分(panel 是补充层不是依赖)
+                from lib.codex import run_codex
+                objections = {o["id"]: o for o in parse_scores(run_codex(panel_prompt(idea, batch)))}
+                n_rej = 0
+                for s in clean:
+                    o = objections.get(s["id"])
+                    if o and o.get("reject"):
+                        s["panel_objection"] = (o.get("reason") or "该拒(未给理由)")[:200]
+                        n_rej += 1
+                log.info(f"  panel batch {start}: {n_rej} objections")
+            except Exception as e:  # noqa: BLE001
+                log.info(f"  panel SKIP batch {start}: {e}")
         (score_dir / f"batch_{start}.json").write_text(json.dumps(clean, ensure_ascii=False, indent=2), encoding="utf-8")
         log.info(f"  OK batch {start} ({len(clean)} scored)")
         return len(clean)
