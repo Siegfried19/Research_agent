@@ -124,3 +124,24 @@
 2026-06-10T05:01:19Z	-	remote_view: 手机过验证方案上线。pipeline/remote_view.sh = x11vnc(:1,localhost-only)+websockify/noVNC(绑 Tailscale IP,VNC密码,不开Funnel)。fetch_tierb 弹验证时 Telegram 带 noVNC 链接,手机点链接看屏点掉挑战即自动续跑。幂等;密钥 config/x11vnc.* gitignored。
 2026-06-10T05:09:50Z	-	remote_view: 用户决定封存(MOTHBALLED)。默认关(ensure_remote_view 返回空,除非 tier_b.remote_view=true 或 RESEARCH_REMOTE_VIEW=1)。x11vnc/websockify 已停、端口已关。代码+vendor/novnc 保留。遗留:手机端放大仍不灵+安全顾虑,解封前先解决。
 2026-06-10T05:11:40Z	-	CODE FREEZE 2026-06-10: 今日代码改动到此为止,提交代码+文档+配置(不含正写中的 db/summaries,留待数据commit)。
+2026-06-10T05:19:20Z	rl-general-toolbox	summarize_auto: 86 ok, 0 failed/skipped
+2026-06-10T05:19:20Z	rl-general-toolbox	stage:sum end(rc=0)
+2026-06-10T05:19:20Z	rl-general-toolbox	stage:finalize start
+2026-06-10T05:19:20Z	rl-general-toolbox	stage:finalize end(rc=0)
+2026-06-10T05:19:50Z	rl-general-toolbox	stage:recover start
+2026-06-10T05:20:06Z	rl-general-toolbox	recover_oa: 2/6 recovered free
+2026-06-10T05:20:06Z	rl-general-toolbox	stage:recover end(rc=0)
+2026-06-10T05:20:56Z	rl-general-toolbox	stage:recover start
+2026-06-10T05:21:05Z	rl-general-toolbox	recover_oa: 1/4 recovered free
+2026-06-10T05:21:05Z	rl-general-toolbox	stage:recover end(rc=0)
+2026-06-10T05:21:22Z	rl-general-toolbox	stage:tierb start
+2026-06-10T05:22:43Z	rl-general-toolbox	fetch_tierb: Tier B done: 1 fetched, 2 failed (of 3)
+2026-06-10T05:22:43Z	rl-general-toolbox	stage:tierb end(rc=0)
+2026-06-10T05:22:43Z	rl-general-toolbox	stage:worklist start
+2026-06-10T05:22:43Z	rl-general-toolbox	stage:worklist end(rc=0)
+2026-06-10T05:22:43Z	rl-general-toolbox	stage:sum start
+2026-06-10T05:25:25Z	rl-general-toolbox	summarize_auto: 4 ok, 0 failed/skipped
+2026-06-10T05:25:25Z	rl-general-toolbox	stage:sum end(rc=0)
+2026-06-10T05:25:25Z	rl-general-toolbox	stage:finalize start
+2026-06-10T05:25:25Z	rl-general-toolbox	stage:finalize end(rc=0)
+2026-06-10T05:25:50Z	rl-general-toolbox	RECOVERY DONE: 6篇失败救回4(CIM/RegMatters/WhatMatters arXiv修复+补id, Wiley pdfdirect适配);2篇无解(PPG Reloaded/Lazy Agents,无arXiv无DOI)。topic2 终态 98 summarized/2 pdf_failed/100。
