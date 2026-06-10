@@ -167,3 +167,7 @@
 2026-06-10T19:06:29Z	rl-general-toolbox	verify_summaries: checked=25 pass=6 minor=13 major=6 errors=0
 2026-06-10T19:11:31Z	-	correct_summaries: 6/6 corrected
 2026-06-10T22:17:51Z	rl-general-toolbox	escalate_verify: verified=7 pass=3 minor=4 major=0 corrected=0 stubborn=0 errors=0
+2026-06-10T22:27:06Z	rl-general-toolbox	export_corpus: 100 entries, 0 rejected -> topics/rl-general-toolbox/literature_corpus.yaml
+2026-06-10T22:28:36Z	-	correct_summaries: 4/4 corrected
+2026-06-10T22:29:07Z	rl-general-toolbox	escalate_verify: verified=22 pass=5 minor=13 major=4 corrected=4 stubborn=0 errors=94
+2026-06-10T22:29:35Z	-	FRAMEWORK BUILT(用户上飞机前交代): ①MIGRATION.md=记忆分布地图+换机器清单(全局CLAUDE.md附录可照抄重建) ②export_corpus.py=出口③的桥(ARS literature_corpus YAML,topic2 100条过schema校验) ③ask.py 接引用图(命中带库内引用邻居,JSON含related_in_library)。出口③只差真实idea全流程试跑,等用户回来。

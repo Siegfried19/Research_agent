@@ -40,3 +40,5 @@ __pycache__/
 *.pyc
 .DS_Store
 db/fts.sqlite
+topics/*/literature_corpus.yaml
+store/literature_corpus_all.yaml

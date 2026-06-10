@@ -2,6 +2,7 @@
 
 > 换机器 / 新会话打开本仓库时**先读这个文件**，再看 `README.md`。
 > 本机的对话记忆不会跨机器同步，所有要紧上下文都在仓库里。
+> **记忆分布地图 + 换机器完整清单 → `MIGRATION.md`**（2026-06-10 建，回答"记忆在哪/换机器怎么办"）。
 
 ## 这个项目是什么
 给一段研究思路 → 多源批量搜论文 → 下载全文 → 每篇用一个子 agent 写**中文**结构化总结 → 存进 SQLite 库。
@@ -58,7 +59,8 @@ python3 pipeline/run.py <id> verify      # escalate_verify.py --start-pct 100: C
 init, discover, **score_auto**, commit, fetch_oa, recover_oa, **recover_agent**(hunt,agent联网猎免费源), **fetch_tierb**, build_worklist,
 **summarize_auto**, register_summaries, render_topic, migrate_slugs, cross_topic,
 prepare_update, **update_auto**, register_updates, suggest_updates, notify, **audit_quality**,
-**verify_summaries**(Codex 核查总结幻觉), **correct_summaries**(幻觉修正出 vN+1), **escalate_verify**(升级阶梯驱动=verify阶段), run.py, run.sh(薄壳)
+**verify_summaries**(Codex 核查总结幻觉), **correct_summaries**(幻觉修正出 vN+1), **escalate_verify**(升级阶梯驱动=verify阶段),
+**ask**(知识库检索/问答,FTS5+引用邻居,--json 给 agent), **export_corpus**(出口③:导出 ARS literature_corpus YAML), run.py, run.sh(薄壳)
 lib/: db, **log**(一等公民日志), http, sources, merge, store, slug, notify, **claude**(claude -p 调用器+并发池), **quality**(硬信号质量评估), **codex**(codex exec 调用器,跨模型第二引擎)
 > `score_auto`/`summarize_auto`/`update_auto` 用 `claude -p` 取代了旧的 Workflow agent。
 > `fetch_tierb` = 方法④付费墙抓取（自启 Chrome→OpenAthens→人点验证→混合 B/A 抓 PDF）。
@@ -133,7 +135,7 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
 3. **知识库的三个出口（按近→远）**：
    - ① **用户本人来查答案**——`ask.py "<问题>" --answer`（已有）。
    - ② **别的项目里的 agent 做任务卡住时来查**——`ask.py --json` + 全局 `~/.claude/CLAUDE.md` 发现机制（已有）。
-   - ③ **🎯 idea→论文流水线**——用 academic agent（`ref/academic-research-skills`，ARS，CC BY-NC）吃这个库，从研究想法走到论文成稿。接口已勘察：ARS deep-research 的 **corpus-first 模式**接收 `literature_corpus[]`(citation_key/title/authors/year/source_pointer)，先吃本地语料、外搜只补缺口；从我们库导出该格式是小工作量。**未动手；这是知识库建设的终极验收标准。**
+   - ③ **🎯 idea→论文流水线**——用 academic agent（`ref/academic-research-skills`，ARS，CC BY-NC）吃这个库，从研究想法走到论文成稿。**桥已建好(2026-06-10)**：`pipeline/export_corpus.py <topicId|all> [--min-relevance N]` 导出 ARS Material-Passport `literature_corpus[]` YAML（严格对 schema：CSL 作者名、bibtex 风格 citation_key、无 year 拒绝不硬凑；quality_tier 走 tags+user_notes 出口标记；source_pointer 指本地 PDF；topic2 100 条实测过 schema 校验）。**设想流程**：用户给 idea → 流水线建主题攒语料(`run auto`) → `export_corpus` → ARS `academic-pipeline`(corpus-first,先吃我们的库、外搜补缺) → 研究报告/论文稿 → 引用的新论文回灌进库。**还没跑过一次真实 idea 全流程——那是终极验收,等用户回来一起试。** 注意:导出文件含摘要(版权),仅本地用勿外发。
 
 ## 待办 / 下一步
 - ✅ **(2026-06-09 完成)** 4 篇全文+总结;`fetch_tierb` 固化;`score_auto`/`summarize_auto`(claude -p);`run auto` 一条龙;**整套迁移到 Python**;**修了 recover_oa**(arxiv/repository 优先 + 用 ext_ids.arxiv 不只靠标题)。

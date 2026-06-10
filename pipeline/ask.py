@@ -136,8 +136,16 @@ def search(fts, q, topn):
             sc *= 0.5  # 出口认标记:可疑来源降权 + 显式标注
         topics = main.execute("SELECT topic_id, relevance FROM paper_topic WHERE paper_id=?",
                               (p["id"],)).fetchall()
+        # 引用图扩展(落地路径④): 库内引用邻居(本篇引用的 + 引用本篇的),组成"相互关联"
+        related = main.execute(
+            """SELECT p2.title, p2.slug, 'cites' AS rel FROM citations c
+                 JOIN papers p2 ON p2.id=c.dst_paper_id WHERE c.src_paper_id=?
+               UNION ALL
+               SELECT p2.title, p2.slug, 'cited_by' FROM citations c
+                 JOIN papers p2 ON p2.id=c.src_paper_id WHERE c.dst_paper_id=?""",
+            (p["id"], p["id"])).fetchall()
         hits.append({"slug": slug, "score": sc, "p": p, "topics": topics,
-                     "snip": snips.get(slug, "")})
+                     "snip": snips.get(slug, ""), "related": related})
     main.close()
     hits.sort(key=lambda h: -h["score"])
     return hits[:topn]
@@ -156,6 +164,10 @@ def as_json(hits, q):
             "quality_tier": p["quality_tier"],  # suspect=可疑来源慎引, flag=预印本未评审
             "topics": [{"id": t["topic_id"], "relevance": t["relevance"]} for t in h["topics"]],
             "snippet": h["snip"][:300],
+            "related_in_library": [
+                {"rel": r["rel"], "title": r["title"],
+                 "summary_dir": str(ROOT / "store" / "summaries" / r["slug"])}
+                for r in h["related"]],  # 库内引用邻居(顺藤摸瓜用)
             "summary_path": str(vs[-1]) if vs else None,   # 中文结构化总结(先读这个)
             "text_path": str(ROOT / p["text_path"]) if p["text_path"] else None,  # 英文全文
         })
@@ -177,6 +189,9 @@ def show(hits, q):
         print(f"   主题: {tline}")
         if h["snip"]:
             print(f"   摘段: {h['snip'][:200]}")
+        for r in h["related"][:4]:
+            arrow = "→引用" if r["rel"] == "cites" else "←被引"
+            print(f"   {arrow}: {r['title'][:70]}")
         print(f"   总结: store/summaries/{h['slug']}/  全文: {p['text_path'] or '-'}\n")
 
 
