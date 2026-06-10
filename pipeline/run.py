@@ -7,7 +7,8 @@ Stages:
   score     relevance scoring (claude -p) -> scores/batch_*.json
   commit    select + write DB (additive on incremental)
   fetch     download OA full text (+ arXiv fallback)
-  recover   free fallback: Unpaywall + arXiv (repository-first)
+  recover   free fallback: Unpaywall + arXiv (repository-first) + DBLP/PMLR
+  hunt      agentic free-source hunt (claude -p + web search) for what's left
   tierb     paywall full text via browser + NYU OpenAthens (you click challenges)
   worklist  build summarize worklist
   sum       summaries (claude -p) -> v1.md
@@ -34,6 +35,7 @@ def steps(stage, tid):
         "commit":   [("commit.py", [f"topics/{tid}"])],
         "fetch":    [("fetch_oa.py", [tid])],
         "recover":  [("recover_oa.py", [tid])],
+        "hunt":     [("recover_agent.py", [tid])],
         "tierb":    [("fetch_tierb.py", [tid])],
         "worklist": [("build_worklist.py", [tid])],
         "sum":      [("summarize_auto.py", [tid])],
@@ -41,7 +43,7 @@ def steps(stage, tid):
     }.get(stage)
 
 
-AUTO = ["discover", "score", "commit", "fetch", "recover", "tierb", "worklist", "sum", "finalize"]
+AUTO = ["discover", "score", "commit", "fetch", "recover", "hunt", "tierb", "worklist", "sum", "finalize"]
 
 
 def run_stage(stage, tid):
@@ -63,7 +65,7 @@ def run_stage(stage, tid):
 def main():
     if len(sys.argv) < 3:
         print("usage: run.py <topicId> <stage>\n"
-              "stages: discover|score|commit|fetch|recover|tierb|worklist|sum|finalize|auto", file=sys.stderr)
+              "stages: discover|score|commit|fetch|recover|hunt|tierb|worklist|sum|finalize|auto", file=sys.stderr)
         sys.exit(1)
     tid, stage = sys.argv[1], sys.argv[2]
     if stage == "auto":

@@ -145,3 +145,17 @@
 2026-06-10T05:25:25Z	rl-general-toolbox	stage:finalize start
 2026-06-10T05:25:25Z	rl-general-toolbox	stage:finalize end(rc=0)
 2026-06-10T05:25:50Z	rl-general-toolbox	RECOVERY DONE: 6篇失败救回4(CIM/RegMatters/WhatMatters arXiv修复+补id, Wiley pdfdirect适配);2篇无解(PPG Reloaded/Lazy Agents,无arXiv无DOI)。topic2 终态 98 summarized/2 pdf_failed/100。
+2026-06-10T17:12:08Z	rl-general-toolbox	stage:worklist start
+2026-06-10T17:12:08Z	rl-general-toolbox	stage:worklist end(rc=0)
+2026-06-10T17:12:09Z	rl-general-toolbox	stage:sum start
+2026-06-10T17:13:24Z	rl-general-toolbox	summarize_auto: 2 ok, 0 failed/skipped
+2026-06-10T17:13:24Z	rl-general-toolbox	stage:sum end(rc=0)
+2026-06-10T17:13:24Z	rl-general-toolbox	stage:finalize start
+2026-06-10T17:13:24Z	rl-general-toolbox	stage:finalize end(rc=0)
+2026-06-10T17:25:52Z	all	recover_agent: 1/1 found by web-searching agent
+2026-06-10T17:26:14Z	rl-general-toolbox	stage:hunt start
+2026-06-10T17:26:14Z	rl-general-toolbox	recover_agent: 0 papers to hunt
+2026-06-10T17:26:14Z	rl-general-toolbox	stage:hunt end(rc=0)
+2026-06-10T17:27:14Z	rl-general-toolbox	RESCUE+UPGRADE: 2 pdf_failed (PPG Reloaded/Lazy Agents) rescued from PMLR (ICML 2023, free) -> topic2 100/100 summarized. recover_oa += dblp-oa channel (PMLR/ACL/OpenReview via DBLP title search). NEW stage hunt=recover_agent.py (claude -p + WebSearch/WebFetch hunts legit free PDFs before tierb); e2e tested on temp DB (found PPG on PMLR, 10MB, validated).
+2026-06-10T17:54:15Z	rl-general-toolbox	stage:tierb start
+2026-06-10T17:54:15Z	rl-general-toolbox	stage:tierb end(rc=0)

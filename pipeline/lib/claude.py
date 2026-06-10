@@ -14,13 +14,18 @@ CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "claude")
 MODEL = os.environ.get("SUMMARY_MODEL", "opus")
 
 
-def run_claude(prompt, model=None, timeout=300):
-    """Run one `claude -p` call. Returns trimmed stdout. Raises on non-zero/timeout."""
+def run_claude(prompt, model=None, timeout=300, tools=None):
+    """Run one `claude -p` call. Returns trimmed stdout. Raises on non-zero/timeout.
+    tools: optional list of tool names to allow (e.g. ["WebSearch", "WebFetch"]) —
+    headless runs have no permission prompt, so anything not allowed is denied."""
     binp = shutil.which(CLAUDE_BIN)
     if not binp:
         raise RuntimeError(f"'{CLAUDE_BIN}' not found — install & log into Claude Code first.")
+    cmd = [binp, "-p", "--model", model or MODEL]
+    if tools:
+        cmd += ["--allowedTools", ",".join(tools)]
     proc = subprocess.run(
-        [binp, "-p", "--model", model or MODEL],
+        cmd,
         input=prompt, capture_output=True, text=True, encoding="utf-8", timeout=timeout,
     )
     if proc.returncode != 0:

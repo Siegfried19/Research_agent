@@ -16,7 +16,7 @@
 
 ```bash
 python3 pipeline/run.py <id> auto      # 或 bash pipeline/run.sh <id> auto（等价薄壳）
-# = discover → score → commit → fetch → recover → tierb → worklist → sum → finalize
+# = discover → score → commit → fetch → recover → hunt → tierb → worklist → sum → finalize
 ```
 全程唯一需要人:**`tierb` 阶段遇 Cloudflare/Duo 验证时会暂停 + Telegram 喊你,你在 Chrome 里点一下即自动续跑**。也可单跑某阶段调试:
 ```bash
@@ -24,7 +24,8 @@ python3 pipeline/run.py <id> discover    # discover.py: 多源搜 → candidates
 python3 pipeline/run.py <id> score       # score_auto.py: claude -p 逐批打分 → scores/batch_*.json
 python3 pipeline/run.py <id> commit      # commit.py: 选篇写库（首跑 TopN / 增量追加 + 重算rank）
 python3 pipeline/run.py <id> fetch       # fetch_oa.py: OA 全文（含 arXiv 回退）
-python3 pipeline/run.py <id> recover     # recover_oa.py: Unpaywall(repository优先)+arXiv 免费兜底
+python3 pipeline/run.py <id> recover     # recover_oa.py: Unpaywall(repository优先)+arXiv+DBLP会议OA(PMLR/ACL/OpenReview) 免费兜底
+python3 pipeline/run.py <id> hunt        # recover_agent.py: claude -p 联网猎免费源(规则渠道全空才轮到它)
 python3 pipeline/run.py <id> tierb       # fetch_tierb.py: 浏览器+OpenAthens 取付费墙（人点验证）
 python3 pipeline/run.py <id> worklist    # build_worklist.py: 建总结清单（status=pdf_downloaded 的）
 python3 pipeline/run.py <id> sum         # summarize_auto.py: claude -p 逐篇写 v1.md
@@ -41,7 +42,7 @@ python3 pipeline/run.py <id> finalize    # register_summaries.py + render_topic.
 - 文件名用**论文标题 slug**（`papers.slug`），不是 DOI。DOI 仍是 `papers.id` 主键。
 - **选篇靠 claude -p 相关性打分，不靠 API 排序**（OpenAlex 的相关性把引用量混进去了，会把高引但跑题的论文顶上来）。
 - **不用 Google Scholar 批量**（无 API、强反爬）。
-- 下载先吃 OA，再 `recover_oa.py`（Unpaywall repository优先 + arXiv 兜底，免费），最后才 Tier B 付费墙。
+- 下载四级：先吃 OA → `recover_oa.py` 规则免费兜底（Unpaywall repository优先 + arXiv 版本枚举 + **DBLP 反查会议自营OA站** PMLR/ACL Anthology/OpenReview，2026-06-10 加,via=dblp-oa）→ `recover_agent.py` **agent 兜底**（claude -p 开 WebSearch/WebFetch 联网找合法免费 PDF，脚本负责下载校验落库；prompt 明令禁 Sci-Hub 类盗版源）→ 最后才 Tier B 付费墙。兜底层设计哲学：**撞到一类拉不下来的就固化一个新渠道**（同 tierb 的 findPdfUrl 出版商适配）。
 - 批量下载要**限速**，别刷崩用户学校的访问 / 触发出版商风控。
 - `claude -p` 偶尔撞 Max 限流失败 → 重跑该阶段即可（已总结/已打分的自动跳过;sum/score 幂等）。撞限流就调小并发：`python3 pipeline/summarize_auto.py <id> 1`。
 
@@ -53,7 +54,7 @@ python3 pipeline/run.py <id> finalize    # register_summaries.py + render_topic.
 - `citations` 库内论文相互引用边
 
 ## 脚本清单（pipeline/，全 Python）
-init, discover, **score_auto**, commit, fetch_oa, recover_oa, **fetch_tierb**, build_worklist,
+init, discover, **score_auto**, commit, fetch_oa, recover_oa, **recover_agent**(hunt,agent联网猎免费源), **fetch_tierb**, build_worklist,
 **summarize_auto**, register_summaries, render_topic, migrate_slugs, cross_topic,
 prepare_update, **update_auto**, register_updates, suggest_updates, notify, **audit_quality**,
 **verify_summaries**(Codex 核查总结幻觉), run.py, run.sh(薄壳)
@@ -104,6 +105,7 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
 ## Tier B 取全文（方法④，已验证可用 2026-06-09）
 分工：**用户人在机器旁手点人工关卡（Cloudflare Turnstile / Duo）；其余全自动。** 远程桌面方案已放弃（太复杂）。每周跑约 1 次。
 - **自启 Chrome**（照 Stock_agent `ensure_chrome`）：`opencli doctor` 没含 "Extension: connected" 就 `DISPLAY=:1 setsid google-chrome --user-data-dir=~/.config/google-chrome-scrape --profile-directory="Profile 2" --no-restore-session &`，轮询 doctor ~60s（profile 别名 `8fnbkdfj`，~3s 连上；偶发断开重启即可）。
+- **Chrome 生命周期（2026-06-10 照 Stock_agent 补齐,根治"越开越多"）**：跑前 flock 独占（锁=`~/.config/google-chrome-scrape/scrape.lock`,共用该实例的任务同一把锁）→ 跑完 **finally 无条件 `pkill -f "user-data-dir=<UDD>"` 整关**（独立目录绝不误伤日常 Chrome;复用来的实例也关）。副产物:每次都是 fresh launch → PDF 下载 pref 必生效 → 方法 B 始终可用。⚠️ Stock_agent 的锁还是它项目本地的 `chrome.lock`,两项目极端撞车时 tierb 收尾会关掉它在用的实例（低概率,要根治就把 Stock_agent 的锁也迁到 UDD 里这把）。
 - **NYU 访问路径**：⚠️ NYU 已弃 EZProxy 迁 **OpenAthens**，旧 `proxy.library.nyu.edu/login?url=` 废。新路径 = **`https://go.openathens.net/redirector/nyu.edu?url=<doi/landing>`**。profile 已有有效 NYU 会话（暂不弹 Duo；会话过期才弹）。
 - **取 PDF（混合 B 优先 + A 兜底）**：`fetch_tierb.py` 自启 Chrome 时写 profile 偏好 `always_open_pdf_externally=true` + 下载目录 `store/dl_tmp`，使 PDF **直接下载**(像人点下载)。
   - **方法 B(优先)**：open PDF 链 → 盯 `store/dl_tmp` 等新的、稳定的 `.pdf`(无 `.crdownload` 伴随)→ 搬到 `store/pdfs/`。

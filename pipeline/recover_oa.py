@@ -1,6 +1,7 @@
 """Recover free full text for papers we missed, WITHOUT any login.
 Per paper lacking a PDF, try (in order): arXiv by id, Unpaywall (repository/arXiv
-locations BEFORE publisher — publisher PDFs often 403), then arXiv by title.
+locations BEFORE publisher — publisher PDFs often 403), arXiv by title, then
+conference-run OA sites via DBLP title search (PMLR/ACL Anthology/OpenReview).
 Usage: python3 pipeline/recover_oa.py <topicId|all>
 
 Fixes the old bug: it used to take Unpaywall's best_oa_location first (usually the
@@ -93,6 +94,33 @@ def arxiv_pdf_by_title(title):
     return None
 
 
+def proceedings_pdf_by_title(title):
+    """Conference-run OA sites (PMLR / ACL Anthology / OpenReview), found via DBLP
+    title search. Covers papers with no DOI and no arXiv (e.g. ICML on PMLR)."""
+    try:
+        d = get_json(f"https://dblp.org/search/publ/api?q={quote(title[:120])}&format=json&h=5",
+                     timeout=30)
+    except Exception:
+        return None
+    hits = (((d.get("result") or {}).get("hits") or {}).get("hit")) or []
+    for h in hits:
+        info = h.get("info") or {}
+        if norm_title(info.get("title") or "") != norm_title(title):
+            continue
+        ees = info.get("ee") or []
+        for ee in [ees] if isinstance(ees, str) else ees:
+            m = re.match(r"https?://proceedings\.mlr\.press/(v\d+)/([^/.]+)\.html", ee)
+            if m:
+                return f"https://proceedings.mlr.press/{m.group(1)}/{m.group(2)}/{m.group(2)}.pdf"
+            m = re.match(r"https?://aclanthology\.org/([^/?#]+?)/?$", ee)
+            if m:
+                return f"https://aclanthology.org/{m.group(1)}.pdf"
+            m = re.match(r"https?://openreview\.net/forum\?id=([^&]+)", ee)
+            if m:
+                return f"https://openreview.net/pdf?id={m.group(1)}"
+    return None
+
+
 def candidate_urls(r):
     urls, vias = [], []
     ax = arxiv_id_of(r)
@@ -105,6 +133,9 @@ def candidate_urls(r):
     bt = arxiv_pdf_by_title(r["title"]) if r["title"] else None
     if bt and bt not in urls:
         urls.append(bt); vias.append("arxiv-title")
+    pp = proceedings_pdf_by_title(r["title"]) if r["title"] else None
+    if pp and pp not in urls:
+        urls.append(pp); vias.append("dblp-oa")
     return list(zip(urls, vias))
 
 

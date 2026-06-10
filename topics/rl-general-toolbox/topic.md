@@ -2,7 +2,7 @@
 
 > **研究思路**：训练强化学习策略（目前主要用 SAC 和 PPO）时经常遇到训不出来的瓶颈，怀疑是 reward 设计或算法超参的问题。需要一批实战导向的论文来构建'RL 训练工具箱'：(1) reward 设计与 shaping 的原则、常见坑（reward hacking/specification gaming）；(2) 训练稳定性 trick、实现细节与超参敏感性的 empirical study；(3) 稀疏奖励下的探索、课程学习；(4) SAC/PPO 之外更丰富的算法（off-policy 改进、模型基方法、约束优化等）及横向比较；(5) control barrier function 等安全增强方法与 RL 的结合（非常重要）；(6) 具体任务（人形/全身控制/数字人/locomotion）上的 reward 工程实例。偏好可操作、有实验对比、给出 do/don't 的论文，而非纯理论。
 
-- 命中论文：100　已总结：98　最近更新：2026-06-10
+- 命中论文：100　已总结：100　最近更新：2026-06-10
 - 检索词：`reward shaping deep reinforcement learning continuous control`、`reward design reinforcement learning robotics locomotion`、`deep reinforcement learning training stability tricks implementation details`、`PPO implementation details hyperparameters empirical study`、`on-policy reinforcement learning what matters empirical study`、`sparse reward exploration intrinsic motivation reinforcement learning`、`reward hacking specification gaming reinforcement learning`、`curriculum learning reinforcement learning robot control`、`control barrier function reinforcement learning safe control`、`safe reinforcement learning constrained policy optimization`、`off-policy actor critic continuous control TD3 SAC improvements`、`model-based reinforcement learning continuous control sample efficiency`、`reinforcement learning humanoid whole-body control reward design`、`deep reinforcement learning continuous control benchmark algorithms comparison`
 
 ## 命中清单（按相关性排序）
@@ -31,7 +31,7 @@
 | 20 | 85.0 | End-To-End Robotic Reinforcement Learning without Reward Engineering | 2019 | 208 | ✅ 已总结 | [v1](../../store/summaries/End_To_End_Robotic_Reinforcement_Learning_without_Reward_Engineering/v1.md) |
 | 21 | 85.0 | Safe exploration in model-based reinforcement learning using control barrier functions | 2022 | 83 | ✅ 已总结 | [v1](../../store/summaries/Safe_exploration_in_model_based_reinforcement_learning_using_control_barrier_functions/v1.md) |
 | 22 | 85.0 | Regularization Matters in Policy Optimization - An Empirical Study on Continuous Control | 2020 | 59 | ✅ 已总结 | [v1](../../store/summaries/Regularization_Matters_in_Policy_Optimization_An_Empirical_Study_on_Continuous_Control/v1.md) |
-| 23 | 85.0 | PPG Reloaded: An Empirical Study on What Matters in Phasic Policy Gradient 🪨 | 2023 | 1 | ⛔ 取全文失败 | — |
+| 23 | 85.0 | PPG Reloaded: An Empirical Study on What Matters in Phasic Policy Gradient 🪨 | 2023 | 1 | ✅ 已总结 | [v1](../../store/summaries/PPG_Reloaded_An_Empirical_Study_on_What_Matters_in_Phasic_Policy_Gradient/v1.md) |
 | 24 | 85.0 | Tiered Reward: Designing Rewards for Specification and Fast Learning of Desired Behavior 🪨 | 2022 | 0 | ✅ 已总结 | [v1](../../store/summaries/Tiered_Reward_Designing_Rewards_for_Specification_and_Fast_Learning_of_Desired_Behavior/v1.md) |
 | 25 | 85.0 | SafeAdapt: Provably Safe Policy Updates in Deep Reinforcement Learning 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/SafeAdapt_Provably_Safe_Policy_Updates_in_Deep_Reinforcement_Learning/v1.md) |
 | 26 | 84.0 | Augmented Proximal Policy Optimization for Safe Reinforcement Learning | 2023 | 32 | ✅ 已总结 | [v1](../../store/summaries/Augmented_Proximal_Policy_Optimization_for_Safe_Reinforcement_Learning/v1.md) |
@@ -101,7 +101,7 @@
 | 90 | 67.0 | Experimental evaluation of model-free reinforcement learning algorithms for continuous HVAC control | 2021 | 169 | ✅ 已总结 | [v1](../../store/summaries/Experimental_evaluation_of_model_free_reinforcement_learning_algorithms_for_continuous/v1.md) |
 | 91 | 66.0 | Model-based Reinforcement Learning: A Survey | 2023 | 481 | ✅ 已总结 | [v1](../../store/summaries/Model_based_Reinforcement_Learning_A_Survey/v1.md) |
 | 92 | 66.0 | Online Meta-Critic Learning for Off-Policy Actor-Critic Methods | 2020 | 54 | ✅ 已总结 | [v1](../../store/summaries/Online_Meta_Critic_Learning_for_Off_Policy_Actor_Critic_Methods/v1.md) |
-| 93 | 66.0 | Lazy Agents: A New Perspective on Solving Sparse Reward Problem in Multi-agent Reinforcement Learning | 2023 | 36 | ⛔ 取全文失败 | — |
+| 93 | 66.0 | Lazy Agents: A New Perspective on Solving Sparse Reward Problem in Multi-agent Reinforcement Learning | 2023 | 36 | ✅ 已总结 | [v1](../../store/summaries/Lazy_Agents_A_New_Perspective_on_Solving_Sparse_Reward_Problem_in_Multi_agent/v1.md) |
 | 94 | 66.0 | Improved Learning of Robot Manipulation Tasks Via Tactile Intrinsic Motivation | 2021 | 32 | ✅ 已总结 | [v1](../../store/summaries/Improved_Learning_of_Robot_Manipulation_Tasks_Via_Tactile_Intrinsic_Motivation/v1.md) |
 | 95 | 66.0 | Comparing Deep Reinforcement Learning and Evolutionary Methods in Continuous Control 🪨 | 2017 | 0 | ✅ 已总结 | [v1](../../store/summaries/Comparing_Deep_Reinforcement_Learning_and_Evolutionary_Methods_in_Continuous_Control/v1.md) |
 | 96 | 66.0 | Safe Control Synthesis via Input Constrained Control Barrier Functions 🪨 | 2021 | 0 | ✅ 已总结 | [v1](../../store/summaries/Safe_Control_Synthesis_via_Input_Constrained_Control_Barrier_Functions/v1.md) |

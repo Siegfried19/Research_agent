@@ -12,6 +12,7 @@ Hybrid download (proven 2026-06-09):
   A (fallback)  — in-page fetch(location.href) -> base64 over opencli's text channel.
 NYU access uses OpenAthens (EZProxy is dead): go.openathens.net/redirector/nyu.edu?url=<doi>
 """
+import fcntl
 import json
 import os
 import re
@@ -129,6 +130,23 @@ def ensure_chrome():
             tlog(f"  bridge connected (profile {ALIAS}, {(i + 1) * 3}s)")
             return
     raise RuntimeError("Chrome bridge did not connect within 60s (is the OpenCLI extension enabled?)")
+
+
+def close_chrome():
+    """整关抓取专用 Chrome(照 Stock_agent close_chrome)。按独立 user-data-dir 匹配:
+    日常 Chrome 不带此 --user-data-dir,绝不误伤;独立目录=独立进程树,主进程连子进程
+    一并带走。模式不带前导 '--'(否则 pkill 把它当选项解析而一个都不杀)。"""
+    sh("pkill", ["-f", f"user-data-dir={UDD}"], timeout=10)
+
+
+def chrome_lock():
+    """独占抓取专用 Chrome 的文件锁(照 Stock_agent):防两个 tierb(或其它抓取任务)
+    并发互踩。锁文件放 UDD 里=共用这个 Chrome 实例的任务天然同一把锁;进程退出时
+    OS 自动释放,不会死锁。"""
+    Path(UDD).mkdir(parents=True, exist_ok=True)
+    fp = open(Path(UDD) / "scrape.lock", "w", encoding="utf-8")
+    fcntl.flock(fp, fcntl.LOCK_EX)
+    return fp
 
 
 def clean_eval(out):
@@ -377,30 +395,39 @@ def main():
         return
 
     tlog(f"Tier B: {len(rows)} papers need full text. log -> {LOG_FILE.relative_to(ROOT)}")
-    ensure_chrome()
-    rv = ensure_remote_view()
-    rv_line = f"\n📱 验证时可手机点: {rv}" if rv else ""
-    notify(f"📚 Tier B 开始抓 {len(rows)} 篇付费墙全文。遇验证我会喊你。{rv_line}")
+    lock_fp = chrome_lock()
+    try:
+        ensure_chrome()
+        rv = ensure_remote_view()
+        rv_line = f"\n📱 验证时可手机点: {rv}" if rv else ""
+        notify(f"📚 Tier B 开始抓 {len(rows)} 篇付费墙全文。遇验证我会喊你。{rv_line}")
 
-    ok = fail = 0
-    for r in rows:
-        try:
-            res = fetch_one(conn, r)
-        except Exception as e:  # noqa: BLE001
-            tlog(f"  ERROR: {e}")
-            res = "pdf_failed"
-        if res == "pdf_downloaded":
-            ok += 1
-        else:
-            fail += 1
-            conn.execute("UPDATE papers SET status='pdf_failed', pdf_fetched_at=? WHERE id=?", (now_iso(), r["id"]))
-            conn.commit()
-        time.sleep(TB.get("delay_ms", 4000) / 1000)
-    conn.close()
-    summary = f"Tier B done: {ok} fetched, {fail} failed (of {len(rows)})"
-    tlog(summary)
-    run_log(topic_id, f"fetch_tierb: {summary}")
-    notify(f"✅ {summary}")
+        ok = fail = 0
+        for r in rows:
+            try:
+                res = fetch_one(conn, r)
+            except Exception as e:  # noqa: BLE001
+                tlog(f"  ERROR: {e}")
+                res = "pdf_failed"
+            if res == "pdf_downloaded":
+                ok += 1
+            else:
+                fail += 1
+                conn.execute("UPDATE papers SET status='pdf_failed', pdf_fetched_at=? WHERE id=?", (now_iso(), r["id"]))
+                conn.commit()
+            time.sleep(TB.get("delay_ms", 4000) / 1000)
+        conn.close()
+        summary = f"Tier B done: {ok} fetched, {fail} failed (of {len(rows)})"
+        tlog(summary)
+        run_log(topic_id, f"fetch_tierb: {summary}")
+        notify(f"✅ {summary}")
+    finally:
+        # 无条件整关(照 Stock_agent):它是独立 user-data-dir 的专属实例,文件锁保证
+        # 此刻没有并发任务在用;复用来的实例也一并关,根治"残留→永不关闭→越积越多"。
+        tlog("closing scrape Chrome (unconditional)...")
+        close_chrome()
+        fcntl.flock(lock_fp, fcntl.LOCK_UN)
+        lock_fp.close()
 
 
 if __name__ == "__main__":
