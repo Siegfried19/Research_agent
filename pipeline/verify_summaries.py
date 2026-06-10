@@ -90,8 +90,14 @@ def split_must(rows, seen):
 
 
 def verify_batch(picked, concurrency):
-    """Codex-check each picked paper. Returns (ok_results, failed)."""
+    """Codex-check each picked paper. Returns (ok_results, failed).
+    Circuit breaker: once a codex usage-limit error is seen, remaining papers
+    are skipped immediately instead of burning one failed call each."""
+    tripped = []
+
     def worker(r, _i):
+        if tripped:
+            return {"id": r["id"], "error": "skipped (codex usage limit hit earlier in batch)"}
         spath = ROOT / r["summary_path"]
         if not spath.exists():
             return {"id": r["id"], "error": "summary file missing"}
@@ -102,8 +108,14 @@ def verify_batch(picked, concurrency):
             return {"id": r["id"], "error": "no fulltext"}
         truncated = len(text) > MAX_CHARS
         sent = text[:MAX_CHARS] + ("\n\n[原文已截断:超出长度上限,以上仅为前一部分]" if truncated else "")
-        v = parse_obj(run_codex(vprompt(r["title"], spath.read_text(encoding="utf-8"),
-                                        sent, truncated), timeout=600))
+        try:
+            out = run_codex(vprompt(r["title"], spath.read_text(encoding="utf-8"),
+                                    sent, truncated), timeout=600)
+        except Exception as e:
+            if "usage limit" in str(e).lower():
+                tripped.append(True)
+            raise
+        v = parse_obj(out)
         res = {"id": r["id"], "title": r["title"], "tier": r.get("quality_tier"),
                "version": r["summary_version"],
                "verdict": v.get("verdict", "?"), "issues": v.get("issues") or []}
