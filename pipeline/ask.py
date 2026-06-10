@@ -1,6 +1,11 @@
 """Ask the paper library a question — RAG stage ① (FTS5, zero deps).
 
-  python3 pipeline/ask.py "<问题或关键词>" [-n N] [--answer] [--reindex]
+  python3 pipeline/ask.py "<问题或关键词>" [-n N] [--json] [--answer] [--reindex]
+
+主要用户是**别的项目里的 agent**(做任务卡住时来查),所以:
+  --json  输出机器可读结果(绝对路径),拿到 summary_path/text_path 自己 Read 深读。
+  人类/agent 通用工作流: 先检索 → 读最相关几篇的总结 → 需要细节再读全文。
+可从任意 cwd 以绝对路径调用: python3 ~/Projects/Research_agent/pipeline/ask.py "..."
 
 Index (db/fts.sqlite, disposable & rebuildable, NOT the production DB):
   fts_sum  trigram tokenizer — title + abstract + latest Chinese summary
@@ -138,6 +143,25 @@ def search(fts, q, topn):
     return hits[:topn]
 
 
+def as_json(hits, q):
+    import json as _json
+    out = []
+    for h in hits:
+        p = h["p"]
+        sdir = ROOT / "store" / "summaries" / h["slug"]
+        vs = sorted(sdir.glob("v*.md"))
+        out.append({
+            "title": p["title"], "year": p["year"], "venue": p["venue"], "doi": p["doi"],
+            "score": round(h["score"], 2),
+            "quality_tier": p["quality_tier"],  # suspect=可疑来源慎引, flag=预印本未评审
+            "topics": [{"id": t["topic_id"], "relevance": t["relevance"]} for t in h["topics"]],
+            "snippet": h["snip"][:300],
+            "summary_path": str(vs[-1]) if vs else None,   # 中文结构化总结(先读这个)
+            "text_path": str(ROOT / p["text_path"]) if p["text_path"] else None,  # 英文全文
+        })
+    print(_json.dumps({"query": q, "hits": out}, ensure_ascii=False, indent=1))
+
+
 def tier_label(p):
     return {"suspect": " ⚠️低可信来源", "flag": " (预印本,未同行评审)",
             "trusted": ""}.get(p["quality_tier"] or "", "")
@@ -177,6 +201,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("question", nargs="?", default="")
     ap.add_argument("-n", type=int, default=8)
+    ap.add_argument("--json", action="store_true", help="机器可读输出(绝对路径),给 agent 用")
     ap.add_argument("--answer", action="store_true", help="claude -p 综合前5命中给出带引用的回答")
     ap.add_argument("--reindex", action="store_true", help="强制全量重建索引")
     a = ap.parse_args()
@@ -188,9 +213,15 @@ def main():
         return
     hits = search(fts, a.question, a.n)
     if not hits:
-        print("库里没有命中。换关键词试试(英文术语对全文层更有效)。")
+        if a.json:
+            print('{"query": %s, "hits": []}' % __import__("json").dumps(a.question, ensure_ascii=False))
+        else:
+            print("库里没有命中。换关键词试试(英文术语对全文层更有效)。")
         return
-    show(hits, a.question)
+    if a.json:
+        as_json(hits, a.question)
+    else:
+        show(hits, a.question)
     if a.answer:
         answer(hits, a.question)
 
