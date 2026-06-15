@@ -11,6 +11,26 @@ def norm_title(t):
     return _NT.sub(" ", s).strip()
 
 
+# 英文标题里几乎无信息量的词，核对时忽略
+_TITLE_STOP = {"the", "a", "an", "of", "for", "and", "or", "to", "in", "on", "with",
+               "via", "using", "by", "from", "is", "are", "as", "at", "this", "that",
+               "towards", "toward", "into", "over", "under", "based", "we", "our"}
+
+
+def title_matches(title, text, head_chars=4000, min_ratio=0.6):
+    """张冠李戴防线：校验抽出的全文确实属于这篇——标题的实义词应大多出现在正文开头。
+    宁可放过、不可误杀：无法可靠判断时（无标题/无正文/标题过短）返回 True，不阻断。
+    供 hunt 等「自由找 URL、无标题保证」的下载路径在 PDF 落盘后做兜底核对。"""
+    if not title or not text:
+        return True
+    words = {w for w in norm_title(title).split() if len(w) > 2 and w not in _TITLE_STOP}
+    if len(words) < 3:
+        return True  # 标题太短，核对不可靠，不阻断
+    head_words = set(norm_title(text[:head_chars]).split())
+    hits = sum(1 for w in words if w in head_words)
+    return hits / len(words) >= min_ratio
+
+
 def canonical_id(rec):
     if rec.get("doi"):
         return rec["doi"]

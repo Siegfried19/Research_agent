@@ -16,6 +16,7 @@ _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)
 from lib.claude import run_claude, pool
 from lib.db import open_db, ROOT, load_config, now_iso
 from lib.http import download_pdf
+from lib.merge import title_matches
 from lib.log import get_logger, run_log
 
 config = load_config()
@@ -111,6 +112,15 @@ def main():
             log.info(f"  FAIL [agent url no good: {e}] {title}")
             continue
         tpath = extract_text(pdf_path, txt_path)
+        # 张冠李戴防线:agent 可能给了"真实有效但属于另一篇"的 PDF —— %PDF 校验挡不住,
+        # 这里用标题核对兜底(抽得出文本才能核;没文本则放过,反正总结阶段会因无文本跳过)。
+        if tpath:
+            text = txt_path.read_text(encoding="utf-8", errors="ignore")
+            if not title_matches(r["title"], text):
+                pdf_path.unlink(missing_ok=True)
+                txt_path.unlink(missing_ok=True)
+                log.info(f"  REJECT [疑似张冠李戴:正文与标题不匹配] {title}")
+                continue
         conn.execute("UPDATE papers SET pdf_path=?, text_path=?, oa_url=COALESCE(oa_url,?), "
                      "status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
                      (str(pdf_path.relative_to(ROOT)), tpath, v["url"], now_iso(), r["id"]))
