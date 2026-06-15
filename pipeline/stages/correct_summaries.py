@@ -21,11 +21,11 @@ MAX_CHARS = 120000
 log = get_logger("correct")
 
 
-def cprompt(title, current_md, issues, next_version, paper_id, text):
+def cprompt(title, current_md, issues, next_version, paper_id, source_block):
     issue_lines = "\n".join(
         f"- [{i.get('severity','?')}] 总结原句:“{i.get('quote','')}” — 问题:{i.get('problem','')}"
         for i in issues)
-    return f"""你是论文精读员。下面给出:论文全文、这篇论文的当前中文总结、以及独立事实核查员(另一个模型对照原文)发现的错误清单。
+    return f"""你是论文精读员。下面给出:论文原文、这篇论文的当前中文总结、以及独立事实核查员(另一个模型对照原文)发现的错误清单。
 请输出一份**修正版总结**。
 
 要求:
@@ -49,8 +49,7 @@ note: 事实核查修正(Codex 抽检发现 {len(issues)} 处问题)
 ==== 当前版本总结 ====
 {current_md}
 
-==== 论文全文 ====
-{text}"""
+{source_block}"""
 
 
 def run_corrections(work, concurrency=2):
@@ -84,12 +83,27 @@ def run_corrections(work, concurrency=2):
     log.info(f"correct_summaries: {len(work)} in worklist, {len(todo)} to do, concurrency={concurrency}")
 
     def worker(w, _i):
-        text = full_text(w)
-        if not text:
-            raise RuntimeError("no fulltext")
         current_md = Path(w["currentPath"]).read_text(encoding="utf-8", errors="ignore")
-        md = run_claude(cprompt(w["title"], current_md, w["issues"], w["nextVersion"],
-                                w["paperId"], text[:MAX_CHARS]))
+        pp = w.get("pdf_path")
+        pdf_abs = None
+        if pp:
+            cand = Path(pp) if Path(pp).is_absolute() else ROOT / pp
+            if cand.exists():
+                pdf_abs = str(cand.resolve())
+        if pdf_abs:
+            # 直读 PDF:claude 用 Read 看公式/图/表再修正,跟 sum 撰写时同源
+            source = (f"==== 论文 PDF ====\n用 Read 工具读取以下 PDF 的**全部页面**"
+                      f"(超过 20 页用 pages 参数分批读完):\n{pdf_abs}\n"
+                      f"直接读 PDF 能看到公式/图/表;核对数字、方向、论断强度时一律以 PDF 原文为准。")
+            md = run_claude(cprompt(w["title"], current_md, w["issues"], w["nextVersion"],
+                                    w["paperId"], source), tools=["Read"], timeout=900)
+        else:
+            text = full_text(w)
+            if not text:
+                raise RuntimeError("no fulltext")
+            source = "==== 论文全文(纯文本) ====\n" + text[:MAX_CHARS]
+            md = run_claude(cprompt(w["title"], current_md, w["issues"], w["nextVersion"],
+                                    w["paperId"], source))
         if not md or len(md) < 200:
             raise RuntimeError(f"bad output ({len(md)} chars)")
         Path(w["outPath"]).parent.mkdir(parents=True, exist_ok=True)

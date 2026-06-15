@@ -10,13 +10,15 @@ Usage: python3 pipeline/stages/verify_summaries.py <topicId> [samplePct] [concur
 """
 import json
 import random
+import shutil
+import tempfile
 import sys
 from pathlib import Path
 
 # --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
-from lib.db import open_db, ROOT, now_iso
+from lib.db import open_db, ROOT, now_iso, load_config
 from lib.codex import run_codex, pool
 from lib.log import get_logger, run_log
 from summarize_auto import full_text
@@ -24,19 +26,27 @@ from summarize_auto import full_text
 MAX_CHARS = 400000
 log = get_logger("verify")
 
+# 让 Codex 自己渲染 PDF:给它一个临时工作目录(拷入 paper.pdf)+ workspace-write 沙箱,
+# 涉及公式/图/表时它会自己把相关页面渲成图片再看(实测 gpt-5.5 会用 PIL/pdftoppm 渲染甚至裁剪放大)。
+# 关掉=纯文本核查(只喂 pdftotext 文本,公式/图表里的错查不出)。
+USE_SELF_RENDER = (load_config().get("verify") or {}).get("codex_self_render", True)
 
-def vprompt(title, summary, text, truncated=False):
+
+def vprompt(title, summary, text, truncated=False, self_render=False):
     trunc_note = ("\n- ⚠️ 提供的原文在末尾被截断([原文已截断]标记)。对于给定原文中找不到、"
                   "但可能位于截断部分的内容(如长综述后部的应用案例/附录数据),"
                   "**不要计为问题**——核不到≠编造。只报告与给定原文**明确矛盾**的内容。"
                   if truncated else "")
-    return f"""你是独立的事实核查员(与撰写总结的模型不同,专查它的幻觉)。下面是一篇论文的中文总结和论文原文。
+    render_note = ("\n- 当前目录下有这篇论文的 PDF: **./paper.pdf**。纯文本抽取常把公式、图、表格弄乱或丢失,"
+                   "凡涉及公式/图表数据的核对,**请自己把相关页面渲染成图片(把图片放在当前目录)再看**,以页面图像为准,"
+                   "不要仅凭可能损坏的文本就判定总结有错。" if self_render else "")
+    return f"""你是独立的事实核查员(与撰写总结的模型不同,专查它的幻觉)。下面是一篇论文的中文总结和论文原文(纯文本){"，论文 PDF 也在当前目录可供你自行渲染查看" if self_render else ""}。
 
 你的唯一任务:核对总结中的**数字和关键论断**是否有原文依据。逐条检查:
 - 总结里的每个具体数字(指标、样本量、提升幅度)在原文中是否存在且未被歪曲
 - 总结归给作者的每个关键论断,原文是否真的这么说(注意"作者声称X"被写成"X成立"的偷换)
 - 是否有原文完全没有的内容被编进总结
-不要评价总结的文笔/完整性/选材,只查"有没有依据"。
+不要评价总结的文笔/完整性/选材,只查"有没有依据"。{render_note}
 例外(跳过不查):
 - 总结标题下方以 "> " 开头的元信息行(作者/年份/venue/引用数/DOI)来自我们的文献数据库,不是从论文里抄的;YAML 头(--- 包围)同理。
 - "局限与我的质疑"一节中**总结者自己的批判与评注**(对论文领域地位/历史影响的判断、与我们研究主题契合度的评价、对后续工作的展望、标注"(总结者注)"的内容)——这些本来就不是论文论断,不需要原文依据。但该节中**转述作者自述局限**的部分仍要核。{trunc_note}
@@ -106,18 +116,32 @@ def verify_batch(picked, concurrency):
             return {"id": r["id"], "error": "summary file missing"}
         w = {"id": r["id"], "text_path": str(ROOT / r["text_path"]) if r.get("text_path") else None,
              "pdf_path": str(ROOT / r["pdf_path"]) if r.get("pdf_path") else None}
-        text = full_text(w)
+        # prefer_pdf:核查者直接读 PDF 抽的文本,跟撰写者(sum 直读 PDF)读同一份源,
+        # 避免拿到一份不同来源/可能过时的 text_path。文本管全量查数字。
+        text = full_text(w, prefer_pdf=True)
         if not text:
             return {"id": r["id"], "error": "no fulltext"}
         truncated = len(text) > MAX_CHARS
         sent = text[:MAX_CHARS] + ("\n\n[原文已截断:超出长度上限,以上仅为前一部分]" if truncated else "")
+        # 自渲染模式:给 Codex 一个隔离的临时工作目录(拷入 paper.pdf)+ workspace-write,
+        # 涉及公式/图表它会自己渲染相关页面再看。scratch 全在 tmpd 里,finally 清掉。
+        tmpd, sandbox, cwd = None, None, None
+        self_render = USE_SELF_RENDER and w["pdf_path"] and Path(w["pdf_path"]).exists()
+        if self_render:
+            tmpd = Path(tempfile.mkdtemp(prefix="vfy_cdx_"))
+            shutil.copy2(w["pdf_path"], tmpd / "paper.pdf")
+            sandbox, cwd = "workspace-write", str(tmpd)
         try:
             out = run_codex(vprompt(r["title"], spath.read_text(encoding="utf-8"),
-                                    sent, truncated), timeout=600)
+                                    sent, truncated, self_render=bool(self_render)),
+                            sandbox=sandbox, cwd=cwd, timeout=900 if self_render else 600)
         except Exception as e:
             if "usage limit" in str(e).lower():
                 tripped.append(True)
             raise
+        finally:
+            if tmpd:
+                shutil.rmtree(tmpd, ignore_errors=True)
         v = parse_obj(out)
         res = {"id": r["id"], "title": r["title"], "tier": r.get("quality_tier"),
                "version": r["summary_version"],

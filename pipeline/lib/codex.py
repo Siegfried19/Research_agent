@@ -17,9 +17,14 @@ CODEX_BIN = os.environ.get("CODEX_BIN", "codex")
 CODEX_MODEL = os.environ.get("CODEX_MODEL")  # None = account default
 
 
-def run_codex(prompt, model=None, timeout=300):
+def run_codex(prompt, model=None, timeout=300, images=None, sandbox=None, cwd=None):
     """Run one `codex exec` call. Returns the final message text. Raises on failure.
-    Uses --output-last-message so we get a clean answer (stdout mixes in session log)."""
+    Uses --output-last-message so we get a clean answer (stdout mixes in session log).
+    images:  optional list of image file paths attached via `-i` (e.g. page PNGs).
+    sandbox: 'read-only' | 'workspace-write' | 'danger-full-access'. workspace-write
+             lets the agent run code (e.g. render a PDF page to PNG and *look* at it).
+    cwd:     working root (`-C`); point it at a throwaway dir so the agent's scratch
+             files stay contained and get cleaned up by the caller."""
     binp = shutil.which(CODEX_BIN)
     if not binp:
         raise RuntimeError(f"'{CODEX_BIN}' not found — npm i -g @openai/codex && codex login")
@@ -28,6 +33,12 @@ def run_codex(prompt, model=None, timeout=300):
     m = model or CODEX_MODEL
     if m:
         cmd += ["-m", m]
+    if sandbox:
+        cmd += ["--sandbox", sandbox]
+    if cwd:
+        cmd += ["-C", cwd]
+    for img in (images or []):
+        cmd += ["-i", img]
     cmd.append("-")  # read prompt from stdin
     try:
         proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True,
