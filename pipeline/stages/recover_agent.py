@@ -3,13 +3,16 @@ rule-based channels, ask headless Claude (with web search) to find a legitimate
 free PDF url. The script (not the agent) downloads, validates %PDF, extracts text
 and updates the DB. Whatever still fails goes on to Tier B — this stage exists to
 spend a cheap web-searching agent before the expensive browser+OpenAthens path.
-Usage: python3 pipeline/recover_agent.py <topicId|all> [concurrency]
+Usage: python3 pipeline/stages/recover_agent.py <topicId|all> [concurrency]
 """
 import json
 import re
 import subprocess
 import sys
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.claude import run_claude, pool
 from lib.db import open_db, ROOT, load_config, now_iso
 from lib.http import download_pdf

@@ -1,11 +1,14 @@
 """Phase 2: download open-access PDFs for a topic's selected papers, extract text.
-Usage: python3 pipeline/fetch_oa.py <topicId|all>
+Usage: python3 pipeline/stages/fetch_oa.py <topicId|all>
 """
 import json
 import re
 import subprocess
 import sys
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, load_config, now_iso
 from lib.http import download_pdf, sleep, HttpError
 from lib.log import get_logger, run_log

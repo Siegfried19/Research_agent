@@ -173,3 +173,4 @@
 2026-06-10T22:29:35Z	-	FRAMEWORK BUILT(用户上飞机前交代): ①MIGRATION.md=记忆分布地图+换机器清单(全局CLAUDE.md附录可照抄重建) ②export_corpus.py=出口③的桥(ARS literature_corpus YAML,topic2 100条过schema校验) ③ask.py 接引用图(命中带库内引用邻居,JSON含related_in_library)。出口③只差真实idea全流程试跑,等用户回来。
 2026-06-10T23:51:23Z	-	correct_summaries: 6/6 corrected
 2026-06-10T23:55:32Z	rl-general-toolbox	escalate_verify: verified=49 pass=10 minor=39 major=0 corrected=6 stubborn=0 errors=0
+2026-06-15T20:28:03Z	-	REFACTOR: pipeline/ 扁平27脚本→分层(git mv 25): stages/(主链14) + tools/(旁路11) + lib/(不动);run.py/ask.py 留根(入口+出口②API)。搬动脚本加 path shim 3行解析 from lib。run.py阶段表+文档已同步,run auto 行为不变;验证全过(py_compile/import/子进程/路由)。详情见 pipeline/ARCHITECTURE.md。

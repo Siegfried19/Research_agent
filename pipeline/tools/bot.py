@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Telegram 对话 bot（暂时升级，照 Stock_agent/daily-digest/bot.py 移植）。
 
-    python3 pipeline/bot.py        # 常驻运行（长轮询，不开任何本机端口）
+    python3 pipeline/tools/bot.py        # 常驻运行（长轮询，不开任何本机端口）
 
 命令（私聊发给 bot，无需斜杠）：
     log [N]           看 logs/run.log 最后 N 行（默认 30）
@@ -24,6 +24,9 @@ from pathlib import Path
 
 import requests
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import ROOT
 from lib.notify import BOT_INBOX, BOT_PID, BOT_WAIT, _load
 
@@ -172,7 +175,7 @@ class Bot:
 def main():
     cfg = _load()
     if not cfg or not cfg.get("token") or not cfg.get("chat_id"):
-        sys.exit("缺 token/chat_id — 先 python3 pipeline/notify.py settoken/chatid")
+        sys.exit("缺 token/chat_id — 先 python3 pipeline/tools/notify.py settoken/chatid")
     if BOT_PID.exists():  # 单例：同一 token 不能有两个 getUpdates 消费者
         try:
             os.kill(int(BOT_PID.read_text().strip()), 0)

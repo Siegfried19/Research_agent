@@ -1,7 +1,7 @@
 """Automated summarization: one `claude -p` call per paper (no agent/Workflow).
 Inlines each paper's full text into the prompt, captures the Chinese structured
 summary markdown from stdout, writes it to summary_path. Idempotent.
-Usage: python3 pipeline/summarize_auto.py <topicId> [concurrency]
+Usage: python3 pipeline/stages/summarize_auto.py <topicId> [concurrency]
 """
 import json
 import os
@@ -11,6 +11,9 @@ import tempfile
 from datetime import date
 from pathlib import Path
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import ROOT
 from lib.claude import run_claude, pool
 from lib.log import get_logger, run_log

@@ -1,8 +1,11 @@
 """Find papers shared across topics + citation bridges between topics.
-Writes store/cross_topic.json. Usage: python3 pipeline/cross_topic.py
+Writes store/cross_topic.json. Usage: python3 pipeline/tools/cross_topic.py
 """
 import json
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT
 from lib.store import build_citations
 

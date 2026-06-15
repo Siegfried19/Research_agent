@@ -32,18 +32,18 @@ PDIR = ROOT / "pipeline"
 # stage -> list of (script, [args...]) run in order
 def steps(stage, tid):
     return {
-        "discover": [("discover.py", [f"topics/{tid}/topic.json"])],
-        "score":    [("score_auto.py", [tid])],
-        "commit":   [("commit.py", [f"topics/{tid}"])],
-        "fetch":    [("fetch_oa.py", [tid])],
-        "recover":  [("recover_oa.py", [tid])],
-        "hunt":     [("recover_agent.py", [tid])],
-        "tierb":    [("fetch_tierb.py", [tid])],
-        "worklist": [("build_worklist.py", [tid])],
-        "sum":      [("summarize_auto.py", [tid])],
-        "finalize": [("register_summaries.py", [tid]), ("render_topic.py", [tid])],
-        "verify":   [("escalate_verify.py", [tid, "--start-pct", "100"]),
-                     ("render_topic.py", [tid])],
+        "discover": [("stages/discover.py", [f"topics/{tid}/topic.json"])],
+        "score":    [("stages/score_auto.py", [tid])],
+        "commit":   [("stages/commit.py", [f"topics/{tid}"])],
+        "fetch":    [("stages/fetch_oa.py", [tid])],
+        "recover":  [("stages/recover_oa.py", [tid])],
+        "hunt":     [("stages/recover_agent.py", [tid])],
+        "tierb":    [("stages/fetch_tierb.py", [tid])],
+        "worklist": [("stages/build_worklist.py", [tid])],
+        "sum":      [("stages/summarize_auto.py", [tid])],
+        "finalize": [("stages/register_summaries.py", [tid]), ("stages/render_topic.py", [tid])],
+        "verify":   [("stages/escalate_verify.py", [tid, "--start-pct", "100"]),
+                     ("stages/render_topic.py", [tid])],
     }.get(stage)
 
 

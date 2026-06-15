@@ -2,7 +2,7 @@
 Per paper lacking a PDF, try (in order): arXiv by id, Unpaywall (repository/arXiv
 locations BEFORE publisher — publisher PDFs often 403), arXiv by title, then
 conference-run OA sites via DBLP title search (PMLR/ACL Anthology/OpenReview).
-Usage: python3 pipeline/recover_oa.py <topicId|all>
+Usage: python3 pipeline/stages/recover_oa.py <topicId|all>
 
 Fixes the old bug: it used to take Unpaywall's best_oa_location first (usually the
 publisher PDF -> 403) and only matched arXiv by exact title (fails on titles that
@@ -14,6 +14,9 @@ import subprocess
 import sys
 from urllib.parse import quote
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, load_config, now_iso
 from lib.http import get_json, get_text, download_pdf, sleep
 from lib.merge import norm_title

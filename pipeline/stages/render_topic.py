@@ -1,10 +1,13 @@
 """Render a topic's view as Markdown: ranked hits + relevance + summary links + citations.
-Usage: python3 pipeline/render_topic.py <topicId>
+Usage: python3 pipeline/stages/render_topic.py <topicId>
 """
 import json
 import re
 import sys
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT
 
 STAT = {"discovered": "⚪ 待取", "pdf_downloaded": "📄 有全文",

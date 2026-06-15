@@ -1,9 +1,12 @@
 """Suggest which existing summaries are worth updating because new citation-neighbors
 have since been summarized.
-Usage: python3 pipeline/suggest_updates.py <topicId|all>
+Usage: python3 pipeline/tools/suggest_updates.py <topicId|all>
 """
 import sys
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db
 
 
@@ -38,7 +41,7 @@ def main():
     for s in suggestions:
         print(f"  [{len(s['new_related'])} new related] v{s['current_version']} {(s['title'] or '')[:50]}")
     if suggestions:
-        print(f"\nTo update, e.g.:  python3 pipeline/prepare_update.py {suggestions[0]['id']}")
+        print(f"\nTo update, e.g.:  python3 pipeline/tools/prepare_update.py {suggestions[0]['id']}")
 
 
 if __name__ == "__main__":

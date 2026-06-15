@@ -12,12 +12,15 @@ so new summaries enter the library already fact-checked.
 Per-paper correction attempts are capped (default 2 per run); a paper still
 major after that is flagged in the report for human triage, not looped forever.
 Verification is advisory: exit code is 0 even if issues remain (see report).
-Usage: python3 pipeline/escalate_verify.py <topicId> [--start-pct P] [--threshold T]
+Usage: python3 pipeline/stages/escalate_verify.py <topicId> [--start-pct P] [--threshold T]
        [--concurrency N] [--max-rounds R] [--max-attempts A]
 """
 import random
 import sys
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import ROOT
 from lib.log import get_logger, run_log
 from verify_summaries import load_candidates, split_must, verify_batch, record_verified, write_report

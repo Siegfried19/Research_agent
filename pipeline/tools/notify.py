@@ -1,12 +1,15 @@
 """Telegram CLI: set up the bot config, grab chat id, send test messages.
-  python3 pipeline/notify.py settoken <BOT_TOKEN>   # save token to config/telegram.json
-  python3 pipeline/notify.py chatid                 # read chat id (after you message the bot once)
-  python3 pipeline/notify.py test "hello"           # send a test message
+  python3 pipeline/tools/notify.py settoken <BOT_TOKEN>   # save token to config/telegram.json
+  python3 pipeline/tools/notify.py chatid                 # read chat id (after you message the bot once)
+  python3 pipeline/tools/notify.py test "hello"           # send a test message
 """
 import json
 import os
 import sys
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.notify import notify, fetch_chat_id, CFG
 
 

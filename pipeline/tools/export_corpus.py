@@ -3,7 +3,7 @@
 pipeline (总蓝图出口③). Schema: ref/academic-research-skills/shared/contracts/
 passport/literature_corpus_entry.schema.json (v3.6.4 required fields + extras).
 
-  python3 pipeline/export_corpus.py <topicId|all> [--min-relevance N] [-o FILE]
+  python3 pipeline/tools/export_corpus.py <topicId|all> [--min-relevance N] [-o FILE]
 
 Notes
 - Entries without a year are REJECTED per schema (listed at the end), not coerced.
@@ -20,6 +20,9 @@ import re
 import sys
 from datetime import datetime, timezone
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT
 from lib.log import get_logger, run_log
 

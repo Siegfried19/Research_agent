@@ -1,12 +1,15 @@
 """Phase 1: multi-source discovery + dedup -> candidate pool (NO db write).
 Selection of the final top-N happens after relevance scoring (see score/commit).
-Usage: python3 pipeline/discover.py topics/<slug>/topic.json
+Usage: python3 pipeline/stages/discover.py topics/<slug>/topic.json
 """
 import json
 import sys
 from datetime import datetime
 from pathlib import Path
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import ROOT, load_config, now_iso
 from lib import sources
 from lib.merge import merge_all

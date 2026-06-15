@@ -1,12 +1,15 @@
 """Build an update worklist to re-summarize papers in light of related work.
 Usage:
-  python3 pipeline/prepare_update.py <paperId> [<paperId> ...]
-  python3 pipeline/prepare_update.py --related <relId,relId> <paperId>
+  python3 pipeline/tools/prepare_update.py <paperId> [<paperId> ...]
+  python3 pipeline/tools/prepare_update.py --related <relId,relId> <paperId>
 If no --related given, related papers default to summarized citation-neighbors.
 """
 import json
 import sys
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT
 
 

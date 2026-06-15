@@ -6,11 +6,14 @@ Default is dry-run (report only); --apply removes block-tier papers from the
 topic (and from papers/citations if no other topic references them) and
 recomputes rank, mirroring commit.py.
 
-Usage: python3 pipeline/audit_quality.py <topicId> [--apply] [--no-fetch]
+Usage: python3 pipeline/tools/audit_quality.py <topicId> [--apply] [--no-fetch]
 """
 import json
 import sys
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, now_iso
 from lib.http import get_json, sleep
 from lib.log import get_logger, run_log

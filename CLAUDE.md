@@ -39,14 +39,14 @@ python3 pipeline/run.py <id> verify      # escalate_verify.py --start-pct 100: C
 **检索词(queries)由你根据用户给的研究思路生成**（多组英文关键词，覆盖不同侧面）。
 
 ## 关键约定 / 坑（务必遵守）
-- **Python 3.10+,stdlib sqlite3**(不再需要 node)。脚本作为模块跑：`python3 pipeline/<x>.py`(脚本内 `from lib.xxx import` 依赖 cwd=pipeline 的 sys.path,run.py 已处理)。
+- **Python 3.10+,stdlib sqlite3**(不再需要 node)。**目录分层(2026-06-15)**：入口/公共API 在 `pipeline/` 根(run.py/ask.py)，主链脚本在 `pipeline/stages/`，旁路在 `pipeline/tools/`，共享库 `pipeline/lib/`。stages/tools 里每个脚本顶部有 **path shim 三行**(把 `pipeline/` 加进 `sys.path`)，所以 `from lib.xxx import` 在任何子目录都解析得到 + sibling import(如 `from summarize_auto import`)靠脚本自身目录在 `sys.path[0]`。直接 `python3 pipeline/stages/<x>.py` 或经 run.py 调都成立。
 - **打分/总结靠 `claude -p` 无头**(lib/claude.py;prompt 走 stdin、结果 stdout、脚本自己读写文件)。要加第二个模型(Codex 评审团)就照 `lib/claude.py` 复制成 `lib/codex.py`。
 - 文件名用**论文标题 slug**（`papers.slug`），不是 DOI。DOI 仍是 `papers.id` 主键。
 - **选篇靠 claude -p 相关性打分，不靠 API 排序**（OpenAlex 的相关性把引用量混进去了，会把高引但跑题的论文顶上来）。
 - **不用 Google Scholar 批量**（无 API、强反爬）。
 - 下载四级：先吃 OA → `recover_oa.py` 规则免费兜底（Unpaywall repository优先 + arXiv 版本枚举 + **DBLP 反查会议自营OA站** PMLR/ACL Anthology/OpenReview，2026-06-10 加,via=dblp-oa）→ `recover_agent.py` **agent 兜底**（claude -p 开 WebSearch/WebFetch 联网找合法免费 PDF，脚本负责下载校验落库；prompt 明令禁 Sci-Hub 类盗版源）→ 最后才 Tier B 付费墙。兜底层设计哲学：**撞到一类拉不下来的就固化一个新渠道**（同 tierb 的 findPdfUrl 出版商适配）。
 - 批量下载要**限速**，别刷崩用户学校的访问 / 触发出版商风控。
-- `claude -p` 偶尔撞 Max 限流失败 → 重跑该阶段即可（已总结/已打分的自动跳过;sum/score 幂等）。撞限流就调小并发：`python3 pipeline/summarize_auto.py <id> 1`。
+- `claude -p` 偶尔撞 Max 限流失败 → 重跑该阶段即可（已总结/已打分的自动跳过;sum/score 幂等）。撞限流就调小并发：`python3 pipeline/stages/summarize_auto.py <id> 1`。
 
 ## 数据模型（db/papers.sqlite，5 表）
 - `papers` 全局论文库：主键=规范化DOI；`slug`=文件名；`status`=discovered/pdf_downloaded/pdf_failed/summarized
@@ -55,24 +55,36 @@ python3 pipeline/run.py <id> verify      # escalate_verify.py --start-pct 100: C
 - `summary_versions` 总结版本历史（version/path/based_on/note）
 - `citations` 库内论文相互引用边
 
-## 脚本清单（pipeline/，全 Python）
-init, discover, **score_auto**, commit, fetch_oa, recover_oa, **recover_agent**(hunt,agent联网猎免费源), **fetch_tierb**, build_worklist,
-**summarize_auto**, register_summaries, render_topic, migrate_slugs, cross_topic,
-prepare_update, **update_auto**, register_updates, suggest_updates, notify, **audit_quality**,
-**verify_summaries**(Codex 核查总结幻觉), **correct_summaries**(幻觉修正出 vN+1), **escalate_verify**(升级阶梯驱动=verify阶段),
-**ask**(知识库检索/问答,FTS5+引用邻居,--json 给 agent), **export_corpus**(出口③:导出 ARS literature_corpus YAML), run.py, run.sh(薄壳)
-lib/: db, **log**(一等公民日志), http, sources, merge, store, slug, notify, **claude**(claude -p 调用器+并发池), **quality**(硬信号质量评估), **codex**(codex exec 调用器,跨模型第二引擎)
+## 脚本清单（pipeline/，全 Python — 2026-06-15 起按职责分文件夹，见 `pipeline/ARCHITECTURE.md`）
+**目录结构**（前门留根 / 主链进 stages / 旁路进 tools / 工具箱 lib）：
+```
+pipeline/
+├─ run.py            ★唯一入口/总指挥(run auto 按序调 stages/)
+├─ ask.py            ★出口①②公共API(全局 ~/.claude/CLAUDE.md 引它,路径不可动)
+├─ run.sh / remote_view.sh
+├─ stages/   主链 14 脚本(只被 run.py 调；每个文件顶部有 path shim 让 from lib 解析到 pipeline/lib)
+│    discover, **score_auto**, commit, fetch_oa, recover_oa, **recover_agent**(hunt,agent联网猎免费源),
+│    **fetch_tierb**, build_worklist, **summarize_auto**, register_summaries, render_topic,
+│    **verify_summaries**(Codex 核查幻觉), **correct_summaries**(修正出 vN+1), **escalate_verify**(verify阶段驱动)
+├─ tools/    旁路 11 脚本(手动跑,不在 run auto 链上)
+│    init, migrate_slugs, notify, cross_topic, **audit_quality**, suggest_updates,
+│    prepare_update, **update_auto**, register_updates, **export_corpus**(出口③:导ARS YAML), bot(Telegram对话bot)
+└─ lib/      共享工具箱(不动)
+     db, **log**(一等公民日志), http, sources, merge, store, slug, notify,
+     **claude**(claude -p 调用器+并发池), **quality**(硬信号质量评估), **codex**(codex 调用器,跨模型第二引擎)
+```
+> ⚠️ 加新脚本：放 `stages/`(进主链,记得在 run.py 注册) 或 `tools/`(旁路)，从根目录复制 path shim 三行；公共/入口才放根目录。
 > `score_auto`/`summarize_auto`/`update_auto` 用 `claude -p` 取代了旧的 Workflow agent。
 > `fetch_tierb` = 方法④付费墙抓取（自启 Chrome→OpenAthens→人点验证→混合 B/A 抓 PDF）。
 > 日志:每个脚本写 `logs/run.log`(机器日志,一行一事件) + `logs/pipeline-<date>.log`(详细);tierb 另有 `logs/tierb-<date>.log`。
 
 其它命令：
 ```bash
-python3 pipeline/recover_oa.py <id>        # 免费补全(Unpaywall repository优先 + arXiv)
-python3 pipeline/suggest_updates.py <id>   # (5b)建议哪些老总结该更新
-python3 pipeline/prepare_update.py <doi>   # (5a)备更新 → python3 update_auto.py → register_updates.py
-python3 pipeline/cross_topic.py            # (6)跨主题（需≥2主题;自带全库引用边重建——commit 只建主题内的边）
-python3 pipeline/audit_quality.py <id>     # 质量审计:回查已入库论文(拉OpenAlex最新撤稿/DOAJ);--apply 移除block级
+python3 pipeline/stages/recover_oa.py <id>     # 免费补全(Unpaywall repository优先 + arXiv)
+python3 pipeline/tools/suggest_updates.py <id> # (5b)建议哪些老总结该更新
+python3 pipeline/tools/prepare_update.py <doi> # (5a)备更新 → python3 pipeline/tools/update_auto.py → register_updates.py
+python3 pipeline/tools/cross_topic.py          # (6)跨主题（需≥2主题;自带全库引用边重建——commit 只建主题内的边）
+python3 pipeline/tools/audit_quality.py <id>   # 质量审计:回查已入库论文(拉OpenAlex最新撤稿/DOAJ);--apply 移除block级
 ```
 
 ## 质量评价体系（硬信号，2026-06-09 上线；2026-06-10 改"标记优先"）
@@ -97,9 +109,9 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
 ## Telegram 通知 + 对话 bot
 - bot @research_agentffbot；配置在 `config/telegram.json`（**gitignore，不入库**；token 是密钥）。
 - 基础层：`notify()` 一次性推送；`wait_for_reply()` 仅在一次运行卡住等用户时轮询。
-- 用途：Tier B 登录/Duo 提醒、进度、报错。CLI：`python3 pipeline/notify.py settoken|chatid|test`。
-- **对话 bot（2026-06-10 临时升级，照 Stock_agent/daily-digest/bot.py 移植）**：`pipeline/bot.py` 常驻长轮询，用户在 Telegram 上发任何话 → 转本机 `claude -p --resume`（opus、`--dangerously-skip-permissions`、cwd=仓库根，多轮记忆存 `logs/bot_session.txt`）；命令 `help`/`new`(清会话)/`log [N]`(看 run.log)。只认配置里的 chat_id。
-  - 启动：`cd ~/Projects/Research_agent && setsid nohup python3 -u pipeline/bot.py >> logs/bot.log 2>&1 &`；停：`kill $(cat logs/bot.pid)`。单例（bot.pid 活着就拒启）。**不随开机自启**——机器重启后要手动拉起。
+- 用途：Tier B 登录/Duo 提醒、进度、报错。CLI：`python3 pipeline/tools/notify.py settoken|chatid|test`。
+- **对话 bot（2026-06-10 临时升级，照 Stock_agent/daily-digest/bot.py 移植）**：`pipeline/tools/bot.py` 常驻长轮询，用户在 Telegram 上发任何话 → 转本机 `claude -p --resume`（opus、`--dangerously-skip-permissions`、cwd=仓库根，多轮记忆存 `logs/bot_session.txt`）；命令 `help`/`new`(清会话)/`log [N]`(看 run.log)。只认配置里的 chat_id。
+  - 启动：`cd ~/Projects/Research_agent && setsid nohup python3 -u pipeline/tools/bot.py >> logs/bot.log 2>&1 &`；停：`kill $(cat logs/bot.pid)`。单例（bot.pid 活着就拒启）。**不随开机自启**——机器重启后要手动拉起。
   - ⚠️ 与 tierb 协作：bot 常驻时独占 getUpdates，所以每条消息落一份 `logs/bot_inbox.jsonl`；`wait_for_reply()` 检测到 bot 在跑（logs/bot.pid 进程活着）就改读 inbox 并写 `logs/bot_wait.json` 声明关键词，bot 对命中关键词的消息只转交不回 claude。bot 死了自动回退老的 getUpdates 轮询。
 - 若换机器：`config/telegram.json` 不在仓库里，需要用户重新 `settoken` + `chatid`。
 
@@ -135,7 +147,7 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
 3. **知识库的三个出口（按近→远）**：
    - ① **用户本人来查答案**——`ask.py "<问题>" --answer`（已有）。
    - ② **别的项目里的 agent 做任务卡住时来查**——`ask.py --json` + 全局 `~/.claude/CLAUDE.md` 发现机制（已有）。
-   - ③ **🎯 idea→论文流水线**——用 academic agent（`ref/academic-research-skills`，ARS，CC BY-NC）吃这个库，从研究想法走到论文成稿。**桥已建好(2026-06-10)**：`pipeline/export_corpus.py <topicId|all> [--min-relevance N]` 导出 ARS Material-Passport `literature_corpus[]` YAML（严格对 schema：CSL 作者名、bibtex 风格 citation_key、无 year 拒绝不硬凑；quality_tier 走 tags+user_notes 出口标记；source_pointer 指本地 PDF；topic2 100 条实测过 schema 校验）。**设想流程**：用户给 idea → 流水线建主题攒语料(`run auto`) → `export_corpus` → ARS `academic-pipeline`(corpus-first,先吃我们的库、外搜补缺) → 研究报告/论文稿 → 引用的新论文回灌进库。**还没跑过一次真实 idea 全流程——那是终极验收,等用户回来一起试。** 注意:导出文件含摘要(版权),仅本地用勿外发。
+   - ③ **🎯 idea→论文流水线**——用 academic agent（`ref/academic-research-skills`，ARS，CC BY-NC）吃这个库，从研究想法走到论文成稿。**桥已建好(2026-06-10)**：`pipeline/tools/export_corpus.py <topicId|all> [--min-relevance N]` 导出 ARS Material-Passport `literature_corpus[]` YAML（严格对 schema：CSL 作者名、bibtex 风格 citation_key、无 year 拒绝不硬凑；quality_tier 走 tags+user_notes 出口标记；source_pointer 指本地 PDF；topic2 100 条实测过 schema 校验）。**设想流程**：用户给 idea → 流水线建主题攒语料(`run auto`) → `export_corpus` → ARS `academic-pipeline`(corpus-first,先吃我们的库、外搜补缺) → 研究报告/论文稿 → 引用的新论文回灌进库。**还没跑过一次真实 idea 全流程——那是终极验收,等用户回来一起试。** 注意:导出文件含摘要(版权),仅本地用勿外发。
 
 ## 待办 / 下一步
 - ✅ **(2026-06-09 完成)** 4 篇全文+总结;`fetch_tierb` 固化;`score_auto`/`summarize_auto`(claude -p);`run auto` 一条龙;**整套迁移到 Python**;**修了 recover_oa**(arxiv/repository 优先 + 用 ext_ids.arxiv 不只靠标题)。

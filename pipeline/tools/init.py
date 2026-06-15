@@ -1,6 +1,9 @@
 """Phase 0: create directory structure + initialize the SQLite database.
-Usage: python3 pipeline/init.py
+Usage: python3 pipeline/tools/init.py
 """
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, DB_PATH
 
 DIRS = ["db", "store/pdfs", "store/summaries", "store/text", "store/dl_tmp", "topics", "runs", "logs"]

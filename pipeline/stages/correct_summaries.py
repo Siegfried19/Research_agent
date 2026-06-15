@@ -2,13 +2,16 @@
 Unlike update_auto (integrates related work, no full text), this re-reads the
 PAPER FULL TEXT plus the confirmed issues and produces a corrected version vN+1.
 Input: store/correction_worklist.json  {"work":[{"paperId":..,"issues":[{quote,problem,severity}]}]}
-Usage: python3 pipeline/correct_summaries.py [concurrency]
+Usage: python3 pipeline/stages/correct_summaries.py [concurrency]
 """
 import json
 import sys
 from datetime import date
 from pathlib import Path
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, now_iso
 from lib.claude import run_claude, pool
 from lib.log import get_logger, run_log

@@ -4,7 +4,7 @@ OpenAthens) or bot-protected OA (Cloudflare). Fully scripted; the ONLY human ste
 is clicking a Cloudflare/Duo challenge when one appears (we pause + ping Telegram,
 then resume). Idempotent: skips papers already pdf_downloaded.
 
-  python3 pipeline/fetch_tierb.py <topicId>
+  python3 pipeline/stages/fetch_tierb.py <topicId>
 
 Hybrid download (proven 2026-06-09):
   B (preferred) — Chrome auto-downloads the PDF (we set always_open_pdf_externally
@@ -24,6 +24,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, load_config, now_iso
 from lib.log import run_log
 try:

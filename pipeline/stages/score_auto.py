@@ -5,11 +5,14 @@ format commit.py expects: [{id, relevance, reason, edge_insight, panel_objection
 Cross-model panel (config quality.codex_panel, default false): Codex reviews the
 same batch as a devil's advocate (reject reasons only, no veto); objections ride
 along in the batch files and are weighed at commit time.
-Usage: python3 pipeline/score_auto.py <topicId> [batchSize] [concurrency]
+Usage: python3 pipeline/stages/score_auto.py <topicId> [batchSize] [concurrency]
 """
 import json
 import sys
 
+# --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import ROOT, load_config
 from lib.claude import run_claude, pool
 from lib.log import get_logger, run_log
