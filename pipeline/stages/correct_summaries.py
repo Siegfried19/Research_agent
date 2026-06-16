@@ -1,12 +1,14 @@
 """Rewrite summaries that failed cross-model fact-check (verify_summaries.py).
-Unlike update_auto (integrates related work, no full text), this re-reads the
-PAPER FULL TEXT plus the confirmed issues and produces a corrected version vN+1.
+Unlike update_auto (integrates related work, no full text), claude re-reads the
+PAPER PDF directly (same as summarize_auto: sees formulas/figures/tables) plus
+the confirmed issues and produces a corrected version vN+1. No plain-text
+fallback — a paper with no PDF on disk is skipped + logged (mirrors sum).
 Input: store/correction_worklist.json  {"work":[{"paperId":..,"issues":[{quote,problem,severity}]}]}
 Usage: python3 pipeline/stages/correct_summaries.py [concurrency]
 """
 import json
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 # --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
@@ -15,9 +17,7 @@ _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)
 from lib.db import open_db, ROOT, now_iso
 from lib.claude import run_claude, pool
 from lib.log import get_logger, run_log
-from summarize_auto import full_text
 
-MAX_CHARS = 120000
 log = get_logger("correct")
 
 
@@ -59,7 +59,7 @@ def run_corrections(work, concurrency=2):
     conn = open_db()
     todo = []
     for w in work:
-        p = conn.execute("SELECT id, slug, title, text_path, pdf_path FROM papers WHERE id=?",
+        p = conn.execute("SELECT id, slug, title, pdf_path FROM papers WHERE id=?",
                          (w["paperId"],)).fetchone()
         if not p:
             log.info(f"skip (not in db): {w['paperId']}")
@@ -77,10 +77,17 @@ def run_corrections(work, concurrency=2):
             continue
         todo.append({"paperId": p["id"], "title": p["title"], "issues": w["issues"],
                      "currentPath": str(ROOT / cur["path"]), "nextVersion": nv, "outPath": str(out),
-                     "text_path": str(ROOT / p["text_path"]) if p["text_path"] else None,
                      "pdf_path": str(ROOT / p["pdf_path"]) if p["pdf_path"] else None})
     conn.close()
     log.info(f"correct_summaries: {len(work)} in worklist, {len(todo)} to do, concurrency={concurrency}")
+
+    no_pdf_log = ROOT / "store" / "correct_no_pdf.log"
+
+    def log_no_pdf(w):
+        # 一行一条:时间戳 \t paperId \t 标题。append 模式,单行短写在 POSIX 上原子,并发安全。
+        line = f"{datetime.now().isoformat(timespec='seconds')}\t{w.get('paperId') or ''}\t{w.get('title') or ''}\n"
+        with no_pdf_log.open("a", encoding="utf-8") as f:
+            f.write(line)
 
     def worker(w, _i):
         current_md = Path(w["currentPath"]).read_text(encoding="utf-8", errors="ignore")
@@ -90,20 +97,17 @@ def run_corrections(work, concurrency=2):
             cand = Path(pp) if Path(pp).is_absolute() else ROOT / pp
             if cand.exists():
                 pdf_abs = str(cand.resolve())
-        if pdf_abs:
-            # 直读 PDF:claude 用 Read 看公式/图/表再修正,跟 sum 撰写时同源
-            source = (f"==== 论文 PDF ====\n用 Read 工具读取以下 PDF 的**全部页面**"
-                      f"(超过 20 页用 pages 参数分批读完):\n{pdf_abs}\n"
-                      f"直接读 PDF 能看到公式/图/表;核对数字、方向、论断强度时一律以 PDF 原文为准。")
-            md = run_claude(cprompt(w["title"], current_md, w["issues"], w["nextVersion"],
-                                    w["paperId"], source), tools=["Read"], timeout=900)
-        else:
-            text = full_text(w)
-            if not text:
-                raise RuntimeError("no fulltext")
-            source = "==== 论文全文(纯文本) ====\n" + text[:MAX_CHARS]
-            md = run_claude(cprompt(w["title"], current_md, w["issues"], w["nextVersion"],
-                                    w["paperId"], source))
+        if not pdf_abs:
+            # 跟 sum 完全一致:无 PDF 不回退纯文本,只记一条日志(时间+paperId+标题)并跳过。
+            log_no_pdf(w)
+            log.info(f"  SKIP [no pdf] {(w['title'] or '')[:50]}")
+            return {"error": "no pdf"}
+        # 直读 PDF:claude 用 Read 看公式/图/表再修正,跟 sum 撰写时同源
+        source = (f"==== 论文 PDF ====\n用 Read 工具读取以下 PDF 的**全部页面**"
+                  f"(多页论文;若超过 20 页用 pages 参数分批读完,不要只读前几页):\n{pdf_abs}\n"
+                  f"直接读 PDF 能看到公式/图/表;核对数字、方向、论断强度时一律以 PDF 原文为准。")
+        md = run_claude(cprompt(w["title"], current_md, w["issues"], w["nextVersion"],
+                                w["paperId"], source), tools=["Read"], timeout=900)
         if not md or len(md) < 200:
             raise RuntimeError(f"bad output ({len(md)} chars)")
         Path(w["outPath"]).parent.mkdir(parents=True, exist_ok=True)

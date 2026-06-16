@@ -1,8 +1,10 @@
 """Cross-model fact-check of summaries (Codex checks what Claude wrote).
 Scope: ALL suspect-tier papers + corrected/updated summaries (v>=2 not yet
-re-checked) + a random sample of the rest (default 10%). Codex reads summary +
-full text, verifies numbers/claims, reports issues. REPORT ONLY — never modifies
-summaries (corrections are correct_summaries.py's job).
+re-checked) + a random sample of the rest (default 10%). Codex gets the summary +
+the paper PDF dropped into an isolated sandbox and reads it ITSELF (extracts text
+for numbers, renders pages for formulas/figures) — no pre-extracted text fed in.
+Verifies numbers/claims, reports issues. REPORT ONLY — never modifies summaries
+(corrections are correct_summaries.py's job).
 State: topics/<id>/verified.json maps paper_id -> last verified summary version,
 so re-runs sample fresh papers and corrected versions become eligible again.
 For auto-escalating rounds / full sweeps use escalate_verify.py.
@@ -26,27 +28,40 @@ from summarize_auto import full_text
 MAX_CHARS = 400000
 log = get_logger("verify")
 
-# 让 Codex 自己渲染 PDF:给它一个临时工作目录(拷入 paper.pdf)+ workspace-write 沙箱,
-# 涉及公式/图/表时它会自己把相关页面渲成图片再看(实测 gpt-5.5 会用 PIL/pdftoppm 渲染甚至裁剪放大)。
-# 关掉=纯文本核查(只喂 pdftotext 文本,公式/图表里的错查不出)。
+# B 选项(默认):纯把 PDF 扔给 Codex——给它隔离临时目录(拷入 paper.pdf)+ workspace-write 沙箱,
+# 它自己读全篇:命令行抽文本查数字 + 涉及公式/图/表时自渲染相关页面成图片再看
+# (实测 gpt-5.5 会用 PIL/pdftoppm 渲染甚至裁剪放大)。prompt 里不预喂抽取文本。
+# 关掉=调试/省钱模式:不开沙箱,把这份 PDF 的 pdftotext 文本喂进 prompt(同源,但公式/图表里的错查不出)。
+# 两种模式都以 PDF 为唯一原文来源;PDF 不在盘上 = 异常,记错误跳过(不退回 text_path 偷换来源)。
 USE_SELF_RENDER = (load_config().get("verify") or {}).get("codex_self_render", True)
 
 
-def vprompt(title, summary, text, truncated=False, self_render=False):
-    trunc_note = ("\n- ⚠️ 提供的原文在末尾被截断([原文已截断]标记)。对于给定原文中找不到、"
-                  "但可能位于截断部分的内容(如长综述后部的应用案例/附录数据),"
-                  "**不要计为问题**——核不到≠编造。只报告与给定原文**明确矛盾**的内容。"
-                  if truncated else "")
-    render_note = ("\n- 当前目录下有这篇论文的 PDF: **./paper.pdf**。纯文本抽取常把公式、图、表格弄乱或丢失,"
-                   "凡涉及公式/图表数据的核对,**请自己把相关页面渲染成图片(把图片放在当前目录)再看**,以页面图像为准,"
-                   "不要仅凭可能损坏的文本就判定总结有错。" if self_render else "")
-    return f"""你是独立的事实核查员(与撰写总结的模型不同,专查它的幻觉)。下面是一篇论文的中文总结和论文原文(纯文本){"，论文 PDF 也在当前目录可供你自行渲染查看" if self_render else ""}。
+def vprompt(title, summary, text=None, truncated=False, pdf_mode=False):
+    if pdf_mode:
+        # B:原文只以 PDF 形式给 Codex,prompt 里不放抽取文本,让它自己读全篇。
+        intro = "下面是一篇论文的中文总结,论文原文以 PDF 形式放在当前目录(./paper.pdf)。"
+        source_directive = ("\n- 当前目录下有这篇论文的 PDF: **./paper.pdf**,这是唯一的原文来源。"
+                            "**请你自己读取它来核查**:用命令行(如 pdftotext)抽出全文核对数字与论断,"
+                            "务必读完整篇、不要只看前几页;凡涉及公式/图/表的数据,把相关页面渲染成图片"
+                            "(放当前目录)再看,以页面图像为准,不要凭可能损坏的抽取文本就判总结有错。")
+        trunc_note = ""
+        source_block = "==== 论文原文 ====\n见当前目录的 ./paper.pdf(按上面要求自行读取)"
+    else:
+        # 兜底:PDF 不在盘上(或开关关闭),退回把抽取文本直接喂进 prompt。
+        intro = "下面是一篇论文的中文总结和论文原文(纯文本)。"
+        source_directive = ""
+        trunc_note = ("\n- ⚠️ 提供的原文在末尾被截断([原文已截断]标记)。对于给定原文中找不到、"
+                      "但可能位于截断部分的内容(如长综述后部的应用案例/附录数据),"
+                      "**不要计为问题**——核不到≠编造。只报告与给定原文**明确矛盾**的内容。"
+                      if truncated else "")
+        source_block = f"==== 论文原文 ====\n{text}"
+    return f"""你是独立的事实核查员(与撰写总结的模型不同,专查它的幻觉)。{intro}
 
 你的唯一任务:核对总结中的**数字和关键论断**是否有原文依据。逐条检查:
 - 总结里的每个具体数字(指标、样本量、提升幅度)在原文中是否存在且未被歪曲
 - 总结归给作者的每个关键论断,原文是否真的这么说(注意"作者声称X"被写成"X成立"的偷换)
 - 是否有原文完全没有的内容被编进总结
-不要评价总结的文笔/完整性/选材,只查"有没有依据"。{render_note}
+不要评价总结的文笔/完整性/选材,只查"有没有依据"。{source_directive}
 例外(跳过不查):
 - 总结标题下方以 "> " 开头的元信息行(作者/年份/venue/引用数/DOI)来自我们的文献数据库,不是从论文里抄的;YAML 头(--- 包围)同理。
 - "局限与我的质疑"一节中**总结者自己的批判与评注**(对论文领域地位/历史影响的判断、与我们研究主题契合度的评价、对后续工作的展望、标注"(总结者注)"的内容)——这些本来就不是论文论断,不需要原文依据。但该节中**转述作者自述局限**的部分仍要核。{trunc_note}
@@ -62,8 +77,7 @@ def vprompt(title, summary, text, truncated=False, self_render=False):
 ==== 中文总结 ====
 {summary}
 
-==== 论文原文 ====
-{text}"""
+{source_block}"""
 
 
 def parse_obj(out):
@@ -114,27 +128,31 @@ def verify_batch(picked, concurrency):
         spath = ROOT / r["summary_path"]
         if not spath.exists():
             return {"id": r["id"], "error": "summary file missing"}
-        w = {"id": r["id"], "text_path": str(ROOT / r["text_path"]) if r.get("text_path") else None,
-             "pdf_path": str(ROOT / r["pdf_path"]) if r.get("pdf_path") else None}
-        # prefer_pdf:核查者直接读 PDF 抽的文本,跟撰写者(sum 直读 PDF)读同一份源,
-        # 避免拿到一份不同来源/可能过时的 text_path。文本管全量查数字。
-        text = full_text(w, prefer_pdf=True)
-        if not text:
-            return {"id": r["id"], "error": "no fulltext"}
-        truncated = len(text) > MAX_CHARS
-        sent = text[:MAX_CHARS] + ("\n\n[原文已截断:超出长度上限,以上仅为前一部分]" if truncated else "")
-        # 自渲染模式:给 Codex 一个隔离的临时工作目录(拷入 paper.pdf)+ workspace-write,
-        # 涉及公式/图表它会自己渲染相关页面再看。scratch 全在 tmpd 里,finally 清掉。
+        w = {"id": r["id"], "pdf_path": str(ROOT / r["pdf_path"]) if r.get("pdf_path") else None}
+        summary = spath.read_text(encoding="utf-8")
+        # summarized 的篇必然曾有 PDF(sum 阶段无 PDF 直接跳过、不产出总结)。这里没 PDF =
+        # 异常(被删/移动)→ 记错误跳过、进报告"未能核查"让人看,绝不退回 text_path 等别的来源
+        # 去核一份本就从 PDF 写出来的总结(那正是我们要摆脱的偷换来源)。
+        if not (w["pdf_path"] and Path(w["pdf_path"]).exists()):
+            return {"id": r["id"], "error": "no pdf on disk (anomaly: summarized paper lost its PDF)"}
         tmpd, sandbox, cwd = None, None, None
-        self_render = USE_SELF_RENDER and w["pdf_path"] and Path(w["pdf_path"]).exists()
-        if self_render:
+        if USE_SELF_RENDER:
+            # B:纯把 PDF 扔给 Codex——隔离临时目录(拷入 paper.pdf)+ workspace-write,
+            # 让它自己读全篇(抽文本查数字 + 按需渲染页面看公式/图表),不预喂抽取文本。
             tmpd = Path(tempfile.mkdtemp(prefix="vfy_cdx_"))
             shutil.copy2(w["pdf_path"], tmpd / "paper.pdf")
             sandbox, cwd = "workspace-write", str(tmpd)
+            prompt, timeout = vprompt(r["title"], summary, pdf_mode=True), 900
+        else:
+            # 调试/省钱:不开沙箱,把这份 PDF 的 pdftotext 文本喂进 prompt(同源,但看不到公式/图表)。
+            text = full_text(w, prefer_pdf=True)
+            if not text:
+                return {"id": r["id"], "error": "pdf on disk but text extraction failed"}
+            truncated = len(text) > MAX_CHARS
+            sent = text[:MAX_CHARS] + ("\n\n[原文已截断:超出长度上限,以上仅为前一部分]" if truncated else "")
+            prompt, timeout = vprompt(r["title"], summary, sent, truncated, pdf_mode=False), 600
         try:
-            out = run_codex(vprompt(r["title"], spath.read_text(encoding="utf-8"),
-                                    sent, truncated, self_render=bool(self_render)),
-                            sandbox=sandbox, cwd=cwd, timeout=900 if self_render else 600)
+            out = run_codex(prompt, sandbox=sandbox, cwd=cwd, timeout=timeout)
         except Exception as e:
             if "usage limit" in str(e).lower():
                 tripped.append(True)
