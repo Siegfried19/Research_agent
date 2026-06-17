@@ -31,6 +31,7 @@
 7. **重建可重建物**:`python3 pipeline/ask.py --reindex`(FTS 索引);缺全文的话按主题重跑下载各阶段。
 8. **(出口③用到再做)** `git clone https://github.com/Imbad0202/academic-research-skills ref/academic-research-skills`(gitignored,CC BY-NC)。
 9. **封存件(默认不装)**:手机过验证 remote_view 需要 x11vnc/websockify/`vendor/novnc` + 密钥重新生成——见 CLAUDE.md"手机过验证"节。
+10. **(常开机器自动跑)夜间 cron 部署**:整套要在一台常开机器上半夜自动跑(白天留 token 给用户),部署步骤 + cron 行 + 干净环境的 PATH 坑 → 见 **`docs/nightly-cron-deploy.md`**(`run.py` 的 `auto-pull` 白天有人那半 / `auto-sum` 夜间无人那半)。
 
 ## 附录 A — `~/.claude/CLAUDE.md` 全文(全局发现机制,照抄)
 
