@@ -1,0 +1,149 @@
+[
+  {
+    "kind": "contribution",
+    "point": "提出 P3O 算法，把带约束的策略迭代转化为对一个等价无约束问题的单次最小化求解。",
+    "quote_en": "we propose Penalized Proximal Policy Optimization (P3O), which solves the cumbersome constrained policy iteration via a single minimization of an equivalent unconstrained problem",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "P3O 用一个惩罚函数消除成本约束，并用 clipped surrogate objective 去掉信赖域约束。",
+    "quote_en": "P3O utilizes a simple-yet-effective\npenalty function to eliminate cost constraints and\nremoves the trust-region constraint by the clipped\nsurrogate objective",
+    "where": "p.1 Abstract",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "作者从理论上证明了在惩罚因子有限大时该方法的精确性，并对采样轨迹评估时的近似误差给出最坏情况分析。",
+    "quote_en": "We theoretically prove the exactness of the proposed method with a fnite penalty\nfactor and provide a worst-case analysis for approximate error when evaluated on sample trajectories",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "现有基于二次近似的算法存在四个缺点：凸近似带来不可忽略的近似误差、只学到接近可行的策略；闭式解涉及 Hessian 矩阵求逆、计算昂贵；多约束时需额外内循环；初始不可行时需额外交互恢复、降低样本效率。",
+    "quote_en": "(1) The\nconvex approximation to a non-convex policy optimization\nresults in non-negligible approximate errors and only learns\nnear constraint-satisfying policies; (2) The closed-form solution to the primal problem involves the inversion of Hessian\nmatrix",
+    "where": "p.1 §1 Introduction",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "P3O 用 ReLU 算子把约束惩罚进目标函数，得到无约束目标（问题3）：在原始的负 reward 优势项上加 κ 乘以各约束违反量的 max{0,·}。",
+    "quote_en": "we penalize constraints with ReLU operators to the\nobjective function which yields an unconstrained problem",
+    "where": "p.3 §4 Eq.(3)",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "作者声称这是首个从精确惩罚法视角求解约束策略优化的工作。",
+    "quote_en": "To our best knowledge, it is the frst\nwork to solve the constrained policy optimization in the perspective of the exact penalty method",
+    "where": "p.3 §4",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "Theorem 1：设 λ̄ 是问题(2)最优解对应的拉格朗日乘子向量，当惩罚因子 κ 取足够大常数（κ≥||λ̄||∞）时，问题(2)与问题(3)共享同一最优解集。",
+    "quote_en": "Let the penalty\nfactor κ be a suffciently large constant (κ ≥ ||λ¯||∞), problem (2) and problem (3) share the same optimal solution set",
+    "where": "p.3 Theorem 1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "Theorem 2：用问题(4)替换问题(3)（即用 dπk 近似 dπ）时，最坏情况近似误差为 O(κm√δ)，其中 δ 为相邻策略的 KL 散度期望。",
+    "quote_en": "The worst-case approximate error is O(κm√\nδ) if we replace\nproblem (3) with problem (4)",
+    "where": "p.3 Theorem 2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "最终 P3O 目标 Eq.(5)：L^P3O(θ)=L^CLIP_R(θ)+κ·Σ_i max{0, L^CLIP_Ci(θ)}，其中 reward 项与成本项都用裁剪重要性采样比来约束策略更新落在信赖域内。",
+    "quote_en": "L\nP3O(θ) = LCLIP\nR (θ) + κ ·\nX\ni\nmax{0,L\nCLIP\nCi (θ)}",
+    "where": "p.4 Eq.(5)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "P3O 目标的第一项与标准 PPO 相同，其余项是裁剪后的约束目标，用一阶优化器（Adam）即可求解，几乎处处可微。",
+    "quote_en": "Note that the frst term in the P3O objective (5) is the same\nas standard PPO and the rest terms are the clipped constraint\nobjectives",
+    "where": "p.4 §4",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "实践中通过自适应增大 κ（κ←min{ρκ,κmax}, ρ>1）+ 早停，以及对优势估计做近似标准正态归一化的技巧，使得固定 κ 也能在不同任务上取得普遍良好结果。",
+    "quote_en": "We fnd this technique enables a fxed κ for\ngeneral good results across different tasks",
+    "where": "p.4 §4 / Algorithm 2",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "在单约束任务上，P3O 相对 CPO/PPO-Lagrangian/FOCOPS 在 AntCircle 上 reward 分别高 +15%、+24%、+9%，在 PointGather 上分别高 +34%、+23%、+31%。",
+    "quote_en": "The proposed P3O algorithm has +15%, +24%, +9% higher reward improvement\nover CPO, PPO-Lagrangian, FOCOPS on the AntCircle task,\nand +34%, +23%, +31% on the PointGather task respectively",
+    "where": "p.5 §5 Single-Constraint",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Table 1 报告单约束任务上的均值±95%置信区间：AntCircle 上 P3O reward 253.92±11.67（CPO 214.45 / PPO-L 189.82 / FOCOPS 232.08），cost(≤50) 为 46.18±7.49（CPO 57.66 超限 / PPO-L 27.71 / FOCOPS 34.50）。",
+    "quote_en": "Mean performance with normal 95% confdence interval on single-constraint tasks",
+    "where": "p.5 Table 1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Table 1：PointGather 上 P3O reward 4.57±0.54（CPO 3.11 / PPO-L 3.49 / FOCOPS 3.14），cost(≤0.5) 为 0.51±0.10（CPO 0.73 超限 / PPO-L 0.48 / FOCOPS 0.51）。",
+    "quote_en": "Mean performance with normal 95% confdence interval on single-constraint tasks",
+    "where": "p.5 Table 1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "每个算法跑 5 个不同随机种子；cost 图中虚线为约束阈值，Circle 为 50、Gather 为 0.5。",
+    "quote_en": "Each tested algorithm runs\nover fve different seeds. The dashed line in the cost plot is the constraint threshold which is 50 for Circle and 0.5 for Gather",
+    "where": "p.5 Figure 2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "作者观察到 P3O 更紧地收敛到约束上限，而 CPO 因 Taylor 近似存在更多约束违反、收敛后甚至无法满足约束；PPO-Lagrangian 过于保守且学习曲线波动大。",
+    "quote_en": "CPO\nhas more constraint violations and even fails to satisfy the\nconstraint after convergence possibly due to Taylor’s approximation",
+    "where": "p.5 §5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "敏感性分析：P3O 只引入一个额外超参（惩罚因子 κ），在较宽的 κ 取值范围内实验结果稳定，且在不同 cost limit d（25/50/75/100）下都能学到满足约束的策略并精确收敛到上限。",
+    "quote_en": "The experimental results are stable in a wide range of\nκ",
+    "where": "p.5 §5 Sensitivity Analysis / Figure 4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "多约束（Navigation，hazards 阈值25 / pillars 阈值20）场景：只约束单一成本的算法会满足该约束但失控另一个，两个约束都纳入 P3O 时各自都在收敛时被满足，代价是 episode return 低于无约束与单约束设置。",
+    "quote_en": "When both constraints are incorporated into our algorithm, each one is well satisfed at the\nconvergence. The episode return is lower than unconstrained\nand single-constrained settings",
+    "where": "p.6 §5 Multi-Constraint / Figure 5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "多智能体（Simple Spread）场景：把 MAPPO 损失换成 Eq.(5) 得到 MAP3O，可在保证互碰约束的同时提升总 reward；学习一个集中式 critic 的版本 reward 更好、约束满足更严格。",
+    "quote_en": "The centralized version of MAP3O has better reward performance\nand satisfes the constraint more strictly",
+    "where": "p.6 §5 Multi-Agent / Figure 6",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "P3O 三大优点：精确（一阶优化等价无约束目标）、可行（容许任意初始化、不需可行性恢复）、可扩展（天然支持多约束/多智能体而不增加复杂度）。",
+    "quote_en": "(1) accuracy: P3O algorithm is accurate and\nsample-effcient with frst-order optimization over a theoretically equivalent unconstrained objective",
+    "where": "p.1 §1 Introduction",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "与最相似的 IPO（用 log-barrier 作惩罚项）相比：IPO 需要初始可行策略且 log-barrier 在惩罚项趋于无穷时会有数值问题、解未必与原问题一致；P3O 用精确惩罚函数得到等价无约束目标。",
+    "quote_en": "the log-barrier function possibly leads to numerical issues when the penalty term goes towards infnity, or the solution is not exactly the same as the primal problem",
+    "where": "p.2 §2 Related Work",
+    "strength": null
+  }
+]

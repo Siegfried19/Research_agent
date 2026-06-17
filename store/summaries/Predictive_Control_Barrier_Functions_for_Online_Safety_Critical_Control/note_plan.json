@@ -1,0 +1,170 @@
+[
+  {
+    "kind": "contribution",
+    "point": "提出预测式控制屏障函数(PCBF):沿名义轨迹前瞻性地考虑系统未来安全,在轨迹离开安全集之前就采取纠正动作。",
+    "quote_en": "This paper presents a methodology for constructing Control Barrier Functions (CBFs) that proactively consider the future safety of a system along a nominal trajectory, and effect corrective action before the trajectory leaves a designated safe set.",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "相比已有CBF技术,该策略是主动(proactive)而非反应式(reactive),因而可能对名义轨迹做更小的修改。",
+    "quote_en": "Compared to existing CBF techniques, this strategy is proactive rather than reactive and thus potentially results in smaller modifications to the nominal trajectory.",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "仿真中,PCBF对名义轨迹的修改更少、控制输入更小(对比传统CBF),计算比非线性MPC更快。",
+    "quote_en": "In simulation, the predictive CBF results in less modification to the nominal trajectory and smaller control inputs than a traditional CBF, and faster computations than a nonlinear model predictive control approach.",
+    "where": "p.1 Abstract",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "传统CBF的缺陷:CBF条件是反应式(又称myopic),只看当前状态与状态导数的安全性,不考虑系统未来目标。",
+    "quote_en": "one drawback of CBFs is that the CBF condition is reactive (frequently called myopic [2]); i.e., CBFs only consider the safety of the current state and state derivative, rather than considering future objectives of the system.",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "PCBF以模型预测方式同时编码系统当前与未来的安全性,同时仍对当前控制输入给出便捷的CBF条件。",
+    "quote_en": "Intuitively, PCBFs are functions that encode both the present and future safety of the system in a model-predictive manner, while still providing the convenient CBF condition on the current control input.",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "与MPC不同,即使动力学和约束非线性,CBF条件始终是控制仿射的,且只作用于当前控制输入。",
+    "quote_en": "Unlike MPC, the CBF condition is always control-affine, even when the dynamics and constraints are nonlinear. The CBF condition also only applies to the current control input rather than to a predicted horizon of control inputs.",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "PCBF下的控制输入可用小维度、仿射约束的二次规划(QP)求解,比非线性MPC更易解。",
+    "quote_en": "the control input under a PCBF can be computed using a Quadratic Program (QP) with small dimension and affine constraints, which can be solved more easily than nonlinear MPC",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "PCBF不引入固定离散化,因此在整个预测视界的所有时刻都保证安全,而非仅在MPC采样时刻。",
+    "quote_en": "as the PCBF approach does not introduce a fixed discretization, safety is guaranteed at all times in the prediction horizon rather than just at the MPC sampled times.",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "局限(作者自述):PCBF尚不支持采样数据(sampled-data)控制器,而MPC支持。",
+    "quote_en": "That said, the PCBF does not yet support sampled-data controllers, as does MPC.",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "相比Backup CBF,PCBF沿名义目标(允许不安全)传播轨迹,不需事先已知后备控制器或后备集,轨迹也不被限制在后备集附近。",
+    "quote_en": "a backup controller or backup set does not need to be known a priori [11], and the system trajectories are not limited to evolving near the backup set, which may be overly conservative.",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "局限(作者自述):与Backup CBF不同,PCBF不保证输入约束满足,这是未来研究方向。",
+    "quote_en": "unlike Backup CBFs, PCBFs do not guarantee input constraint satisfaction, though this is an area for future study.",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "由于生成的路径不要求安全,本文把安全性从路径p的计算中解耦,从而可用很简单的名义路径。",
+    "quote_en": "this paper decouples safety from the computation of p, and thus enables the use of very simple nominal paths.",
+    "where": "p.3 §III-A",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "核心构造:预测安全函数 hp 同时编码系统沿路径p的未来安全h,以及路径p变得不安全的时刻R。",
+    "quote_en": "The function hp in (11) encodes both the future safety h of the system along p, and the time R at which the path p becomes unsafe.",
+    "where": "p.3-4 §III-C 式(11)",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "理论上(Theorem 1)证明H*的零下水平集是安全集的子集,因此令该集前向不变足以让轨迹始终待在安全集内;作者称整个策略被证明是可证安全的。",
+    "quote_en": "The proposed strategy is shown to be provably safe, and then is demonstrated in simulated scenarios where it would otherwise be difficult to construct a traditional CBF.",
+    "where": "p.1 Abstract / p.4 Theorem 1",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "主定理Theorem 2:在温和假设下,H*是一个控制屏障函数(CBF),因而可经CBF条件用于保证安全。",
+    "quote_en": "Then H∗in (13) is a CBF.",
+    "where": "p.5 §III-C Theorem 2",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "方法不对h的相对度(relative-degree)做任何假设;对许多系统,即使h本身不是CBF,该方法也能生成CBF H*。",
+    "quote_en": "we have not made any assumptions on the relative-degree of h. For many systems, such as those in Section IV, this method will generate a CBF H∗even when h is not a CBF.",
+    "where": "p.6 §III-C",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "案例一(十字路口)把两辆车建模为双积分器 z¨1=u1, z¨2=u2,并与指数CBF(ECBF)和相同预测视界的非线性MPC对比。",
+    "quote_en": "we also simulated this case with safety governed by an Exponential CBF [17] and via nonlinear MPC using the same prediction horizon.",
+    "where": "p.6 §IV-A",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "案例一结果:PCBF与MPC表现大体相近,两车都接近后从路口两侧继续通过;而ECBF使两个智能体都完全停车,谁都没通过路口。",
+    "quote_en": "the PCBF and MPC performed generally similarly, with both cars approaching close and then continuing on opposite sides of the intersection. On the other hand, the ECBF caused both agents to come to a complete stop, so neither agent made it through the intersection.",
+    "where": "p.7 §IV-A 图3-4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "案例一每次控制计算平均耗时:ECBF 0.0034s、PCBF 0.050s、MPC 0.98s(均在2.6GHz笔记本CPU上)。",
+    "quote_en": "the computation time per control computation was 0.0034 s for the ECBF, 0.050 s for the PCBF, and 0.98 s for the MPC approach, all on a 2.6 GHz laptop CPU",
+    "where": "p.7 §IV-A",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "案例二(卫星避撞)安全约束 h=ρ−‖r1−r2‖,ρ=1km;该场景对已有CBF/梯度方法不好处理,因卫星轨速很大,h可从很负快速变到零。",
+    "quote_en": "the satellites necessarily orbit at large velocities, so h may rapidly change from very negative to zero.",
+    "where": "p.7 §IV-B",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "案例二结果:PCBF在不安全预测进入视界的t=367s即采取微小控制动作;ECBF晚得多才动作,届时所需推力是10倍以上。",
+    "quote_en": "the PCBF trajectory (blue) takes a small control action as soon as the unsafe prediction enters the horizon at t = 367 s, and then is very similar to the nominal trajectory (red). On the other hand, the ECBF trajectory (green) takes control action much later, when over 10 times as much thrust is required.",
+    "where": "p.7 §IV-B 图5-6",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "案例二中MPC不可行:h>0仅持续0.14秒,相同长度预测视界需要超过10^4个采样点,使MPC问题(及多数在线轨迹搜索算法)难以处理。",
+    "quote_en": "h > 0 occurs for only 0.14 seconds since the satellites are moving so fast. Thus, utilizing the same length of prediction horizon would require more than 104samples, making the MPC problem (and most other online trajectory search algorithms) intractable.",
+    "where": "p.7 §IV-B",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "结论:该方法相比传统CBF减少了CBF条件对名义路径的侵入,且与MPC表现相近但计算时间降低一个数量级、无需线性化。",
+    "quote_en": "The approach reduces the degree to which the CBF condition intrudes on the nominal path compared to a traditional CBF in simulation, and performs similarly to an MPC approach while reducing computation times by an order of magnitude and avoiding the need for linearizations.",
+    "where": "p.7 §V",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "未来工作(作者自述):扩展到考虑输入约束,以及把安全保证扩展到带分布式控制器的多智能体集合。",
+    "quote_en": "extending the safety guarantees to collections of agents with distributed controllers.",
+    "where": "p.7 §V",
+    "strength": null
+  }
+]

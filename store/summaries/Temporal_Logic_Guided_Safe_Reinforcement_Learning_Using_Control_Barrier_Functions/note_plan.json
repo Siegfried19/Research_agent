@@ -1,0 +1,233 @@
+[
+  {
+    "kind": "method",
+    "point": "用时序逻辑(scTLTL)指定任务,把公式的鲁棒度(robustness degree)自动转成奖励函数,用户只需写逻辑公式",
+    "quote_en": "In this work, we use the robustness degree of temporal logic formulas as the reward function which is also constructed with nested min/max functions. However, the user only needs to specify the task as a logic formula and the transformation to the reward function is performed automatically.",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "鲁棒度有严格语义:大于零即表示任务完成",
+    "quote_en": "The robustness reward also has rigorous semantics such that a value greater than zero indicates completion of the task.",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "提出用时序逻辑及其等价有限状态自动机(FSA)的三种用法:给RL提供奖励、为CLF做目标选择以引导探索、为CBF定义安全集",
+    "quote_en": "we propose three ways to use temporal logic and its equivalent finite state automata (FSA) in our system - provide reward for the RL agent, perform goal selection for the control Lyapunov function for guided exploration and define safe sets for the control barrier functions.",
+    "where": "p.1 §I 贡献列表",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "扩展FSA增广MDP框架以处理硬约束和规范违反",
+    "quote_en": "we extend the FSA augmented MDP framework [9] to handle hard constraints and violation of specifications.",
+    "where": "p.1 §I 贡献列表",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "把整个系统整合进一个可高效求解的二次规划(QP)",
+    "quote_en": "we integrate the system into a quadratic program that can be solved efficiently.",
+    "where": "p.1 §I 贡献列表",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "在带安全约束、已知系统动力学、未知环境动力学的仿真连续控制任务上演示框架,并研究每个组件的作用与效果",
+    "quote_en": "we demonstrate the applicability of our framework in a simulated continuous control task with safety constraints, known system dynamics and unknown environmental dynamics, and study the use and effectiveness of each component in the system.",
+    "where": "p.1 §I 贡献列表",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "FSA增广MDP的奖励鼓励系统离开当前自动机状态、进入下一个,从而最终到达满足规范的终止状态",
+    "quote_en": "Intuitively, the reward function in Equation (5) encourages the system to exit the current automaton state and move on to the next, and by doing so eventually reach the final state",
+    "where": "p.3 §III-C",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "用陷阱状态(trap states)显式处理规范违反:进入陷阱状态即无法再满足规范,修改后的奖励同时惩罚进入陷阱状态",
+    "quote_en": "This problem can be solved by adding an additional set of trap states",
+    "where": "p.3 §V / p.4 §V-A",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "奖励本身不阻止智能体在学习中违反规范,智能体反而需要探索陷阱状态来学习(故有自环),测试时可选择进入陷阱状态即终止",
+    "quote_en": "It is important to note that r˜ in Equation (11) does not prevent the RL agent from violating",
+    "where": "p.4 §V-A",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "CLF目标选择:挑当前状态下最容易激活的、通向非陷阱状态的出边,取使该边守卫谓词鲁棒度最大的MDP状态作为目标",
+    "quote_en": "The intuition behind goal selection using the FSA is to find the outgoing edge (leading to a non-trap state) that is easiest for the agent to activate at its current state.",
+    "where": "p.4 §V-B",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "找到目标sg后用一个简单的二次型CLF;案例研究采用该CLF",
+    "quote_en": "Other CLFs that meet the criteria in Equation (8) can also be used. For simplicity, the above CLF will be adopted in our case studies.",
+    "where": "p.4 §V-B 式(13)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "CBF约束:把FSA中守卫谓词解释为安全集,通过先转为合取范式(CNF)来阻止智能体进入陷阱状态",
+    "quote_en": "We exploit the fact that the guarding predicates ψ in an FSA are propositional logic formulas of inequality constraints over states. They can be naturally interpreted as safe sets and incorporated into the CBF.",
+    "where": "p.4 §V-C",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "QP中松弛变量δ在CBF与CLF约束冲突时增大;K取很大的正常数(约1e10)",
+    "quote_en": "K is chosen to be a large positive constant (∼ 1e",
+    "where": "p.3 命题1 式(9)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "把RL动作arl与CLF、CBF动作相加注入已知系统动力学,通过求解TL-CLF-CBF QP(式16)得到安全动作",
+    "quote_en": "arl is the action provided by the RL agent.",
+    "where": "p.5 §V-D 式(15)(16)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "框架同时结合基于模型的规划与无模型学习,可利用已知动力学也能处理未知动力学",
+    "quote_en": "The system also combines model-based planning and model-free learning so that knowledge about the system dynamics can be taken advantage of while unknown dynamics can also be handled.",
+    "where": "p.5 §V-D",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "RL组件用PPO作为学习算法",
+    "quote_en": "we use proximal policy optimization (PPO) [28] as the learning algorithm.",
+    "where": "p.6 §VI-D",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "策略网络为前馈网络,3个隐层分别300/200/100个ReLU单元,值函数同结构",
+    "quote_en": "The policy is represented by a feed-forward neural network with 3 hidden layers of 300, 200, 100 ReLU units respectively. The value function is of the same architecture.",
+    "where": "p.6 §VI-D",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "每个episode时间horizon T=200步,每次更新迭代收集5条轨迹的批,目标区位置episode间随机",
+    "quote_en": "Each episode has horizon T = 200 steps and the positions of the goal regions are randomized between episodes",
+    "where": "p.6 §VI-D",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "每次更新收集5条轨迹的批",
+    "quote_en": "We collect a batch of 5 trajectories for each update iteration.",
+    "where": "p.6 §VI-D",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "智能体MDP状态含位置朝向[x,y,θ]及所有目标与移动障碍位置(13连续维),加1维离散FSA状态共14维",
+    "quote_en": "Combined with 1 discrete dimension for the FSA state (from construction of the FSA augmented MDP), the total state space is 14 dimensional.",
+    "where": "p.5 §VI-B",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "智能体采用独轮车(unicycle)模型,控制量为前进速度av与转向速度aθ;系统欠驱动不可控,用偏移参考点改写为全驱动形式",
+    "quote_en": "The agent's controls are the forward velocity av and steering speed aθ.",
+    "where": "p.5 §VI-B / p.6 式(17)(18)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "仿真环境:一个已知动力学的智能体、两条直线构成的必须留在内部的通道安全约束、三个圆形目标区(episode内固定、episode间随机)、两个动力学未知的移动障碍",
+    "quote_en": "two obstacles that move in the vicinity of the channel and whose dynamics are unknown.",
+    "where": "p.5 §VI-A 图3",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "四种配置(纯RL、RL+CBF、RL+CLF、RL+CBF+CLF)的折扣回报最终性能相近",
+    "quote_en": "We can see that all configurations are able to achieve similar end performance.",
+    "where": "p.6 §VI-E 图4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "带CLF的配置在学习初期上升更快(收敛起步更快)",
+    "quote_en": "The configurations with CLF exhibit faster rising time at the beginning of the learning process.",
+    "where": "p.6 §VI-E 图4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "带CLF的学习曲线方差和波动更大",
+    "quote_en": "it can also be observed that the learning curves with CLFs show higher variances and volatility.",
+    "where": "p.6 §VI-E 图4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "CBF能在整个学习过程中始终阻止智能体违反安全约束",
+    "quote_en": "We can see that the CBF is able to prevent the agent from violating the safety constraints at all times during learning.",
+    "where": "p.6 §VI-E 图5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "无CBF的配置因为有违反惩罚也会逐渐学到减少违反",
+    "quote_en": "For configurations without CBF, because a violation penalty is imposed on the agent (Equation (11)), it also gradually learns to minimize violation.",
+    "where": "p.6 §VI-E 图5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "无CBF的配置能与障碍保持更远距离,因为它允许智能体走出安全区",
+    "quote_en": "The agent is able to keep a further distance from the obstacles in configurations without CBF as this configuration allows the agent to travel outside the safe zone.",
+    "where": "p.6 §VI-E 图6",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "在20次评估试验上,带CBF训练的智能体成功率更高(评估时CBF始终开启)",
+    "quote_en": "The results show that the agents trained with CBF exhibits higher success rates.",
+    "where": "p.7 图8",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "评估在20次试验上统计成功率",
+    "quote_en": "Figure 8 shows the evaluation success rate over 20 trials.",
+    "where": "p.7 图8",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "CLF+CBF(无RL)配置中,CBF把智能体停在安全区边界导致卡住,且因CLF/CBF都不知障碍动力学而发生碰撞;加入RL后智能体学会改去g1完成任务",
+    "quote_en": "CLF still commands the agent to g2, however, CBF stops the agent at the border of the safety zone and the agent is stuck.",
+    "where": "p.7 图7(c)(d)",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "系统含大量超参(cr、w、K、α、c3及控制界),学习过程与最终性能明显受其影响",
+    "quote_en": "We find that the learning process and the final performance of the",
+    "where": "p.7-8 §VI-E",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "作者自述未来工作:减轻用户调参负担",
+    "quote_en": "An important future work is therefore to alleviate the burden of parameter tuning from the user.",
+    "where": "p.8 §VI-E",
+    "strength": "supported"
+  }
+]

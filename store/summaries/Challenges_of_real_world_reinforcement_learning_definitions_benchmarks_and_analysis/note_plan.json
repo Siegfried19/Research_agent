@@ -1,0 +1,233 @@
+[
+  {
+    "kind": "contribution",
+    "point": "论文把阻碍RL落地的现实困难归纳为九大挑战。",
+    "quote_en": "We posit that these difficulties can be well summarized by a set of nine challenges that are holding back RL from real-world use.",
+    "where": "p.2420 §1",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "作者的目标是识别并形式化一组独立挑战,这些挑战体现了RL要在真实系统中常规部署必须解决的难点。",
+    "quote_en": "In this work, we identify and formalize a series of independent challenges that embody the difficulties that must be addressed for RL to be commonly deployed in real-world systems.",
+    "where": "p.2419 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "提出开源连续控制环境套件 realworldrl-suite 作为基准。",
+    "quote_en": "Our proposed challenges are implemented in a suite of continuous control environments called",
+    "where": "p.2419 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "论文声称做出四项主要贡献。",
+    "quote_en": "This paper presents four main contributions:",
+    "where": "p.2422 §1.2",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "套件扩展自 DeepMind Control Suite,横跨8个任务、内含七类挑战wrapper。",
+    "quote_en": "Seven real-world challenge wrappers (mentioned above) across 8 DeepMind Control Suite tasks",
+    "where": "p.2453 §4",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "用两个SOTA算法做基准:DMPO 和 D4PG。",
+    "quote_en": "Distributional Maximum a Posteriori Policy Optimization (DMPO) (Abdolmaleki et al. 2018a) and Distributed Distributional Deterministic Policy Gradient (D4PG) (Barth-Maron et al. 2018).",
+    "where": "p.2424 §2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "选这两个算法因为它们在dm-control上是SOTA、且算法本质不同(EM式随机策略 vs 确定性策略梯度)。",
+    "quote_en": "We chose these two algorithms for benchmarking performance as they (1) yield SOTA performance on the dm-control suite",
+    "where": "p.2424 §2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "D4PG对critic估计做了四项改动。",
+    "quote_en": "D4PG makes four changes to improve the critic estimation (and thus the policy): evaluating n-step rather than 1-step returns, performing a distributional critic update",
+    "where": "p.2424 §2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "每个算法在4个任务上跑30K episodes、5个随机种子。",
+    "quote_en": "Each algorithm is run for 30 K episodes on 5 different seeds",
+    "where": "p.2424 §2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "默认报告最后100个episode的均值表现及其标准差。",
+    "quote_en": "the mean performance reported in each graph is the mean performance of the last 100 episodes of training with the corresponding standard deviation.",
+    "where": "p.2424 §2",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "样本效率上,DMPO在所有任务上的归一化regret都高于D4PG。",
+    "quote_en": "We can observe that DMPO has higher normalized regret than D4PG on all tasks.",
+    "where": "p.2426 §2.1",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "收敛后稳定性上,DMPO的不稳定性也高于D4PG,但cartpole:swingup例外。",
+    "quote_en": "As can be seen in the figure, DMPO also has higher instability than D4PG, except for",
+    "where": "p.2427 §2.1",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "D4PG在humanoid:walk上收敛更慢,但最终收敛到的策略比walker:walk上的更稳定。",
+    "quote_en": "it is interesting that while D4PG takes longer to get to a policy on",
+    "where": "p.2427 §2.1",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "动作延迟=推迟动作执行n步,观测/奖励延迟=扣留观测/奖励n步。",
+    "quote_en": "An action delay is defined here as delaying the agent's action execution for",
+    "where": "p.2428 §2.2",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "两个算法对奖励延迟都不如对观测/动作延迟敏感。",
+    "quote_en": "Both algorithms appear to be less sensitive to reward delay compared to delays in observations or actions.",
+    "where": "p.2428 §2.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "奖励延迟x轴要增到100步才看到明显性能下降。",
+    "quote_en": "the reward delay (x-axis) has to be increased to 100 timesteps to see a significant drop in performance.",
+    "where": "p.2428 §2.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "用哑变量增加状态维度时,算法仍能在cartpole/quadruped/walker上收敛到最优。",
+    "quote_en": "the algorithm learns to deal with the noise and converges to the optimal performance for the cases of",
+    "where": "p.2430 §2.3",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "quadruped维度高于walker却收敛更快,因为它本质上是更稳定的系统。",
+    "quote_en": "yet converges faster since it is a fundamentally more stable system.",
+    "where": "p.2430 §2.3",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "约束用CMDP形式化为带约束的优化问题。",
+    "quote_en": "Constrained MDPs define a constrained optimization problem and can be expressed as:",
+    "where": "p.2431 §2.4",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "safety_coeff越趋近0任务越难,且约束违反在时间上是非均匀的。",
+    "quote_en": "constraint violations are non-uniform throughout time",
+    "where": "p.2432 §2.4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "卡住和丢失的传感器都显著降低最终性能。",
+    "quote_en": "We see from the figures that both dropped and stuck sensors have a significant effect on degrading the final performance.",
+    "where": "p.2435 §2.5",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "多目标用朴素混合奖励:r_b是基础任务奖励,r_c是该步满足的约束数,α在两者间平衡。",
+    "quote_en": "where r_b is the task's base reward, r_c is the number of satisfied constraints during that timestep and",
+    "where": "p.2442 §2.6",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "r_c权重越大约束越快被满足,但过度强调r_c会迅速劣化基础任务表现。",
+    "quote_en": "However, over-emphasis on",
+    "where": "p.2442 §2.6",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "动作重复增多时性能下降,但quadruped虽状态动作空间更大却对动作重复更鲁棒。",
+    "quote_en": "we observe that albeit quadruped has larger state and action spaces, it still more robust to action repetition.",
+    "where": "p.2444 §2.7",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "离线RL用了CRR,它限制学到的模型在有正优势时模仿行为策略。",
+    "quote_en": "Critic Regularized Regression (CRR) Wang et al. (2020), which restricts the learned model to mimic the behavior policy when it has a positive advantage.",
+    "where": "p.2446 §2.8",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "离线RL(CRR)在humanoid和cartpole上学不好,但在walker和quadruped上达到尚可水平。",
+    "quote_en": "the agent fails to learn properly in the",
+    "where": "p.2446 §2.8",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "离线设置下D4PG在每个任务上都学不会,结果被略去。",
+    "quote_en": "D4PG was also trained on each of the tasks, but failed to learn in each case and therefore the results have been omitted.",
+    "where": "p.2446 §2.8",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "即便用每个挑战最简单的版本组合起来,任务也变得出奇地难。",
+    "quote_en": "and combining them together creates a surprisingly difficult task.",
+    "where": "p.2449 §2.10",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "组合挑战下两个算法的性能急剧下降,即便施加最小扰动也如此。",
+    "quote_en": "We can see that both learners' performance drops drastically, even when applying the smallest perturbations of each challenge.",
+    "where": "p.2449 §2.10",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "总体上DMPO的regret几乎差一个数量级,但收敛后明显更稳定。",
+    "quote_en": "showing DMPO to be almost an order of magnitude worse in terms of regret, but significantly more stable once converged.",
+    "where": "p.2454 §5",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "额外观测维度对两个算法影响都不显著,动作维度更多也不一定更难学。",
+    "quote_en": "we see that additional observation dimensions don't affect either DMPO or D4PG significantly, and that environments with more action dimensions are not necessarily harder to learn.",
+    "where": "p.2454 §5",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "奖励延迟总体影响较小,humanoid:walk任务除外。",
+    "quote_en": "but reward delays seem to be globally less impactful except on the",
+    "where": "p.2454 §5",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "本文处理了原九大挑战中的8个,剩下的是可解释性。",
+    "quote_en": "we have addressed 8 of the 9 challenges originally presented in Dulac-Arnold et al. (2019). The remaining challenge is explainability.",
+    "where": "p.2451 §2.11",
+    "strength": "supported"
+  }
+]

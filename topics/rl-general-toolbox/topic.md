@@ -2,7 +2,7 @@
 
 > **研究思路**：训练强化学习策略（目前主要用 SAC 和 PPO）时经常遇到训不出来的瓶颈，怀疑是 reward 设计或算法超参的问题。需要一批实战导向的论文来构建'RL 训练工具箱'：(1) reward 设计与 shaping 的原则、常见坑（reward hacking/specification gaming）；(2) 训练稳定性 trick、实现细节与超参敏感性的 empirical study；(3) 稀疏奖励下的探索、课程学习；(4) SAC/PPO 之外更丰富的算法（off-policy 改进、模型基方法、约束优化等）及横向比较；(5) control barrier function 等安全增强方法与 RL 的结合（非常重要）；(6) 具体任务（人形/全身控制/数字人/locomotion）上的 reward 工程实例。偏好可操作、有实验对比、给出 do/don't 的论文，而非纯理论。
 
-- 命中论文：100　已总结：100　最近更新：2026-06-10
+- 命中论文：100　已总结：39　最近更新：2026-06-10
 - 检索词：`reward shaping deep reinforcement learning continuous control`、`reward design reinforcement learning robotics locomotion`、`deep reinforcement learning training stability tricks implementation details`、`PPO implementation details hyperparameters empirical study`、`on-policy reinforcement learning what matters empirical study`、`sparse reward exploration intrinsic motivation reinforcement learning`、`reward hacking specification gaming reinforcement learning`、`curriculum learning reinforcement learning robot control`、`control barrier function reinforcement learning safe control`、`safe reinforcement learning constrained policy optimization`、`off-policy actor critic continuous control TD3 SAC improvements`、`model-based reinforcement learning continuous control sample efficiency`、`reinforcement learning humanoid whole-body control reward design`、`deep reinforcement learning continuous control benchmark algorithms comparison`
 
 ## 命中清单（按相关性排序）
@@ -34,7 +34,7 @@
 | 23 | 85.0 | PPG Reloaded: An Empirical Study on What Matters in Phasic Policy Gradient 🪨 | 2023 | 1 | ✅ 已总结 | [v1](../../store/summaries/PPG_Reloaded_An_Empirical_Study_on_What_Matters_in_Phasic_Policy_Gradient/v1.md) |
 | 24 | 85.0 | Tiered Reward: Designing Rewards for Specification and Fast Learning of Desired Behavior 🪨 | 2022 | 0 | ✅ 已总结 | [v1](../../store/summaries/Tiered_Reward_Designing_Rewards_for_Specification_and_Fast_Learning_of_Desired_Behavior/v1.md) |
 | 25 | 85.0 | SafeAdapt: Provably Safe Policy Updates in Deep Reinforcement Learning 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/SafeAdapt_Provably_Safe_Policy_Updates_in_Deep_Reinforcement_Learning/v1.md) |
-| 26 | 84.0 | Augmented Proximal Policy Optimization for Safe Reinforcement Learning | 2023 | 32 | ✅ 已总结 | [v1](../../store/summaries/Augmented_Proximal_Policy_Optimization_for_Safe_Reinforcement_Learning/v1.md) |
+| 26 | 84.0 | Augmented Proximal Policy Optimization for Safe Reinforcement Learning | 2023 | 32 | 📄 有全文 | — |
 | 27 | 84.0 | Constraint-Conditioned Policy Optimization for Versatile Safe Reinforcement Learning | 2023 | 22 | ✅ 已总结 | [v1](../../store/summaries/Constraint_Conditioned_Policy_Optimization_for_Versatile_Safe_Reinforcement_Learning/v1.md) |
 | 28 | 83.0 | Value Improved Actor Critic Algorithms 🪨 | 2024 | 3 | ✅ 已总结 | [v1](../../store/summaries/Value_Improved_Actor_Critic_Algorithms/v1.md) |
 | 29 | 82.0 | From Sparse to Dense: Toddler-inspired Reward Transition in Goal-Oriented Reinforcement Learning 🪨 | 2025 | 0 | ✅ 已总结 | [v1](../../store/summaries/From_Sparse_to_Dense_Toddler_inspired_Reward_Transition_in_Goal_Oriented_Reinforcement/v1.md) |
@@ -49,66 +49,66 @@
 | 38 | 80.0 | From Reward Shaping to Q-Shaping: Achieving Unbiased Learning with LLM-Guided Knowledge 🪨 | 2024 | 0 | ✅ 已总结 | [v1](../../store/summaries/From_Reward_Shaping_to_Q_Shaping_Achieving_Unbiased_Learning_with_LLM_Guided_Knowledge/v1.md) |
 | 39 | 80.0 | Predictive Control Barrier Functions for Online Safety Critical Control 🪨 | 2022 | 0 | ✅ 已总结 | [v1](../../store/summaries/Predictive_Control_Barrier_Functions_for_Online_Safety_Critical_Control/v1.md) |
 | 40 | 80.0 | Leveraging exploration in off-policy algorithms via normalizing flows 🪨 | 2019 | 0 | ✅ 已总结 | [v1](../../store/summaries/Leveraging_exploration_in_off_policy_algorithms_via_normalizing_flows/v1.md) |
-| 41 | 80.0 | Safe Reinforcement Learning with Probabilistic Control Barrier Functions for Ramp Merging 🪨 | 2022 | 0 | ✅ 已总结 | [v1](../../store/summaries/Safe_Reinforcement_Learning_with_Probabilistic_Control_Barrier_Functions_for_Ramp_Merging/v1.md) |
-| 42 | 78.0 | Reinforcement Learning for Robust Parameterized Locomotion Control of Bipedal Robots | 2021 | 12 | ✅ 已总结 | [v1](../../store/summaries/Reinforcement_Learning_for_Robust_Parameterized_Locomotion_Control_of_Bipedal_Robots_2/v1.md) |
-| 43 | 78.0 | Humanoid Whole-Body Badminton via Multi-Stage Reinforcement Learning 🪨 | 2025 | 0 | ✅ 已总结 | [v1](../../store/summaries/Humanoid_Whole_Body_Badminton_via_Multi_Stage_Reinforcement_Learning/v1.md) |
-| 44 | 78.0 | Recursively Feasible Probabilistic Safe Online Learning with Control Barrier Functions 🪨 | 2022 | 0 | ✅ 已总结 | [v1](../../store/summaries/Recursively_Feasible_Probabilistic_Safe_Online_Learning_with_Control_Barrier_Functions/v1.md) |
-| 45 | 76.0 | Sim-to-Real: Learning Agile Locomotion For Quadruped Robots | 2018 | 673 | ✅ 已总结 | [v1](../../store/summaries/Sim_to_Real_Learning_Agile_Locomotion_For_Quadruped_Robots/v1.md) |
-| 46 | 76.0 | A survey of preference-based reinforcement learning methods | 2017 | 115 | ✅ 已总结 | [v1](../../store/summaries/A_survey_of_preference_based_reinforcement_learning_methods/v1.md) |
-| 47 | 76.0 | Model-based Safe Deep Reinforcement Learning via a Constrained Proximal Policy Optimization Algorithm | 2022 | 72 | ✅ 已总结 | [v1](../../store/summaries/Model_based_Safe_Deep_Reinforcement_Learning_via_a_Constrained_Proximal_Policy/v1.md) |
-| 48 | 76.0 | Input-to-State Safety for Reinforcement Learning. 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/Input_to_State_Safety_for_Reinforcement_Learning/v1.md) |
-| 49 | 76.0 | Humanoid Manipulation Interface: Humanoid Whole-Body Manipulation from Robot-Free Demonstrations 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/Humanoid_Manipulation_Interface_Humanoid_Whole_Body_Manipulation_from_Robot_Free/v1.md) |
-| 50 | 75.0 | Learning Complex Dexterous Manipulation with Deep Reinforcement Learning and Demonstrations | 2018 | 124 | ✅ 已总结 | [v1](../../store/summaries/Learning_Complex_Dexterous_Manipulation_with_Deep_Reinforcement_Learning_and/v1.md) |
-| 51 | 75.0 | Constrained Variational Policy Optimization for Safe Reinforcement Learning | 2022 | 118 | ✅ 已总结 | [v1](../../store/summaries/Constrained_Variational_Policy_Optimization_for_Safe_Reinforcement_Learning/v1.md) |
-| 52 | 75.0 | Curiosity Driven Reinforcement Learning for Motion Planning on Humanoids | 2014 | 75 | ✅ 已总结 | [v1](../../store/summaries/Curiosity_Driven_Reinforcement_Learning_for_Motion_Planning_on_Humanoids/v1.md) |
-| 53 | 75.0 | Soft Actor-Critic Algorithm in High-Dimensional Continuous Control Tasks 🪨 | 2024 | 1 | ✅ 已总结 | [v1](../../store/summaries/Soft_Actor_Critic_Algorithm_in_High_Dimensional_Continuous_Control_Tasks/v1.md) |
-| 54 | 75.0 | Causal-Paced Deep Reinforcement Learning 🪨 | 2025 | 0 | ✅ 已总结 | [v1](../../store/summaries/Causal_Paced_Deep_Reinforcement_Learning/v1.md) |
-| 55 | 74.0 | Safe Reinforcement Learning With Stability Guarantee for Motion Planning of Autonomous Vehicles | 2021 | 150 | ✅ 已总结 | [v1](../../store/summaries/Safe_Reinforcement_Learning_With_Stability_Guarantee_for_Motion_Planning_of_Autonomous/v1.md) |
-| 56 | 74.0 | Efficient Continuous Control with Double Actors and Regularized Critics | 2022 | 55 | ✅ 已总结 | [v1](../../store/summaries/Efficient_Continuous_Control_with_Double_Actors_and_Regularized_Critics/v1.md) |
-| 57 | 74.0 | Decoupled Policy Actor-Critic: Bridging Pessimism and Risk Awareness in Reinforcement Learning | 2025 | 5 | ✅ 已总结 | [v1](../../store/summaries/Decoupled_Policy_Actor_Critic_Bridging_Pessimism_and_Risk_Awareness_in_Reinforcement/v1.md) |
-| 58 | 74.0 | AFU: Actor-Free critic Updates in off-policy RL for continuous control 🪨 | 2024 | 0 | ✅ 已总结 | [v1](../../store/summaries/AFU_Actor_Free_critic_Updates_in_off_policy_RL_for_continuous_control/v1.md) |
-| 59 | 74.0 | The Role of Domain Randomization in Training Diffusion Policies for Whole-Body Humanoid Control 🪨 | 2024 | 0 | ✅ 已总结 | [v1](../../store/summaries/The_Role_of_Domain_Randomization_in_Training_Diffusion_Policies_for_Whole_Body_Humanoid/v1.md) |
-| 60 | 74.0 | Learning robotic manipulation skills with multiple semantic goals by conservative curiosity-motivated exploration 🪨 | 2023 | 0 | ✅ 已总结 | [v1](../../store/summaries/Learning_robotic_manipulation_skills_with_multiple_semantic_goals_by_conservative/v1.md) |
-| 61 | 74.0 | Improved Soft Actor-Critic: Mixing Prioritized Off-Policy Samples with On-Policy Experience 🪨 | 2021 | 0 | ✅ 已总结 | [v1](../../store/summaries/Improved_Soft_Actor_Critic_Mixing_Prioritized_Off_Policy_Samples_with_On_Policy_Experience/v1.md) |
-| 62 | 72.0 | Deep Reinforcement Learning-Based End-to-End Navigation of Mobile Robots with Reward Shaping 🪨 | 2024 | 1 | ✅ 已总结 | [v1](../../store/summaries/Deep_Reinforcement_Learning_Based_End_to_End_Navigation_of_Mobile_Robots_with_Reward/v1.md) |
-| 63 | 72.0 | Transformer-based human-motion forecasting coupled with safe reinforcement learning for telepresence robot co-navigation. 🪨 | 2025 | 0 | ✅ 已总结 | [v1](../../store/summaries/Transformer_based_human_motion_forecasting_coupled_with_safe_reinforcement_learning_for/v1.md) |
-| 64 | 72.0 | Reinforcement Learning with Stochastic Reward Machines 🪨 | 2025 | 0 | ✅ 已总结 | [v1](../../store/summaries/Reinforcement_Learning_with_Stochastic_Reward_Machines/v1.md) |
-| 65 | 71.0 | CVaR-Constrained Policy Optimization for Safe Reinforcement Learning | 2024 | 50 | ✅ 已总结 | [v1](../../store/summaries/CVaR_Constrained_Policy_Optimization_for_Safe_Reinforcement_Learning/v1.md) |
-| 66 | 71.0 | JuggleRL: Mastering Ball Juggling with a Quadrotor via Deep Reinforcement Learning 🪨 | 2025 | 0 | ✅ 已总结 | [v1](../../store/summaries/JuggleRL_Mastering_Ball_Juggling_with_a_Quadrotor_via_Deep_Reinforcement_Learning/v1.md) |
-| 67 | 70.0 | Hierarchical deep reinforcement learning: integrating temporal abstraction and intrinsic motivation | 2016 | 541 | ✅ 已总结 | [v1](../../store/summaries/Hierarchical_deep_reinforcement_learning_integrating_temporal_abstraction_and_intrinsic/v1.md) |
-| 68 | 70.0 | Stochastic Neural Networks for Hierarchical Reinforcement Learning | 2017 | 378 | ✅ 已总结 | [v1](../../store/summaries/Stochastic_Neural_Networks_for_Hierarchical_Reinforcement_Learning/v1.md) |
-| 69 | 70.0 | Safe Off-Policy Deep Reinforcement Learning Algorithm for Volt-VAR Control in Power Distribution Systems | 2019 | 307 | ✅ 已总结 | [v1](../../store/summaries/Safe_Off_Policy_Deep_Reinforcement_Learning_Algorithm_for_Volt_VAR_Control_in_Power/v1.md) |
-| 70 | 70.0 | A Survey on Offline Reinforcement Learning: Taxonomy, Review, and Open Problems | 2023 | 286 | ✅ 已总结 | [v1](../../store/summaries/A_Survey_on_Offline_Reinforcement_Learning_Taxonomy_Review_and_Open_Problems/v1.md) |
-| 71 | 70.0 | Safe Reinforcement Learning for Autonomous Vehicles through Parallel Constrained Policy Optimization | 2020 | 87 | ✅ 已总结 | [v1](../../store/summaries/Safe_Reinforcement_Learning_for_Autonomous_Vehicles_through_Parallel_Constrained_Policy/v1.md) |
-| 72 | 70.0 | VCSAP: Online reinforcement learning exploration method based on visitation count of state-action pairs | 2025 | 8 | ✅ 已总结 | [v1](../../store/summaries/VCSAP_Online_reinforcement_learning_exploration_method_based_on_visitation_count_of_state/v1.md) |
-| 73 | 70.0 | Combining Soft-Actor Critic with Cross-Entropy Method for Policy Search in Continuous Control | 2022 | 8 | ✅ 已总结 | [v1](../../store/summaries/Combining_Soft_Actor_Critic_with_Cross_Entropy_Method_for_Policy_Search_in_Continuous/v1.md) |
-| 74 | 70.0 | Doubly Robust Off-Policy Actor-Critic Algorithms for Reinforcement Learning 🪨 | 2019 | 3 | ✅ 已总结 | [v1](../../store/summaries/Doubly_Robust_Off_Policy_Actor_Critic_Algorithms_for_Reinforcement_Learning/v1.md) |
-| 75 | 70.0 | Soft Actor-Critic with Beta Policy via Implicit Reparameterization Gradients 🪨 | 2024 | 1 | ✅ 已总结 | [v1](../../store/summaries/Soft_Actor_Critic_with_Beta_Policy_via_Implicit_Reparameterization_Gradients/v1.md) |
-| 76 | 70.0 | Mixture of Autoencoder Experts Guidance using Unlabeled and Incomplete Data for Exploration in Reinforcement Learning 🪨 | 2025 | 1 | ✅ 已总结 | [v1](../../store/summaries/Mixture_of_Autoencoder_Experts_Guidance_using_Unlabeled_and_Incomplete_Data_for/v1.md) |
-| 77 | 70.0 | Value Bonuses using Ensemble Errors for Exploration in Reinforcement Learning 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/Value_Bonuses_using_Ensemble_Errors_for_Exploration_in_Reinforcement_Learning/v1.md) |
-| 78 | 70.0 | Mirror Descent Safe Policy Optimization for Reinforcement Learning Agents. 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/Mirror_Descent_Safe_Policy_Optimization_for_Reinforcement_Learning_Agents/v1.md) |
-| 79 | 70.0 | A graph-based safe reinforcement learning method for multi-agent cooperation 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/A_graph_based_safe_reinforcement_learning_method_for_multi_agent_cooperation/v1.md) |
-| 80 | 70.0 | Deep dive into model-free reinforcement learning for underwater locomotion: theory and practice. 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/Deep_dive_into_model_free_reinforcement_learning_for_underwater_locomotion_theory_and/v1.md) |
-| 81 | 68.0 | Constrained Policy Optimization with Explicit Behavior Density For Offline Reinforcement Learning | 2023 | 16 | ✅ 已总结 | [v1](../../store/summaries/Constrained_Policy_Optimization_with_Explicit_Behavior_Density_For_Offline_Reinforcement/v1.md) |
-| 82 | 68.0 | ReLU to the Rescue: Improve Your On-Policy Actor-Critic with Positive Advantages | 2023 | 11 | ✅ 已总结 | [v1](../../store/summaries/ReLU_to_the_Rescue_Improve_Your_On_Policy_Actor_Critic_with_Positive_Advantages/v1.md) |
-| 83 | 68.0 | Self-supervised network distillation: An effective approach to exploration in sparse reward environments | 2024 | 10 | ✅ 已总结 | [v1](../../store/summaries/Self_supervised_network_distillation_An_effective_approach_to_exploration_in_sparse/v1.md) |
-| 84 | 68.0 | Broad Critic Deep Actor Reinforcement Learning for Continuous Control 🪨 | 2024 | 3 | ✅ 已总结 | [v1](../../store/summaries/Broad_Critic_Deep_Actor_Reinforcement_Learning_for_Continuous_Control/v1.md) |
-| 85 | 68.0 | Game-Theoretic Constrained Policy Optimization for Safe Reinforcement Learning 🪨 | 2025 | 3 | ✅ 已总结 | [v1](../../store/summaries/Game_Theoretic_Constrained_Policy_Optimization_for_Safe_Reinforcement_Learning/v1.md) |
-| 86 | 68.0 | CIM: Constrained Intrinsic Motivation for Sparse-Reward Continuous Control 🪨 | 2022 | 2 | ✅ 已总结 | [v1](../../store/summaries/CIM_Constrained_Intrinsic_Motivation_for_Sparse_Reward_Continuous_Control/v1.md) |
-| 87 | 68.0 | What Matters in RL-Based Methods for Object-Goal Navigation? An Empirical Study and A Unified Framework 🪨 | 2025 | 2 | ✅ 已总结 | [v1](../../store/summaries/What_Matters_in_RL_Based_Methods_for_Object_Goal_Navigation_An_Empirical_Study_and_A/v1.md) |
-| 88 | 68.0 | Offline constrained policy optimization with safe anchoring. 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/Offline_constrained_policy_optimization_with_safe_anchoring/v1.md) |
-| 89 | 68.0 | Scaling data-driven robotics with reward sketching and batch reinforcement learning 🪨 | 2019 | 0 | ✅ 已总结 | [v1](../../store/summaries/Scaling_data_driven_robotics_with_reward_sketching_and_batch_reinforcement_learning/v1.md) |
-| 90 | 67.0 | Experimental evaluation of model-free reinforcement learning algorithms for continuous HVAC control | 2021 | 169 | ✅ 已总结 | [v1](../../store/summaries/Experimental_evaluation_of_model_free_reinforcement_learning_algorithms_for_continuous/v1.md) |
-| 91 | 66.0 | Model-based Reinforcement Learning: A Survey | 2023 | 481 | ✅ 已总结 | [v1](../../store/summaries/Model_based_Reinforcement_Learning_A_Survey/v1.md) |
-| 92 | 66.0 | Online Meta-Critic Learning for Off-Policy Actor-Critic Methods | 2020 | 54 | ✅ 已总结 | [v1](../../store/summaries/Online_Meta_Critic_Learning_for_Off_Policy_Actor_Critic_Methods/v1.md) |
-| 93 | 66.0 | Lazy Agents: A New Perspective on Solving Sparse Reward Problem in Multi-agent Reinforcement Learning | 2023 | 36 | ✅ 已总结 | [v1](../../store/summaries/Lazy_Agents_A_New_Perspective_on_Solving_Sparse_Reward_Problem_in_Multi_agent/v1.md) |
-| 94 | 66.0 | Improved Learning of Robot Manipulation Tasks Via Tactile Intrinsic Motivation | 2021 | 32 | ✅ 已总结 | [v1](../../store/summaries/Improved_Learning_of_Robot_Manipulation_Tasks_Via_Tactile_Intrinsic_Motivation/v1.md) |
-| 95 | 66.0 | Comparing Deep Reinforcement Learning and Evolutionary Methods in Continuous Control 🪨 | 2017 | 0 | ✅ 已总结 | [v1](../../store/summaries/Comparing_Deep_Reinforcement_Learning_and_Evolutionary_Methods_in_Continuous_Control/v1.md) |
-| 96 | 66.0 | Safe Control Synthesis via Input Constrained Control Barrier Functions 🪨 | 2021 | 0 | ✅ 已总结 | [v1](../../store/summaries/Safe_Control_Synthesis_via_Input_Constrained_Control_Barrier_Functions/v1.md) |
-| 97 | 66.0 | Self-Organizing Dual-Buffer Adaptive Clustering Experience Replay (SODACER) for safe reinforcement learning in optimal control. 🪨 | 2026 | 0 | ✅ 已总结 | [v1](../../store/summaries/Self_Organizing_Dual_Buffer_Adaptive_Clustering_Experience_Replay_SODACER_for_safe/v1.md) |
-| 98 | 65.0 | Variational Dynamic for Self-Supervised Exploration in Deep Reinforcement Learning | 2021 | 24 | ✅ 已总结 | [v1](../../store/summaries/Variational_Dynamic_for_Self_Supervised_Exploration_in_Deep_Reinforcement_Learning/v1.md) |
-| 99 | 64.0 | An Algorithmic Perspective on Imitation Learning | 2018 | 370 | ✅ 已总结 | [v1](../../store/summaries/An_Algorithmic_Perspective_on_Imitation_Learning/v1.md) |
-| 100 | 64.0 | Mastering Complex Control in MOBA Games with Deep Reinforcement Learning | 2020 | 271 | ✅ 已总结 | [v1](../../store/summaries/Mastering_Complex_Control_in_MOBA_Games_with_Deep_Reinforcement_Learning/v1.md) |
+| 41 | 80.0 | Safe Reinforcement Learning with Probabilistic Control Barrier Functions for Ramp Merging 🪨 | 2022 | 0 | 📄 有全文 | — |
+| 42 | 78.0 | Reinforcement Learning for Robust Parameterized Locomotion Control of Bipedal Robots | 2021 | 12 | 📄 有全文 | — |
+| 43 | 78.0 | Humanoid Whole-Body Badminton via Multi-Stage Reinforcement Learning 🪨 | 2025 | 0 | 📄 有全文 | — |
+| 44 | 78.0 | Recursively Feasible Probabilistic Safe Online Learning with Control Barrier Functions 🪨 | 2022 | 0 | 📄 有全文 | — |
+| 45 | 76.0 | Sim-to-Real: Learning Agile Locomotion For Quadruped Robots | 2018 | 673 | 📄 有全文 | — |
+| 46 | 76.0 | A survey of preference-based reinforcement learning methods | 2017 | 115 | 📄 有全文 | — |
+| 47 | 76.0 | Model-based Safe Deep Reinforcement Learning via a Constrained Proximal Policy Optimization Algorithm | 2022 | 72 | 📄 有全文 | — |
+| 48 | 76.0 | Input-to-State Safety for Reinforcement Learning. 🪨 | 2026 | 0 | 📄 有全文 | — |
+| 49 | 76.0 | Humanoid Manipulation Interface: Humanoid Whole-Body Manipulation from Robot-Free Demonstrations 🪨 | 2026 | 0 | 📄 有全文 | — |
+| 50 | 75.0 | Learning Complex Dexterous Manipulation with Deep Reinforcement Learning and Demonstrations | 2018 | 124 | 📄 有全文 | — |
+| 51 | 75.0 | Constrained Variational Policy Optimization for Safe Reinforcement Learning | 2022 | 118 | 📄 有全文 | — |
+| 52 | 75.0 | Curiosity Driven Reinforcement Learning for Motion Planning on Humanoids | 2014 | 75 | 📄 有全文 | — |
+| 53 | 75.0 | Soft Actor-Critic Algorithm in High-Dimensional Continuous Control Tasks 🪨 | 2024 | 1 | 📄 有全文 | — |
+| 54 | 75.0 | Causal-Paced Deep Reinforcement Learning 🪨 | 2025 | 0 | 📄 有全文 | — |
+| 55 | 74.0 | Safe Reinforcement Learning With Stability Guarantee for Motion Planning of Autonomous Vehicles | 2021 | 150 | 📄 有全文 | — |
+| 56 | 74.0 | Efficient Continuous Control with Double Actors and Regularized Critics | 2022 | 55 | 📄 有全文 | — |
+| 57 | 74.0 | Decoupled Policy Actor-Critic: Bridging Pessimism and Risk Awareness in Reinforcement Learning | 2025 | 5 | 📄 有全文 | — |
+| 58 | 74.0 | AFU: Actor-Free critic Updates in off-policy RL for continuous control 🪨 | 2024 | 0 | 📄 有全文 | — |
+| 59 | 74.0 | The Role of Domain Randomization in Training Diffusion Policies for Whole-Body Humanoid Control 🪨 | 2024 | 0 | 📄 有全文 | — |
+| 60 | 74.0 | Learning robotic manipulation skills with multiple semantic goals by conservative curiosity-motivated exploration 🪨 | 2023 | 0 | 📄 有全文 | — |
+| 61 | 74.0 | Improved Soft Actor-Critic: Mixing Prioritized Off-Policy Samples with On-Policy Experience 🪨 | 2021 | 0 | 📄 有全文 | — |
+| 62 | 72.0 | Deep Reinforcement Learning-Based End-to-End Navigation of Mobile Robots with Reward Shaping 🪨 | 2024 | 1 | 📄 有全文 | — |
+| 63 | 72.0 | Transformer-based human-motion forecasting coupled with safe reinforcement learning for telepresence robot co-navigation. 🪨 | 2025 | 0 | 📄 有全文 | — |
+| 64 | 72.0 | Reinforcement Learning with Stochastic Reward Machines 🪨 | 2025 | 0 | 📄 有全文 | — |
+| 65 | 71.0 | CVaR-Constrained Policy Optimization for Safe Reinforcement Learning | 2024 | 50 | 📄 有全文 | — |
+| 66 | 71.0 | JuggleRL: Mastering Ball Juggling with a Quadrotor via Deep Reinforcement Learning 🪨 | 2025 | 0 | 📄 有全文 | — |
+| 67 | 70.0 | Hierarchical deep reinforcement learning: integrating temporal abstraction and intrinsic motivation | 2016 | 541 | 📄 有全文 | — |
+| 68 | 70.0 | Stochastic Neural Networks for Hierarchical Reinforcement Learning | 2017 | 378 | 📄 有全文 | — |
+| 69 | 70.0 | Safe Off-Policy Deep Reinforcement Learning Algorithm for Volt-VAR Control in Power Distribution Systems | 2019 | 307 | 📄 有全文 | — |
+| 70 | 70.0 | A Survey on Offline Reinforcement Learning: Taxonomy, Review, and Open Problems | 2023 | 286 | 📄 有全文 | — |
+| 71 | 70.0 | Safe Reinforcement Learning for Autonomous Vehicles through Parallel Constrained Policy Optimization | 2020 | 87 | 📄 有全文 | — |
+| 72 | 70.0 | VCSAP: Online reinforcement learning exploration method based on visitation count of state-action pairs | 2025 | 8 | 📄 有全文 | — |
+| 73 | 70.0 | Combining Soft-Actor Critic with Cross-Entropy Method for Policy Search in Continuous Control | 2022 | 8 | 📄 有全文 | — |
+| 74 | 70.0 | Doubly Robust Off-Policy Actor-Critic Algorithms for Reinforcement Learning 🪨 | 2019 | 3 | 📄 有全文 | — |
+| 75 | 70.0 | Soft Actor-Critic with Beta Policy via Implicit Reparameterization Gradients 🪨 | 2024 | 1 | 📄 有全文 | — |
+| 76 | 70.0 | Mixture of Autoencoder Experts Guidance using Unlabeled and Incomplete Data for Exploration in Reinforcement Learning 🪨 | 2025 | 1 | 📄 有全文 | — |
+| 77 | 70.0 | Value Bonuses using Ensemble Errors for Exploration in Reinforcement Learning 🪨 | 2026 | 0 | 📄 有全文 | — |
+| 78 | 70.0 | Mirror Descent Safe Policy Optimization for Reinforcement Learning Agents. 🪨 | 2026 | 0 | 📄 有全文 | — |
+| 79 | 70.0 | A graph-based safe reinforcement learning method for multi-agent cooperation 🪨 | 2026 | 0 | 📄 有全文 | — |
+| 80 | 70.0 | Deep dive into model-free reinforcement learning for underwater locomotion: theory and practice. 🪨 | 2026 | 0 | 📄 有全文 | — |
+| 81 | 68.0 | Constrained Policy Optimization with Explicit Behavior Density For Offline Reinforcement Learning | 2023 | 16 | 📄 有全文 | — |
+| 82 | 68.0 | ReLU to the Rescue: Improve Your On-Policy Actor-Critic with Positive Advantages | 2023 | 11 | 📄 有全文 | — |
+| 83 | 68.0 | Self-supervised network distillation: An effective approach to exploration in sparse reward environments | 2024 | 10 | 📄 有全文 | — |
+| 84 | 68.0 | Broad Critic Deep Actor Reinforcement Learning for Continuous Control 🪨 | 2024 | 3 | 📄 有全文 | — |
+| 85 | 68.0 | Game-Theoretic Constrained Policy Optimization for Safe Reinforcement Learning 🪨 | 2025 | 3 | 📄 有全文 | — |
+| 86 | 68.0 | CIM: Constrained Intrinsic Motivation for Sparse-Reward Continuous Control 🪨 | 2022 | 2 | 📄 有全文 | — |
+| 87 | 68.0 | What Matters in RL-Based Methods for Object-Goal Navigation? An Empirical Study and A Unified Framework 🪨 | 2025 | 2 | 📄 有全文 | — |
+| 88 | 68.0 | Offline constrained policy optimization with safe anchoring. 🪨 | 2026 | 0 | 📄 有全文 | — |
+| 89 | 68.0 | Scaling data-driven robotics with reward sketching and batch reinforcement learning 🪨 | 2019 | 0 | 📄 有全文 | — |
+| 90 | 67.0 | Experimental evaluation of model-free reinforcement learning algorithms for continuous HVAC control | 2021 | 169 | 📄 有全文 | — |
+| 91 | 66.0 | Model-based Reinforcement Learning: A Survey | 2023 | 481 | 📄 有全文 | — |
+| 92 | 66.0 | Online Meta-Critic Learning for Off-Policy Actor-Critic Methods | 2020 | 54 | 📄 有全文 | — |
+| 93 | 66.0 | Lazy Agents: A New Perspective on Solving Sparse Reward Problem in Multi-agent Reinforcement Learning | 2023 | 36 | 📄 有全文 | — |
+| 94 | 66.0 | Improved Learning of Robot Manipulation Tasks Via Tactile Intrinsic Motivation | 2021 | 32 | 📄 有全文 | — |
+| 95 | 66.0 | Comparing Deep Reinforcement Learning and Evolutionary Methods in Continuous Control 🪨 | 2017 | 0 | 📄 有全文 | — |
+| 96 | 66.0 | Safe Control Synthesis via Input Constrained Control Barrier Functions 🪨 | 2021 | 0 | 📄 有全文 | — |
+| 97 | 66.0 | Self-Organizing Dual-Buffer Adaptive Clustering Experience Replay (SODACER) for safe reinforcement learning in optimal control. 🪨 | 2026 | 0 | 📄 有全文 | — |
+| 98 | 65.0 | Variational Dynamic for Self-Supervised Exploration in Deep Reinforcement Learning | 2021 | 24 | 📄 有全文 | — |
+| 99 | 64.0 | An Algorithmic Perspective on Imitation Learning | 2018 | 370 | 📄 有全文 | — |
+| 100 | 64.0 | Mastering Complex Control in MOBA Games with Deep Reinforcement Learning | 2020 | 271 | 📄 有全文 | — |
 
 _🪨 = 边角文章（低引用，保留以备不同视角）_
 

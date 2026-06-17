@@ -1,0 +1,191 @@
+[
+  {
+    "kind": "contribution",
+    "point": "本文研究连续控制中策略梯度方法(DDPG 与 TRPO)的复现性,实证超参数显著性、算法方差与可复现性,并给出报告新结果时的指南。",
+    "quote_en": "We investigate and discuss: the significance of hyper-parameters in policy gradients for continuous control, general variance in the algorithms, and reproducibility of reported results. We provide guidelines on reporting novel results as comparisons against baseline methods such that future researchers can make informed decisions when investigating novel methods.",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "评测两类策略梯度算法:off-policy 的 DDPG 与 on-policy 的 TRPO。",
+    "quote_en": "We evaluate the off-policy DDPG [1] and on-policy TRPO [2] algorithms on continuous control environments from the OpenAI Gym benchmark [8], using the MuJoCo physics simulator [7].",
+    "where": "p.2 §2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "实验用两个 MuJoCo 环境:Hopper(状态 R^20、动作 R^3)和 Half-Cheetah(状态 R^20、动作 R^6)。",
+    "quote_en": "two environments: Hopper ( S ⊆ R\n20\n, A ⊆ R\n3\n) and Half-Cheetah (S ⊆ R\n20\n, A ⊆ R\n6\n)",
+    "where": "p.2 §2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "TRPO 用 rllab Tensorflow 实现 [9]、DDPG 用 Q-Prop Tensorflow 实现 [10]。",
+    "quote_en": "All\nexperiments5are performed building upon the rllab Tensorflow implementation of TRPO [9] and the\nQ-Prop Tensorflow implementation of DDPG for our experiments [10].",
+    "where": "p.2 §2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "所有变体跑 5000 次迭代,结果在 5 次运行上取平均;每次只变一个超参,其余固定为默认。",
+    "quote_en": "We run all variations for 5000 iterations and average all results across 5\nruns.",
+    "where": "p.2 §2 Experiment Details",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "研究的超参数:batch size、策略网络结构、step size(TRPO)、正则系数(TRPO)、GAE λ(TRPO)、reward scale(DDPG)、actor-critic 学习率(DDPG)。",
+    "quote_en": "We investigate several hyper-parameters: batch size, policy network architecture, step size\n(TRPO), regularization coefficient (TRPO), generalized advantage estimation ( λ ) (TRPO), reward\nscale (DDPG), and actor-critic learning rates (DDPG).",
+    "where": "p.2 §2 Experiment Details",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "最后用整体最优的超参组合跑 10 次随机种子试验,以考察仅由随机种子方差导致的结果差异。",
+    "quote_en": "Lastly, we run a final set of experiments using the overall best cross-section of hyper-parameters for\n10 trials using random seeds. We do this to investigate whether there is a significant difference in the\nresults just due to variance caused by the random seeds.",
+    "where": "p.2 §2 Experiment Details",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "TRPO 默认超参:网络结构 (100,50,25) ReLU 高斯 MLP 策略、step size 0.01、正则系数 1e-5、GAE λ=1.0;DDPG 默认:网络 (100,50,25)、actor-critic 学习率 1e-3 与 1e-4、batch size 64、reward scale 0.1。",
+    "quote_en": "For TRPO, the default hyper-parameters which we use are: a network architecture of (100,50,25)\nwith ReLU hidden activations for a Gaussian Multilayer Perception Policy [9]; a step size of 0.01; a\nregularization coefficient of 1·10−5; a Generalized Advantage Estimation λ of 1.0 [3].",
+    "where": "p.2 §2 Experiment Details",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "性能度量:前两种(Maximum Average Return、Maximum Return)被认为高度有偏,后两种(Std、Average Return)最稳定;全文主用 Average Return 作比较。",
+    "quote_en": "However, the first two measures are considered to be\nhighly biased, while the last two are considered to be the most stable measures used to compare\nthe performance of proposed algorithms. Thereby, in the rest of this work we only use the Average\nReturn as our comparison measure unless stated otherwise",
+    "where": "p.2 §1 Performance Measures",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "(400,300) 网络结构在 Half-Cheetah 上显著优于两个更小结构,在 Hopper 上优势较弱;TRPO 与 DDPG 都如此。",
+    "quote_en": "Notably, the (400,300) architecture significantly\noutperforms both other smaller architectures for Half-Cheetah and to a less significant extent Hopper\nas well7. This is true for both TRPO and DDPG.",
+    "where": "p.3 §2.1 Policy Network Architecture",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "但被发现最优的 (400,300) 结构并不是 [10,12] 报告基线结果时所用的结构。",
+    "quote_en": "However, the architecture which we found to be the\nbest (400,300) is not the one which is used in reporting results for baselines results in [10, 12].",
+    "where": "p.3 §2.1 Policy Network Architecture",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "TRPO Half-Cheetah 上 (400,300) 对比检验:对 (64,64) t=-13.4165、p=0.0000;对 (100,50,25) t=-11.3368、p=0.0016;而 TRPO Hopper 上差异不显著(对 (100,50,25) t=-0.5904、p=0.2952)。",
+    "quote_en": "For TRPO Half-Cheetah using a two-sample t-test on the sample rollouts: against (64,64) t =\n−13.4165, p = 0.0000; against (100,50,25) t = −11.3368, p = 0.0016. For TRPO Hopper: against\n(100,50,25) t = −0.5904, p = 0.2952; against (64,64) t = −1.9081, p = 0.2198",
+    "where": "p.3 脚注7",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "在 Hopper 上 DDPG 无论网络结构都很不稳定,难以复现他人结果(即便用他们报告的超参)。",
+    "quote_en": "even with varied network architectures, it is difficult to tune DDPG\nto reproduce results from other works even when using their reported hyper-parameter settings.",
+    "where": "p.3 §2.1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "DDPG mini-batch (32,64,128):32 与 64 性能相近,128 能带来显著提升。",
+    "quote_en": "Our analysis with\ndifferent mini-batches for DDPG (32, 64, 128) shows that similar performance can be obtained with\nmini-batch sizes of 32 and 64, whereas significant improvements can be obtained with a batch size of\n128.",
+    "where": "p.4 §2.1 Batch Size",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "TRPO 一般需要更大的 batch size;在 (1000,5000,25000) 中 25000 产生最好结果。",
+    "quote_en": "We investigate the same batch sizes as used\nin [10, 2] of (1000,5000,25000). As expected, a batch size of 25000 produces the best results.",
+    "where": "p.4 §2.1 Batch Size",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "正则系数(RC,1e-5 到 .1)未见显著差异,但在 Hopper 上影响似乎更明显(最大差异 RC=0.1 时 t=2.8965、p=0.1443)。",
+    "quote_en": "We don’t see a significant difference8\n",
+    "where": "p.4 §2.2 Regularization Coefficient + 脚注8",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "较低的 GAE λ(.97)在更长序列上能改善 Half-Cheetah 结果,对 Hopper 改善轻微。",
+    "quote_en": "We find that for longer iterations, a lower GAE λ does in fact improve results for longer sequences\nin Half-Cheetah and mildly for Hopper9.",
+    "where": "p.5 §2.2 Generalized Advantage Estimation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Step size 默认值 0.01 对 Hopper 和 Half-Cheetah 总体表现最好。",
+    "quote_en": "we find that the default value of 0.01 appears to work\ngenerally the best for both Hopper and Half-Cheetah10.",
+    "where": "p.5 §2.2 Step Size",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "尽管文献报告 DDPG 对 reward scale 高度敏感,本文分析显示 DDPG 并不因 rescale 奖励而改善;在 Half-Cheetah 上不缩放(RS=1)反而得到高得多的回报,尽管 [10][9] 报告最优 reward scale 为 0.1。",
+    "quote_en": "our analysis shows that DDPG does not improve by rescaling the\nrewards. In fact, for the Half-Cheetah environment, we find that no reward scaling (RS=1) yields\nmuch higher returns, even though [10] and [9] have reported an optimal reward scale value to be 0.1.",
+    "where": "p.6 §2.3 Reward Scale",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "actor-critic 学习率对 Hopper 的影响小于对 Half-Cheetah,提示 DDPG 还受其他变化与随机性来源影响。",
+    "quote_en": "we find that the actor and critic learning rates for DDPG have less of an effect on the\nHopper environment than the Half-Cheetah environment.",
+    "where": "p.6 §2.3 Actor-Critic Learning Rates",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "仅改变随机种子、对相同超参下的运行随机分两组(各5次)取平均,Half-Cheetah 上可得到统计显著差异、甚至落入完全不同分布(t=-9.0916、p=0.0016),而 Hopper 上不显著(t=2.2243、p=0.1825)。",
+    "quote_en": "Particularly for Half-Cheetah it is possible to get training curves\nthat do not fall within the same distribution at all, just by averaging different runs with the same\nhyper-parameters, but random seeds.",
+    "where": "p.7 §2.4 + 脚注12",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "即便用精调超参,DDPG 在两个环境上都无法获得稳定结果,提示存在其他外部随机性来源。",
+    "quote_en": "Even with fine-tuned hyper-parameter\nconfigurations, our analysis shows that stable results with DDPG, on either of the environments\ncannot be achieved.",
+    "where": "p.7 §2.4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Half-Cheetah 比 Hopper 更易受超参调节影响;作者推测因环境本身随机性不同——Half-Cheetah 动力学更稳定、失败模式更少,Hopper 易快速失败引入更大外部方差。",
+    "quote_en": "We find that Half-Cheetah is more susceptible to performance variations from\nhyper-parameter tuning, while Hopper is not. We posit that this may be due to the difference in\nstochasticity within the environments themselves.",
+    "where": "p.8 §3",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "给出报告准则:(1)报告所有度量(尤其 Average Return 与回报标准差);(2)报告所有优化用超参;(3)尽量用接近最优的超参;(4)在多于5次试验上平均并报告平均了多少次。",
+    "quote_en": "it is extremely important for future works to: (1) report all possible\nmetrics to characterize their own algorithms against TRPO and DDPG (particularly Average Return\nand Standard Deviation of the returns); (2) report all hyper-parameters used for optimization; (3)\nattempt to use a somewhat optimal set of hyper-parameters; (4) average results on greater than 5\ntrials and report how many trials are averaged together13.",
+    "where": "p.8 §3",
+    "strength": "strong"
+  },
+  {
+    "kind": "result",
+    "point": "Table 1(TRPO 基线)汇总各家报告值:本文最佳超参 5 次平均在 Half-Cheetah 5000 iters 的 Average Return 为 5010.83(Std 443.87)、Hopper 为 2421.067(Std 796.58),而 rllab[9] 报告 Half-Cheetah 仅 1914.0、Hopper 1183.3,落差很大。",
+    "quote_en": "Results and descriptions of reported values by various works using TRPO (Hopper\nand Half-Cheetah environments) as a baseline.",
+    "where": "p.8 表1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Table 2(DDPG 基线)汇总各家报告值:本文 Half-Cheetah 5000 iters Average Return 3725.3(Std 512.8)、Hopper 仅 857.6,而 QProp[10] 报告的 Max Average Return 高达 7490(Half-Cheetah),说明各家报告值差异极大。",
+    "quote_en": "Results and descriptions of reported values by various works using DDPG (Hopper\nand Half-Cheetah environments) as a baseline.",
+    "where": "p.9 表2",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "作者建议社区需要更好的精调实现并提供超参预设与广泛任务上的基准结果,以避免基线的不公平比较。",
+    "quote_en": "we suggest that the ML research community requires better fine-tuned\nimplementations of these algorithms with provided hyper-parameter presets. These implementations\nshould have benchmark results for a wide range of commonly used tasks.",
+    "where": "p.9 §3",
+    "strength": "supported"
+  }
+]

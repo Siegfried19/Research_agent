@@ -1,0 +1,184 @@
+[
+  {
+    "kind": "contribution",
+    "point": "提出 EVO 算法,把极值理论引入约束RL来建模和利用极端的奖励/代价样本,以降低约束违反。",
+    "quote_en": "We propose the Extreme Value policy Optimization (EVO) algorithm, leveraging Extreme Value Theory (EVT) to model and exploit extreme reward and cost samples, reducing constraint violations.",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "EVO 引入一个极值分位约束目标,显式刻画代价分布尾部的极端样本。",
+    "quote_en": "EVO introduces an extreme quantile optimization objective to explicitly capture extreme samples in the cost tail distribution.",
+    "where": "p.1 Abstract",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "在回放时引入极端优先级机制,放大稀有但高影响极端样本的学习信号。",
+    "quote_en": "we propose an extreme prioritization mechanism during replay, amplifying the learning signal from rare but high-impact extreme samples.",
+    "where": "p.1 Abstract",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "动机:基于期望的约束忽视尾部稀有但高影响的极值事件(如黑天鹅),可能导致严重约束违反。",
+    "quote_en": "However, expectation-based constraints overlook rare but high-impact extreme value events in the tail distribution, such as black swan incidents, which can lead to severe constraint violations.",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "即使期望代价满足阈值,尾部极端样本仍会带来频繁约束违反。",
+    "quote_en": "even when the expected cost satisfies the constraint, frequent constraint violations can occur due to the presence of these extreme events, as shown in Figure 1a.",
+    "where": "p.1 §1 Introduction",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "尾部超过阈值的条件分布渐近服从广义帕累托分布(GPD),这是建模的理论依据(定理3.1)。",
+    "quote_en": "samples exceeding a threshold follow a Generalized Pareto Distribution (GPD)",
+    "where": "p.4 §4.1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "用经验数据把累计代价分布同时拟合 GPD 与高斯,结果显示尾部更贴合 GPD。",
+    "quote_en": "The results in Figure 1b demonstrate that the tail distribution better aligns with the GPD.",
+    "where": "p.4 §4.1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "提出极值分位约束 q_{μ+ν}≤d,其中 q_μ 为安全边界(把分布分成主体与尾部),ν 为尾部利用范围。",
+    "quote_en": "We denote qµ in qµ+ν as the safety boundary, dividing the distribution into the body and the tail to capture extreme samples.",
+    "where": "p.4 §4.1 Eq.6",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "GPD 的形状参数 ξ 和尺度参数 σ 用极大似然估计。",
+    "quote_en": "The parameters of the GPD, ξ (shape) and σ (scale), are estimated using maximum likelihood estimation",
+    "where": "p.4 §4.1 Eq.14",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "优先级分数 p 由奖励优先级 ω_r 与代价优先级 ω_c 两部分组成:p = ω_r + ω_c。",
+    "quote_en": "The prioritization score p is composed of two components: reward prioritization and cost prioritization.",
+    "where": "p.5 §4.2 Eq.16",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "GPD 拟合用的极端集稀疏、样本少导致高方差,故引入离线重要性重采样来扩充极端样本、降低方差。",
+    "quote_en": "we introduce an off-policy importance resampling approach to augment extreme samples and reduce the variance of the GPD.",
+    "where": "p.5 §4.3",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "理论上给出 EVO 策略更新时期望约束违反的上界(定理4.1),并据此推出零违反利用范围 ν0。",
+    "quote_en": "We provide an upper bound on the expected constraint violation during policy updates in EVO.",
+    "where": "p.5 §4.4 Theorem 4.1",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "证明 EVO 的约束违反概率低于基于期望的CRL,差额为 ν0(定理4.2)。",
+    "quote_en": "EVO has a lower constraint violation probability than the expectation-based CRL by a margin of ν0.",
+    "where": "p.6 §4.4 Theorem 4.2",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "证明 EVO 估计分位的方差低于分位回归方法(定理4.3),且方差与样本数负相关。",
+    "quote_en": "Note that Theorem 4.3 indicates that the variance of EVO is negatively correlated with the number of samples used to estimate the quantile",
+    "where": "p.6 §4.4 Theorem 4.3",
+    "strength": "strong"
+  },
+  {
+    "kind": "result",
+    "point": "实验环境为 Safety Gymnasium 与 Safety MuJoCo;约束阈值为25。",
+    "quote_en": "the constraint threshold which is 25",
+    "where": "p.7 Figure 3 caption",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "实验设置:总训练步数 10^7,最大轨迹长度1000步,每方法用6个随机种子。",
+    "quote_en": "with a total of 10⁄7 training time steps and a maximum trajectory length of 1000 steps. To reduce randomness, 6 random seeds were used for each method",
+    "where": "p.7 §5 Experiment Setting",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "在 Safety Gymnasium 导航任务上,EVO 快速收敛到可行域并在训练全程保持零约束违反。",
+    "quote_en": "EVO rapidly converges to the feasible domain and subsequently maintains zero constraint violations throughout training.",
+    "where": "p.7 §5 Performance and Constraint",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "EVO 策略性能与 CPO 相当,同时优于同样强调零违反的 Saute、WCSAC。",
+    "quote_en": "EVO achieves policy performance comparable to CPO while outperforming other methods such as Saute and WCSAC that emphasize zero constraint violations.",
+    "where": "p.7 §5 Performance and Constraint",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "作者提醒:CPO 在 SafetyPointGoal1-v0 违反阈值,所以它回报高于EVO并不代表策略更好。",
+    "quote_en": "CPO violates the constraint threshold in SafetyPointGoal1-v0, so a higher return than EVO does not indicate a better policy.",
+    "where": "p.7 §5 Performance and Constraint",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "用 ratio=平均回报/(约束违反率+ξ) 综合指标,EVO 在多数任务取得最佳(8个环境中除SafetySwimmerVelocity外均最高)。",
+    "quote_en": "The results show that EVO achieves the best performance across multiple tasks, effectively balancing policy performance and constraint satisfaction.",
+    "where": "p.19 §C.2 / Table 2",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "消融:把EVT分位约束换成常数分位,会以牺牲策略性能为代价换取约束满足。",
+    "quote_en": "the constant quantile objective achieves constraint satisfaction by diminishing policy performance.",
+    "where": "p.7 §5 Ablation Study",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "消融:去掉离线样本后 GPD 方差上升,经验上验证了定理4.3(代价标准差7.370→10.517,分位标准差15.562→27.762)。",
+    "quote_en": "eliminating off-policy samples leads to an increase in the variance of the GPD, providing empirical validation of Theorem 4.3.",
+    "where": "p.8 §5 + Figure 6",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "KS检验下 GPD 在各种数据分布上拟合表现稳健,对极端样本拟合优于高斯。",
+    "quote_en": "GPD presents accurate fitting performance across various data distributions.",
+    "where": "p.9 Figure 7 caption",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "样本量消融:在 SafetyPointCircle1-v0,EVO 即便只用10个样本也能维持较强的约束满足与性能。",
+    "quote_en": "EVO maintains strong constraint satisfaction and performance even with as few as 10 samples.",
+    "where": "p.9 §5 Sample Size of GPD Fitting",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "GPD 拟合开销很小,只需几秒,EVO 相对CPO仅有限增加训练时间(Table 1)。",
+    "quote_en": "GPD fitting process is highly efficient, taking only a few seconds in total.",
+    "where": "p.19 §C.1.2 / Table 1",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "局限/边界条件:当极端值与正常值差距细微时,GPD 可能拟合不佳,可用非线性变换放大差异。",
+    "quote_en": "the GPD may not provide a satisfactory fit due to the requirement in EVT that the threshold t be sufficiently large.",
+    "where": "p.9 §5 The Fitting Accuracy of GPD",
+    "strength": null
+  }
+]

@@ -1,0 +1,184 @@
+[
+  {
+    "kind": "contribution",
+    "point": "提出 APPO：给原始约束问题的拉格朗日函数附加一个二次偏差项，构造出multiplier-penalty函数",
+    "quote_en": "we propose Augmented Proximal Policy Optimization (APPO), which augments the Lagrangian function of the primal constrained problem via attaching a quadratic deviation term",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "该multiplier-penalty函数既能抑制cost振荡以稳定收敛，又与原始约束问题等价以精确控制安全代价",
+    "quote_en": "The constructed multiplier-penalty function dampens cost oscillation for stable convergence while being equivalent to the primal constrained problem to precisely control safety costs.",
+    "where": "p.1 Abstract",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "APPO 通过交替更新策略与拉格朗日乘子来求解构造出的增广原始-对偶问题",
+    "quote_en": "APPO alternately updates the policy and the Lagrangian multiplier via solving the constructed augmented primal-dual problem",
+    "where": "p.1 Abstract",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "把PPO的裁剪技巧同时用到reward和cost目标上，用近邻策略采集的数据更新策略，从而免去信赖域约束和Hessian求逆",
+    "quote_en": "we apply the clipped technique inspired by PPO (Schulman et al. 2017) to both reward and cost objectives to update policy with data sampled by proximal policies",
+    "where": "p.1 Introduction",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "用一个二次偏差项来补充关于等价等式约束问题(式5)的拉格朗日函数",
+    "quote_en": "We use a quadratic deviation term to supplement the Lagrange function concerning Eq. (5)",
+    "where": "p.2 §Methodology 式(6)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "理论上证明multiplier-penalty项是精确罚(exact penalty)：存在有限的σ̄，当σ>σ̄时原始问题(4)与增广原始-对偶问题(8)共享相同最优解集（Theorem 1）",
+    "quote_en": "the primal problem (4) and the augmented primal-dual problem (8) share the same",
+    "where": "p.3 Theorem 1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "multiplier-penalty项在策略进入约束违反的松弛边界时才起作用，这个自适应边界给罚项一个在违反前预热的机会",
+    "quote_en": "the multiplier-penalty term takes effect when the policy comes into a slack margin of constraint violations",
+    "where": "p.3 §Methodology",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "这一自适应松弛边界让罚项在约束违反更新之前就预热",
+    "quote_en": "This adaptive margin leaves a chance for the penalty term to warm up before constraint-violating updates",
+    "where": "p.3 §Methodology",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "实现层面：受PPO启发，对cost采用与reward类似的裁剪替代目标(式14/15)",
+    "quote_en": "APPO uses an analogous clipped surrogate objective for the cost as for the reward",
+    "where": "p.3 §Algorithm",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "用GAE从旧策略采集的轨迹估计reward与cost的优势函数",
+    "quote_en": "we use the Generalized Advantage Estimator (GAE)",
+    "where": "p.3 §Algorithm 式(16)附近",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "提供自适应增长罚因子的方法：当约束违反度ν超过阈值ε_k时令σ_{k+1}=ρσ_k，免去手动选罚因子",
+    "quote_en": "We provide an adaptively growing way to adjust the penalty factor",
+    "where": "p.3 §Algorithm；式(17) p.4",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "式(16)的损失函数几乎处处可微，可用一阶优化器(如Adam)直接求解",
+    "quote_en": "the loss function of APPO in Eq. (16) is differentiable almost everywhere",
+    "where": "p.4 §Algorithm",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "证明了原始-对偶问题与原始约束问题的等价性(Theorem 1)，并用Proposition 1说明二次偏差项对收敛的帮助",
+    "quote_en": "We prove the equivalence between the primal-dual problem and the primal constrained problem (Theorem 1) and illustrate the help of the quadratic deviation term for convergence (Proposition 1).",
+    "where": "p.2 §Introduction contributions",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "作者声称APPO相较一长串safe RL基线刷新了SOTA",
+    "quote_en": "setting a new state of the art compared with a comprehensive list of safe RL baselines",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "在Car Button任务上，APPO相对PDO/FOCOPS/CPPO-PID平均高出+41%回报（且IPO/CPO/PCPO有安全违反）",
+    "quote_en": "with an average +41% higher reward improvement over PDO, FOCOPS, CPPO-PID and safety violations of IPO, CPO, PCPO on the Car Button task",
+    "where": "p.5-6 §Overall Performance",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "学习曲线显示APPO比基线更快更平滑地收敛到满足约束的策略，训练中约束违反行为很少",
+    "quote_en": "faster and smoother than other baseline algorithms, with few constraint-violating behaviors during training",
+    "where": "p.6 §Overall Performance 图2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "使用拉格朗日对偶的算法(PDO/FOCOPS/CPPO-PID)在训练中表现出不同程度的振荡",
+    "quote_en": "show varying degrees of oscillation",
+    "where": "p.6 §Overall Performance 图2/图3",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "在不同cost阈值(60/103.12/140，Ant Run)下，APPO精确收敛到代价上限以扩大策略搜索空间",
+    "quote_en": "precisely converges to the cost upper limit to enlarge the policy searching space",
+    "where": "p.7 §Precise cost control 图4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "消融：去掉拉格朗日部分后APPO退化为exterior-point方法(EPM)，该对比说明拉格朗日对偶对安全满足的贡献",
+    "quote_en": "when the Lagrangian part is removed. This ablation comparison illustrates the contribution of Lagrangian duality to safety satisfaction in APPO",
+    "where": "p.7 §Precise cost control 图5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "当σ为零时APPO退化为PDO，以PDO作参照说明二次罚项确实稳定了学习过程",
+    "quote_en": "APPO degenerates into PDO when",
+    "where": "p.7 §Robustness",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "在较宽的超参数范围内实验结果保持稳定（鲁棒性）",
+    "quote_en": "The experimental results are stable in a wide range of hyper-parameter settings",
+    "where": "p.7 §Robustness",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "实验从三个知名safe RL基准(Safe MuJoCo / Safety Gym / Bullet Safety Gym)选了四个代表性任务",
+    "quote_en": "we select four representative tasks from three well-known safe RL benchmark environments",
+    "where": "p.5 §Task scenarios",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "Run任务的速度限制为不超过无约束PPO智能体速度的50%",
+    "quote_en": "cannot exceed 50% of the speed achieved by an unconstrained PPO agent",
+    "where": "p.5 §Task scenarios",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "表1：在满足约束前提下加粗最优回报；APPO在多数任务取得达约束下最优回报",
+    "quote_en": "We bold the best return values with constraint satisfaction",
+    "where": "p.5 表1 caption",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Ball Circle任务APPO达约束下回报768.1（阈值3.0，cost 2.3）",
+    "quote_en": "768.1",
+    "where": "p.5 表1 Ball Circle",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "作者自述局限/未来工作：CMDP与现实人机协作所需安全之间仍有差距，未来转向更严格安全准则的深度RL任务",
+    "quote_en": "our future work will focus on deep RL tasks with more stringent safety criteria",
+    "where": "p.7 Conclusion",
+    "strength": null
+  }
+]

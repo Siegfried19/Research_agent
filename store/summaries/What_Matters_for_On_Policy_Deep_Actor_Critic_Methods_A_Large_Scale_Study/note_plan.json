@@ -1,0 +1,254 @@
+[
+  {
+    "kind": "contribution",
+    "point": "在统一的 on-policy 框架里实现了 50 多个常用实现选择，并做大规模实证研究",
+    "quote_en": "we (1) implement >50 choices in a unified on-policy algorithm implementation, (2) conducted a large-scale",
+    "where": "p.1 §1 Our contributions",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "训练超过 25 万个 agent，覆盖五个不同复杂度的连续控制环境",
+    "quote_en": "We train over 250'000 agents in five continuous control environments of different complexity",
+    "where": "p.1 Abstract",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "五个基准环境来自 OpenAI Gym：Hopper-v1、Walker2d-v1、HalfCheetah-v1、Ant-v1、Humanoid-v1",
+    "quote_en": "Hopper-v1, Walker2d-v1, HalfCheetah-v1, Ant-v1, and Humanoid-v1",
+    "where": "p.2 §2 Considered setting",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "统一实现从 SEED RL 代码库起步",
+    "quote_en": "we implemented a single, unified on-policy agent and corresponding training protocol starting from the SEED RL code base",
+    "where": "p.2 §2 Unified on-policy learning algorithm",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "性能度量：每个超参配置用 3 个独立随机种子各训练，Hopper/HalfCheetah/Walker2d 训 100 万步，Ant/Humanoid 训 200 万步",
+    "quote_en": "we train 3 models with independent random seeds where each model is trained for one million (Hopper, HalfCheetah, Walker2d) or two million (Ant, Humanoid) environment steps",
+    "where": "p.3 §2 Performance measures",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "每十万步冻结策略评估 100 个 episode 的平均无折扣回报，单种子分数正比于学习曲线下面积，配置分数取 3 个种子的中位数",
+    "quote_en": "We evaluate trained policies every hundred thousand steps by freezing the policy and computing the average undiscounted episode return of 100 episodes",
+    "where": "p.3 §2 Performance measures",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "两种分析方式：每个取值的条件 95 分位，以及该取值在 top 5% 配置中的分布",
+    "quote_en": "We report the 95th percentile of the performance as well as a confidence interval based on a binomial approximation",
+    "where": "p.3 §2 Basic experimental design",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "实验分八个主题组：策略损失、网络结构、归一化与裁剪、优势估计、训练设置、时间步处理、优化器、正则化",
+    "quote_en": "We run experiments for eight thematic groups: Policy Losses (Sec. 3.1), Networks architecture",
+    "where": "p.3 §3 Experiments",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "本文新引入 Repeat Positive Advantages (RPA) 损失，是 AWR/V-MPO 的极限情形",
+    "quote_en": "Repeat Positive Advantages (RPA)",
+    "where": "p.13 §B.3",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "策略损失上 PPO 在 5 个环境中的 4 个优于其它损失（HalfCheetah 除外，PPO 是其上的顶尖损失之一）",
+    "quote_en": "We observe that PPO performs better than the other losses on 4 out of 5 environments",
+    "where": "p.4 §3.1 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "即便为每个损失挑最优超参，PPO 在两个最难任务（Humanoid 和 Ant）上仍胜出",
+    "quote_en": "PPO still outperforms the other losses on the two hardest tasks",
+    "where": "p.4 §3.1 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "PG 和 V-trace 在所有任务上表现都更差，作者归因于它们无法处理一次迭代内变成 off-policy 的数据",
+    "quote_en": "PG and V-trace perform worse on all tasks. This is likely caused by their inability to handle data that become off-policy in one iteration",
+    "where": "p.4 §3.1 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "PPO 裁剪阈值 0.2 和 0.3 在所有环境表现尚可，推荐起手设 0.25 并尝试更高更低值",
+    "quote_en": "perform reasonably well in all environments but that lower",
+    "where": "p.4 §3.1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "最意外的发现：策略初始化方案显著影响性能，却几乎从未被 RL 论文提及",
+    "quote_en": "the policy initialization scheme significantly influences the performance while it is rarely even mentioned in RL publications",
+    "where": "p.2 §1 Most surprising finding",
+    "strength": "strong"
+  },
+  {
+    "kind": "result",
+    "point": "把初始动作分布设成零均值、较小标准差、且与观测无关，能显著提升训练速度",
+    "quote_en": "initializing the network so that the initial action distribution has zero mean, a rather low standard deviation and is independent of the observation significantly improves the training speed",
+    "where": "p.2 §1 Most surprising finding",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "仅靠用更小权重初始化策略 MLP 最后一层这一项，就把 Humanoid 上的性能提升 66%",
+    "quote_en": "this alone boosts the performance on Humanoid by 66%",
+    "where": "p.5 §3.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "性能对初始动作标准差非常敏感，0.5 在除 Hopper 外的所有环境上表现最好",
+    "quote_en": "the performance is very sensitive to the initial action standard deviation with 0.5 performing best on all environments except Hopper",
+    "where": "p.5 §3.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "策略与价值网络分开（不共享）在 5 个环境中的 4 个上更好",
+    "quote_en": "Separate value and policy networks (C47) appear to lead to better performance on four out of five environments",
+    "where": "p.5 §3.2 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "激活函数中 tanh 表现最好、relu 最差",
+    "quote_en": "we observe that tanh activations perform best and relu worst",
+    "where": "p.5 §3.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "把采样动作经 tanh 映射到 [-1,1] 比裁剪略好，在 HalfCheetah 上提升 30%",
+    "quote_en": "in particular it improves the performance on HalfCheetah by 30%",
+    "where": "p.5 §3.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "输入（观测）归一化对除 Hopper 外所有环境的良好性能都很关键",
+    "quote_en": "Input normalization (C64) is crucial for good performance on all environments apart from Hopper",
+    "where": "p.6 §3.3 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "价值函数归一化影响很强：对 HalfCheetah 和 Humanoid 关键、对 Hopper/Ant 略有帮助、却显著伤害 Walker2d",
+    "quote_en": "it is crucial for good performance on HalfCheetah and Humanoid, helps slightly on Hopper and Ant and significantly hurts the performance on Walker2d",
+    "where": "p.6 §3.3 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "每个 minibatch 内的优势归一化似乎对性能影响不大",
+    "quote_en": "per-minibatch advantage normalization (C67) seems not to affect the performance too much",
+    "where": "p.6 §3.3 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "GAE 和 V-trace 比 N-step 回报更好，说明结合多步回报有益",
+    "quote_en": "GAE and V-trace appear to perform better than N-step returns",
+    "where": "p.6 §3.4 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "在 GAE 与 V-trace 之间没有发现显著的性能差异",
+    "quote_en": "We have not found a significant performance difference between GAE and V-trace in our experiments",
+    "where": "p.6 §3.4 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "PPO 式价值损失裁剪不论阈值取多少都伤害性能",
+    "quote_en": "PPO-style value loss clipping (C13) hurts the performance regardless of the clipping threshold",
+    "where": "p.6 §3.4 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Huber 损失在所有环境都比 MSE 差",
+    "quote_en": "the Huber loss (C11) performed worse than MSE in all environments",
+    "where": "p.6 §3.4 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "多次遍历经验数据对好的样本复杂度很关键",
+    "quote_en": "going over the experience multiple times appears to be crucial for good sample complexity",
+    "where": "p.7 §3.5 Results",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "增大并行环境数会在部分环境上急剧降低性能",
+    "quote_en": "As we increase the number of parallel environments (C1), performance decreases sharply on some of the environments",
+    "where": "p.7 §3.5 Results",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "在测试范围内增大 batch size 不会伤害样本复杂度",
+    "quote_en": "Increasing the batch size (C4) does not appear to hurt the sample complexity in the range we tested",
+    "where": "p.7 §3.5 Results",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "折扣因子是最重要的超参之一，应按环境调，建议起手 0.99",
+    "quote_en": "should be tuned per environment (start with",
+    "where": "p.7 §3.6 Recommendation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "隔帧跳过（frame skip）在 5 个环境中的 2 个上提升性能",
+    "quote_en": "Skipping every other frame (C21) improves the performance on 2 out of 5 environments",
+    "where": "p.7 §3.6 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Adam 与 RMSprop 优化器间性能差异很小；学习率影响很强，Adam 学习率 0.0003 在所有任务都表现良好",
+    "quote_en": "the learning rate influences the performance very strongly (Fig. 69) with the default value of 0.0003 for Adam (C24) performing well on all tasks",
+    "where": "p.7 §3.7 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "除 HalfCheetah 外，没有证据表明任何被研究的正则化项能显著帮助",
+    "quote_en": "We do not find evidence that any of the investigated regularizers helps significantly on our environments with the exception of HalfCheetah",
+    "where": "p.8 §3.8 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "作者推测正则化不太有用是因为 PPO 损失已强制信赖域、加上细致的策略初始化已保证足够探索",
+    "quote_en": "(1) the PPO policy loss already enforces the trust region which makes KL penalties or constraints redundant; and (2) the careful policy initialization",
+    "where": "p.8 §3.8 Interpretation",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "默认配置（Table 2）含 Shuffle transitions 的 minibatch 处理方式、GAE、tanh 激活等",
+    "quote_en": "Shuffle transitions",
+    "where": "p.17 Table 2 Default settings",
+    "strength": null
+  }
+]

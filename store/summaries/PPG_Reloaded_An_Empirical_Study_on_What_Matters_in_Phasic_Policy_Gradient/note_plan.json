@@ -1,0 +1,212 @@
+[
+  {
+    "kind": "contribution",
+    "point": "通过大规模实证研究推翻PPG两个被认为关键的设计因素，提出真正起作用的是策略正则化与数据多样性。",
+    "quote_en": "we unveil that policy regularization and data diversity are what actually matters",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "在保持策略正则化强度与数据多样性的前提下，可以用低的价值样本复用与高频特征蒸馏达到同等性能。",
+    "quote_en": "we can achieve the same level of performance with low value sample reuse and frequent feature distillation, as long as the policy regularization strength and data diversity are preserved",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "可以在维持PPG高性能的同时把计算开销降到与PPO相近的水平。",
+    "quote_en": "we can maintain the high performance of PPG while reducing the computational cost to a similar level as PPO",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "研究覆盖全部16个Procgen游戏，且同时涵盖样本效率与泛化两种设定。",
+    "quote_en": "Our comprehensive study covers all 16 Procgen games in both sample efficiency and generalization setups",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "现有工作把PPG优越性能归因于两点：高水平价值样本复用、低频特征蒸馏。",
+    "quote_en": "High level of value sample reuse,",
+    "where": "p.1 §1",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "低频特征蒸馏并非关键——只要策略正则化足够强，蒸馏可以高频进行而不损性能。",
+    "quote_en": "Feature distillation can be performed frequently without degrading the performance, as long as there is sufficiently strong policy regularization.",
+    "where": "p.2 §1",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "高样本复用也不是关键因素——在固定梯度更新次数下缩小minibatch（降低样本复用）能达到相似甚至更好性能。",
+    "quote_en": "Reducing the minibatch size while fixing the number of gradient updates (hence lower sample reuse) can achieve similar or even better performance.",
+    "where": "p.2 §1",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "除策略正则化外，蒸馏阶段训练数据的多样性是另一个关键贡献因素。",
+    "quote_en": "the diversity of training data in the distillation phase is another key contributing factor to the performance.",
+    "where": "p.2 §1",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "PPO优化裁剪代理目标L^clip，并加熵奖励构成策略训练总损失L_π = L^clip + β_H E[H[π_θ(·|s_t)]]。",
+    "quote_en": "The total loss for training policy",
+    "where": "p.2 §2.1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "PPG把策略与价值的训练解耦为策略阶段与蒸馏阶段两个阶段；策略阶段优化L_π + β_V R_V。",
+    "quote_en": "PPG decouples its training by alternating between a policy phase and a distillation phase.",
+    "where": "p.2 §2.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "本文采用Moon等人的价值正则项R_V = E[1/2(V_θ(s_t) - V_θ_old(s_t))^2]，约束更新后价值函数对蒸馏前旧价值的偏离。",
+    "quote_en": "which regularizes the deviation between the updated value function and the old one before the policy phase.",
+    "where": "p.3 §2.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "蒸馏阶段优化L_V + β_π R_π，其中R_π为新旧策略间的KL散度，约束更新后策略对蒸馏前旧策略的偏离。",
+    "quote_en": "regularizes the KL divergence between the updated policy and the old policy before the distillation phase.",
+    "where": "p.3 §2.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "相对策略目标，价值目标的训练在三方面不同：更新频率更低、用额外off-policy数据、样本复用更高。",
+    "quote_en": "much less frequently,",
+    "where": "p.3 §3",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "改变蒸馏间隔T_freq时同步调整价值更新次数K_V，使价值更新总数保持不变。",
+    "quote_en": "whenever the T_{freq} is changed, we also change the number of value updates K_V accordingly such that the total number of value updates remains the same.",
+    "where": "p.4 §3.1.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "主要性能指标是在全部Procgen游戏上平均的mean normalized return，每个实验跑3个随机种子。",
+    "quote_en": "Each experiment is run with 3 random seeds and the standard deviations are plotted as shaded areas.",
+    "where": "p.4 §3.1.2",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "在默认β_π=1下，去掉数据多样性的混淆后，性能仍随蒸馏更频繁而下降（图2）。",
+    "quote_en": "with the influence of data diversity removed, the performance seems to still suffer from",
+    "where": "p.4-5 §3.2, 图2",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "随蒸馏频率提高同步增大策略正则化强度β_π，即可达到相似性能（图3）。",
+    "quote_en": "if we increase the policy regularization strength as the distillation phase becomes more frequent, we can easily reach a similar performance.",
+    "where": "p.5 §3.2, 图3",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "可以让策略阶段与蒸馏阶段以同速率(T_freq=1)运行而几乎无性能下降，从而去掉Algorithm 1的第11行得到简化版PPG。",
+    "quote_en": "we can perform the policy training phase and distillation phase at the same rate (i.e., T_{freq} = 1) with almost no performance drop.",
+    "where": "p.5 §3.2, 图3",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "在低频蒸馏(T_freq=32)下提高β_π反而带来相似或更差性能，说明高正则化并非自身提升性能，而是修正高频蒸馏造成的策略畸变（图4）。",
+    "quote_en": "high regularization strength works not by improving performance on its own, but rather by fixing the increased policy distortions caused by frequent distillation.",
+    "where": "p.5 §3.2, 图4",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "固定β_π=1时减小缓冲区大小T_off会导致显著性能下降，T_off从32降到1时下降最大（图5）。",
+    "quote_en": "with changing T_{off} from 32 to 1 giving the largest decline.",
+    "where": "p.5-6 §3.3, 图5",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "在高频蒸馏(T_freq=1, β_π=16)下，更大T_off(更多样数据)通常性能更好；仅用on-policy数据(T_off=1)带来明显性能下降（图6）。",
+    "quote_en": "a higher T_{off}) generally yields better performance. Only using the on-policy data (i.e., T_{off} = 1) incurs a considerable performance drop.",
+    "where": "p.6 §3.3, 图6",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "仅用on-policy数据但增加并行环境数也能获得与off-policy缓冲区相似的性能提升，表明数据多样性确是关键因素之一（图7）。",
+    "quote_en": "increasing the number of environments achieves a similar performance boost as using an off-policy buffer. This indicates that data diversity is indeed one of the factors that matter.",
+    "where": "p.6 §3.3, 图7",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "固定更新次数K_V缩小价值minibatch M_V不会带来性能下降，唯一明显下降出现在泛化(easy)设定下M_V过小(M_V×1/8=128)时（图8）。",
+    "quote_en": "The only noticeable drop occurs in the generalization (easy) setup, when the minibatch size is too small (M_V \\times 1/8 = 128).",
+    "where": "p.7 §3.4, 图8",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "采用M_V×1/8可把训练时间减半，使总时间开销与PPO相近（表2）。",
+    "quote_en": "using M_V \\times 1/8 halves the training time, resulting in similar time costs as PPO.",
+    "where": "p.7 §3.4, 表2",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "过强的价值正则化β_V会妨碍策略学习并降低性能（图10）。",
+    "quote_en": "using too strong regularization hampers policy learning and degrades performance.",
+    "where": "p.8 §4, 图10",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "高频蒸馏下不加价值正则化(β_V=0)仅在泛化(hard)测试性能上带来很小下降，但在低频蒸馏下不加价值正则化性能会大幅退化（图11）；说明低频蒸馏需要更强的价值正则化，这与策略正则化的观察相反。",
+    "quote_en": "we need stronger value regularization under infrequent distillation, which is opposite to our observations for policy regularization.",
+    "where": "p.8 §4, 图10/11",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "刚度分析显示低频蒸馏总体上与更高刚度相关，但刚度差异与性能并不紧密相关（图12）。",
+    "quote_en": "it seems that the difference in stiffness is not closely correlated with the performance.",
+    "where": "p.8 §4, 图12",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "结论重申：被认为关键的高样本复用与低频特征蒸馏并非决定因素，真正起作用的是策略正则化与数据多样性；并可把计算开销减半到PPO水平。",
+    "quote_en": "the two factors that were believed to be critical, high level of sample reuse and low frequency of feature distillation, turn out to be not the deciding factors.",
+    "where": "p.8 §6",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "默认超参：T_off=32、T_freq=32、β_π=1；样本效率(hard)用N_env=256、训练全部关卡、跑100M步。",
+    "quote_en": "T_{off} = 32, T_{freq} = 32, \\beta_\\pi = 1.",
+    "where": "p.4 §3.1.2 / 附录A 表",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "全部实验用IMPALA残差卷积网络与Adam优化器；γ=0.999、λ=0.95、PPO裁剪ε=0.2、熵系数β_H=0.01、学习率5e-4、最大梯度范数0.5。",
+    "quote_en": "we use the residual convolutional networks in IMPALA",
+    "where": "p.11 附录A",
+    "strength": null
+  }
+]

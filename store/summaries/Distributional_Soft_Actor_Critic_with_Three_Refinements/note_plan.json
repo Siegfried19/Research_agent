@@ -1,0 +1,128 @@
+[
+  {
+    "kind": "contribution",
+    "point": "本文在标准DSAC(DSACv1)基础上提出三项改进,得到增强版DSAC-T(又名DSACv2),声称无需逐任务调超参即可匹配或超越主流model-free算法。",
+    "quote_en": "Without the need for task-specific hyperparameter tuning, DSAC-T consistently matches or outperforms leading model-free RL algorithms, including SAC, TD3, DDPG, TRPO, and PPO, in all tested environments.",
+    "where": "Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "改进一:期望值替换——用更稳定的目标Q值(目标return的期望)替换mean-related梯度里随机的target return,使均值更新稳定。",
+    "quote_en": "DSAC-T uses expected value substituting to stabilize mean-value updates, where the random target return is replaced by a more stable target Q-value, essentially the expected value of the target return.",
+    "where": "p.2 §1 contribution 1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "改进二:双值分布学习——clipped double Q-learning的分布式版本,训练两个独立值分布,取Q值较小者算梯度以进一步抑制过估计。",
+    "quote_en": "we introduce a distributional version of clipped double Q-learning, called twin value distribution learning.",
+    "where": "p.2 §1 contribution 2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "改进三:基于方差的critic梯度调整——用基于方差的裁剪边界替换固定边界,并加方差相关的梯度缩放权重来调节更新幅度,降低对reward scaling的敏感性。",
+    "quote_en": "DSAC-T addresses this issue by implementing a variance-based critic gradient adjustment technique, involving substituting the fixed boundary with a variance-based value and imposing a variance-based gradient scaling weight to modulate the update size.",
+    "where": "p.2 §1 contribution 3",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "DSACv1存在的问题:训练不稳定、对reward scaling敏感、以及critic梯度方差高。",
+    "quote_en": "DSACv1 faces challenges such as training instability and sensitivity to reward scaling, as well as high variance in critic gradients due to return randomness.",
+    "where": "Abstract",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "DSAC-T取双值分布中Q值较小者的下标来构造critic和actor梯度。",
+    "quote_en": "The value distribution with the smaller mean value is chosen to construct critic and actor gradients.",
+    "where": "p.5 §4.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "裁剪边界自适应化:b=ξ·E[σθ(s,a)],ξ取3遵循three-sigma规则,使边界随reward幅度自适应。",
+    "quote_en": "Typically, we can set ξ = 3 following the three-sigma rule.",
+    "where": "p.6 §4.3 式(23)",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "在Humanoid-v3上,DSAC-T相对SAC/TD3/PPO/DDPG/TRPO的提升分别为16.0%/92.3%/57.7%/104.7%/1022.2%。",
+    "quote_en": "compared with SAC, TD3, PPO, DDPG, and TRPO, our algorithm shows relative improvements of 16.0%, 92.3%, 57.7%, 104.7%, and 1022.2%, respectively.",
+    "where": "p.7 §5.2",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "DSAC-T在所有测试任务上至少匹配、整体超越全部基线,设立了model-free RL的新表现标准。",
+    "quote_en": "Our results reveal that DSAC-T surpasses (at least matches) the performance of all baseline algorithms across all benchmark tasks.",
+    "where": "p.7 §5.2",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "估计偏差上DSAC-T在Humanoid-v3为-42.29(为负,属轻微低估),数量级远小于RAC-SAC等方法的偏差。",
+    "quote_en": "DSAC-T achieves superior estimation accuracy in both Humanoid (estimation bias: -42.29 vs. 97.78) and Ant (estimation bias: -10.55 vs. -18.82).",
+    "where": "p.9 §5.2 表3",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "消融:去掉期望值替换或去掉双值分布的DSAC-T在Humanoid-v3上学习稳定性和最终表现都更差,证实两项改进各自有贡献。",
+    "quote_en": "This confirms the significant contributions of the expected value substitution technique, defined by (18), and the twin value distribution learning technique to learning stability and efficacy.",
+    "where": "p.9 §5.3.1 图4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "reward scaling消融:去掉方差梯度调整的DSAC-T对reward尺度敏感,在0.01和0.1的低reward尺度下难以学到有效策略。",
+    "quote_en": "it struggles to learn an effective policy under lower reward scales, specifically at 0.01 and 0.1.",
+    "where": "p.9-10 §5.3.2 图5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "与overestimation抑制方法RAC-SAC比,DSAC-T估计精度更优:Humanoid偏差-42.29 vs 97.78,Ant -10.55 vs -18.82。",
+    "quote_en": "The results show that DSAC-T achieves superior estimation accuracy in both Humanoid (estimation bias: -42.29 vs. 97.78) and Ant (estimation bias: -10.55 vs. -18.82).",
+    "where": "p.9 §5.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "计算开销:DSAC-T每1000次迭代35.51s,略高于DSACv1(29.00s)/SAC(35.02s)/TD3(31.41s)/DDPG(25.20s)。",
+    "quote_en": "DSAC-T (35.51s), DSACv1 (29.00s), SAC (35.02s), TD3 (31.41s), and DDPG (25.20s).",
+    "where": "p.8-9 §5.2",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "实验覆盖11个向量输入控制任务(Humanoid/Ant/HalfCheetah/Walker2d/InvertedDoublePendulum/Hopper/Pusher/Reacher/Swimmer/Bipedalwalker/Bipedalwalker-hardcore)和1个图像输入任务CarRacing,各跑5个随机种子。",
+    "quote_en": "including 11 vector-input-based control tasks (Humanoid, Ant, HalfCheetah, Walker2d, InvertedDoublePendulum, Hopper, Pusher, Reacher, Swimmer, Bipedalwalker, and Bipedalwalker-hardcore) and one image-input-based control task (CarRacing).",
+    "where": "p.6 §5 / 图1",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "真实机器人验证:用Geekplus M200移动机器人做轨迹跟踪+避障,目标速度0.28 m/s,策略网络以50Hz频率运行于Intel N4200 CPU。",
+    "quote_en": "We utilized the Geekplus M200 mobile robot as the experimental platform, tasked with precisely following a reference path (as illustrated in Fig. 6) with a desired speed of 0.28 m/s",
+    "where": "p.9-10 §6 图6",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "局限:DSAC-T用单峰高斯近似值分布和随机策略,在多目标、复杂动力学任务中真实分布可能是多峰,限制表征能力;未来拟用diffusion等多峰近似。",
+    "quote_en": "we utilize a unimodal Gaussian distribution to approximate both the value distribution and the stochastic policy. However, in tasks with multiple goals and complex dynamics, the true distributions may exhibit multimodal characteristics.",
+    "where": "p.11 §8 conclusion",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "理论上DSAC-T仅在算法层引入改进,基于DSPI框架,其收敛性质与DSACv1相同(已证明一致收敛到最优解)。",
+    "quote_en": "Since DSAC-T introduces refinements only at the algorithmic level, its theoretical convergence properties remain the same as those of DSACv1.",
+    "where": "p.6 §4.3",
+    "strength": "strong"
+  }
+]

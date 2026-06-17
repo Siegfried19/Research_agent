@@ -1,0 +1,212 @@
+[
+  {
+    "kind": "contribution",
+    "point": "提出奖励自适应RL(HDPG):用多头critic为每个奖励分量学独立价值函数,产生混合策略梯度,再用动态权重让各分量按不同优先级优化策略。",
+    "quote_en": "In this work, we propose a novel reward-adaptive reinforcement learning for biped locomotion, allowing the control policy to be simultaneously optimized by multiple criteria using a dynamic mechanism. The proposed method applies a multi-head critic to learn a separate value function for each reward component. This leads to hybrid policy gradient.",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "动态权重让每个分量以不同优先级优化策略,作者声称借此提高学习效率。",
+    "quote_en": "We further propose dynamic weight, allowing each component to optimize the policy with different priorities. This hybrid and dynamic policy gradient (HDPG) design makes the agent learn more efficiently.",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "问题动机:多数现有方法把各分量奖励简单求和成单一价值函数,会破坏不同奖励间的相关性、限制学习效率。",
+    "quote_en": "Most existing approaches simply add up the component rewards to learn a single value function [5], [10], which may break the correlation between different rewards and therefore limit learning efficiency [11], [12].",
+    "where": "p.1 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "HDPG基于DDPG(连续动作),不同于HRA/drQ基于Q-learning只能处理离散动作空间。",
+    "quote_en": "However, both HRA and drQ are based on Q-learning and can only be used for discrete action space tasks. Our HDPG is based on DDPG [13], which allows learning continuous actions.",
+    "where": "p.2 §II",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "奖励被分解为向量,每个critic头学对应子奖励的动作价值函数;整体Q值也表示为向量,且定义为各头Q之和。",
+    "quote_en": "Each head of the critic learns an action-value corresponding to a specific sub-reward.",
+    "where": "p.3 §IV-A 公式(4)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "不同critic头共享多层底层网络,只有最后一层相互独立。",
+    "quote_en": "Only the last layer is independent of each other.",
+    "where": "p.3 §IV-A 公式(7)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "动态权重直觉:鼓励agent先学简单分量、再逐步学复杂分量;先学保持身体平衡,再学向前移动。",
+    "quote_en": "Intuitively, the motivation of dynamic weights is to encourage the agent to learn the easier components first, and then gradually learn the more complex components.",
+    "where": "p.4 §IV-B",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "权重规则:μ_k越大表示该分量对当前策略越容易拿到大奖励、越易学;σ_k越大表示策略在该分量上越不稳定,需提高其学习率。",
+    "quote_en": "is easier to get a larger reward for the current policy, so it is easier to learn for the current policy, and vice versa.",
+    "where": "p.4 §IV-B 公式(9)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "优先级权重每隔T个episode更新一次;总策略梯度按各头梯度的动态加权和更新。",
+    "quote_en": "the priority weights will be updated every T episodes.",
+    "where": "p.4 §IV-B 公式(9)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "奖励向量含6个子奖励:步态、步进、力矩、高度、姿态、跌倒奖励。",
+    "quote_en": "expressed as step reward, gait reward, height reward, torque reward, orientation reward and fall down reward.",
+    "where": "p.4 §IV-C",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "力矩奖励与关节电机力矩大小成反比,用负奖励惩罚电机过大力矩、降低行走能耗、让轨迹更平滑。",
+    "quote_en": "The torque reward is inverse proportional to the torque magnitude of the joint motors. Negative torque reward is to punish excessive torque of servomotors while walking.",
+    "where": "p.4 §IV-C 公式(12)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "跌倒奖励r_t^d在机器人倒地时设为-50。",
+    "quote_en": "the fall down reward r d t is set as -50 for the robot fell to the ground.",
+    "where": "p.4 §IV-C 公式(14)下方",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "AIDA双足机器人:基于ROS+Gazebo(ODE物理引擎),SolidWorks建模,共10个自由度,每条腿5个DoF,质心维持在骨盆中心。",
+    "quote_en": "The robot contains 10 degrees of freedom (DoF), and each leg has 5 DoF.",
+    "where": "p.5 §V",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "状态用3帧拼接(s_{t-2},s_{t-1},s_t)含时序信息,每帧23维,合成69维状态;动作是各关节角位置,10维向量。",
+    "quote_en": "The combined states yield 69-dimensional state space (23D for each state). The predicted action is the angular position of each joint, which is a 10-dimensional vector.",
+    "where": "p.5 §V-C",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "训练超参:折扣因子0.99,actor学习率1e-5、critic学习率1e-4,batch=64,优先级动态权重每T=20个episode更新一次,Adam优化器。",
+    "quote_en": "the discount factor is set as 0.99. The learning rate of actor network and critic network are set as 1e−5 and 1e−4, respectively. And the training batch size is set as 64.",
+    "where": "p.5 §VI Training",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "奖励权重:w_1=1.0、w_3=0.001(参考OpenAI Gym的Walker2d),其余w_2/w_4/w_5=1.0;每个分量用max-min归一化到(0,1)。",
+    "quote_en": "where w1 and w3 are set as 1.0 and 0.001, respectively. The other weights (e.g., w2, w4, w5) are set as 1.0. We use simple max-min normalization for each reward component.",
+    "where": "p.5 §VI Reward normalization",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "构建3任务的双足locomotion基准:随机扰动行走(6N-14N,持续0.2s)、跨障碍行走、斜坡行走。",
+    "quote_en": "walking under random disturbances, walking cross obstacle, and walking on the slope.",
+    "where": "p.5 §V-B",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "学习效率:HDPG累积奖励约2k episode即开始上升,MHDDPG和DDPG分别需要4k和6k episode。",
+    "quote_en": "The accumulative reward of HDPG starts to rise after training 2k episodes while MHDDPG and DDPG require 4k and 6k episodes, respectively.",
+    "where": "p.6 §VI-A 图4-Left",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "8N侧向扰动下只有HDPG成功率保持90%以上,DDPG和MHDDPG骤降到约80%;6N时各算法都表现良好。",
+    "quote_en": "only HDPG can maintain a success rate of over 90%. In comparison, the success rate of DDPG and MHDDPG dropped sharply to about 80%.",
+    "where": "p.6 §VI-A1 图5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "扰动增到10N时,传统ZMP方法在3个方向成功率仅38%/38%/24%,基于RL的方法仍能保持50%以上。",
+    "quote_en": "the success rate of ZMP in 3 directions is only 38%, 38% and 24% respectively. While the other RL-based methods can maintain a success rate of over 50%.",
+    "where": "p.6 §VI-A1 图5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "随机扰动任务总体:MHDDPG和HDPG都胜过DDPG,HDPG表现最佳。",
+    "quote_en": "the proposed MHDDPG and HDPG outperform DDPG on all walking under random disturbance tasks, and HDPG achieves the best performance.",
+    "where": "p.6 §VI-A1 图5",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "跨障碍:HDPG在所有高度上鲁棒性最佳;1.2cm障碍只有HDPG成功率超60%,而MHDDPG和DDPG跌到约50%。",
+    "quote_en": "For 1.2cm obstacles, only HDPG achieves a success rate over 60%, while MHDDPG and DDPG 50% drop to about 50%.",
+    "where": "p.6-7 §VI-A2 图6",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "1.4cm障碍:HDPG仍最好但只比另两个算法高约20%,作者归因于机器人抬腿高度的限制。",
+    "quote_en": "although HDPG has the best performance, it is only 20% higher than the other two algorithms.",
+    "where": "p.7 §VI-A2 图6",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "斜坡任务:DDPG与MHDDPG表现接近,说明多头critic在此任务作用不强;HDPG最佳,12度斜坡成功率比其他算法高近20%。",
+    "quote_en": "The performance of DDPG and MHDDPG is close, which means that multi-head critic doesn't have a strong effect in this task.",
+    "where": "p.7 §VI-A3 图6",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "动态权重有效性:MHDDPG的step和gait奖励训练非常不稳定(暗示分量间存在依赖),而HDPG的全部5个分量训练稳定。",
+    "quote_en": "However, the step reward and gait reward are very unstable, which indicates that there is dependency between different reward components",
+    "where": "p.7 §VI-A4 图4 Middle/Right",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "训练顺序验证动态权重直觉:高度和姿态奖励约2k episode先上升,步态和步进奖励约6k再上升——即机器人先学会保持平衡再学向前走。",
+    "quote_en": "the height reward and orientation reward first rises at about 2k episodes, while the gait reward and step reward then rise at about 6k episodes. This means that the robot first learns how to keep body balance, and then learns to walk forward.",
+    "where": "p.7 §VI-A4 图4 Right",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Sim-to-real:用仿真+动力学随机化训练的策略成功迁移到实体机器人;视频中受推力扰动后约0.8s内恢复稳定步态。",
+    "quote_en": "As the policy adjusts the actions, the robot recovers to stable gait at 13.9s.",
+    "where": "p.7 §VI-B 图7",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "MuJoCo泛化:在Hopper/Walker2d/HalfCheetah-v3三任务、1M步内,MHDDPG和HDPG都胜过DDPG基线,HDPG在所有任务上最佳。",
+    "quote_en": "MHDDPG and HDPG outperform DDPG baselines on all tasks within 1M environment steps, and HDPG achieves the best performance on all tasks.",
+    "where": "p.7-8 §VI-C 表I",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "把思路套到PPO得HD-PPO:在Hopper和Walker上相比PPO提升超过25%,在HalfCheetah上约提升6.6%;作者指出奖励分量少(HalfCheetah仅2个)时改进不明显。",
+    "quote_en": "HD-PPO has achieved a breakthrough of more than 25% on Hopper and Walker tasks, while it has nearly increased by about 6.6% on HalfCheetah task.",
+    "where": "p.8 §VI-C 表I",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "在Gazebo中搭建AIDA双足机器人并发布3类挑战(推力恢复、障碍、斜坡地形),将仿真策略零额外调参迁移到实体机器人。",
+    "quote_en": "We also release 3 challenges, which are push recovery challenges, obstacle challenges and slope terrain challenges.",
+    "where": "p.1-2 §I",
+    "strength": "observed"
+  }
+]

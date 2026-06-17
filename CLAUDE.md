@@ -37,12 +37,14 @@ python3 pipeline/run.py <id> verify      # escalate_verify.py --start-pct 100: C
 
 **夜间自动化拆分（2026-06-16）**：为"常开机器半夜自动跑、白天把 token 留给用户",`auto` 按 token 消耗+要不要人切成两半:
 - `python3 pipeline/run.py <id> auto-pull` = discover→score→commit→fetch→recover→hunt→**tierb**→worklist。**白天/有人时手动跑**(tierb 要点付费墙验证),只花小量 token(score/hunt)。
-- `python3 pipeline/run.py <id> auto-sum [N]` = sum→finalize→verify。**夜间 cron 无人值守**,token 大户;continue-on-error(撞限流不中断、次晚幂等补齐)+ 起跑/收尾发 Telegram。第三参 `N`=本批最多总结 N 篇(`summarize_auto --limit`,按 rank 取,幂等续做)。**节奏(用户 2026-06-16 定,2026-06-17 把批量从 10 提到 20):一晚跑两批、各 20 篇、相隔 ~4.5h**(踩 token 滚动窗口重置;两条 cron 行 1:00/5:30)。提量依据:10 篇用量校准实测单篇 summarize ~$3.36 等效/Max 实付$0、verify codex ~131s/篇。
+- `python3 pipeline/run.py <id> auto-sum [N]` = sum→finalize→verify。**夜间 cron 无人值守**,token 大户;continue-on-error(撞限流不中断、次晚幂等补齐)+ 起跑/收尾发 Telegram。第三参 `N`=本批最多总结 N 篇(`summarize_auto --limit`,按 rank 取,幂等续做)。**节奏(用户 2026-06-16 定,2026-06-17 把批量从 10 提到 20):一晚跑两批、各 20 篇、相隔 ~5.5h**(踩 token 滚动窗口重置;两条 cron 行 2:00/7:30。**2026-06-17 从 4.5h 调到 5.5h**:实测 codex 额度窗口只够 ~20 次重型核查、且小时级恢复,4.5h 第二批常落进未恢复的窗口仍全挂——见 `logs/SESSION-2026-06-17-codex-quota.md`)。提量依据:10 篇用量校准实测单篇 summarize ~$3.36 等效/Max 实付$0、verify codex ~131s/篇。
 > **2026-06-17 起 cron 用队列模式 `auto-sum-next [N]`**(取代写死单主题的 `auto-sum <id> [N]`,后者保留可手动用):每批从 `topics` 表按 `priority DESC, 建立序` 挑**第一个还有可做篇的主题**做 ≤N 篇,做完自动顺到下一主题——加新主题自动进队、不改 cron;一次只跑一个主题=串行不抢额度。插队=调 `topics.priority`(可经 Telegram bot 让我改,当晚生效)。收尾 Telegram 发 本主题燃尽(🎉/⚠️/✅)+**全队列各主题剩余**;全清发🎉;0进展(疑似坏PDF)发⚠️。`run_auto_sum` chain 头部加了 worklist(切主题自洽)。**cron 已真装并冒烟验证过(PATH 含 ~/.local/bin + nvm codex 目录),队列 priority:gt=1 先做、dhi=0。** 实现见 run.py 的 `select_next_topic/queue_report/burn_down_msg/topic_progress`。
 - 切点理由:tierb(唯一要人)卡链子中间,sum/verify(token 大户)在后半段——前半白天连人带验证搞定,后半烧 token 的丢夜里。`auto`(全程)保留不动。**部署到常开机器的完整 runbook(cron 行/干净环境 PATH 坑/前提)→ `docs/nightly-cron-deploy.md`。**
 
-新主题：建 `topics/<id>/topic.json`（字段：id/title/idea/queries/window_years/target）。
+新主题：建 `topics/<id>/topic.json`（字段：id/title/idea/queries/window_years/target；**可选 `score_anchors`**=3张已定分参照样本[高~95/边界~45/低~10]，治打分跨批次漂移，见下）。
 **检索词(queries)由你根据用户给的研究思路生成**（多组英文关键词，覆盖不同侧面）。
+
+**打分跨批次校准漂移修法（2026-06-17，未提交）**：`score_auto` 每批独立 claude -p 会让"几分算相关"逐批微漂，落截断线附近翻转去留。改了 4 处：rubric 通用骨架(替掉原写死在 digital-human 的例子)＋`topic.json.score_anchors` 注入每批固定头部钉死刻度＋reason 须引原文(证据接地)；batch 10→20＋批内洗牌(对冲位置偏置)；`boundary_rerank` 对去留线 ±8 分窄带×5次取均值复称(首跑=target截断线/增量=资格闸rel≥30·flag_min)，写 `scores/zz_boundary.json` 靠文件名排序让 commit 合并覆盖(commit.py 没动)。**调研依据+方案 → `docs/score-drift-research-findings.md`。** 新主题**冷启动全自动自举**:`score` 阶段发现 topic.json 无 `score_anchors` 就自动裸跑整遍→从整遍分布挑高/边界/低3张写回 topic.json(`autopick_anchors`,非阻塞推TG告知可事后改)→带锚重打;冻好后增量复用不再自举。`run auto` 一条龙无需人介入。想改自举挑的锚点→直接编辑 topic.json 的 `score_anchors` 后重跑 score。gt/dhi 已手挑锚点填好(比自动准),不会触发自举。
 
 ## 关键约定 / 坑（务必遵守）
 - **Python 3.10+,stdlib sqlite3**(不再需要 node)。**目录分层(2026-06-15)**：入口/公共API 在 `pipeline/` 根(run.py/ask.py)，主链脚本在 `pipeline/stages/`，旁路在 `pipeline/tools/`，共享库 `pipeline/lib/`。stages/tools 里每个脚本顶部有 **path shim 三行**(把 `pipeline/` 加进 `sys.path`)，所以 `from lib.xxx import` 在任何子目录都解析得到 + sibling import(如 `from summarize_auto import`)靠脚本自身目录在 `sys.path[0]`。直接 `python3 pipeline/stages/<x>.py` 或经 run.py 调都成立。

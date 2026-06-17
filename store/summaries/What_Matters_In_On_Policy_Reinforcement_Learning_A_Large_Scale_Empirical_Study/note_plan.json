@@ -1,0 +1,240 @@
+[
+  {
+    "kind": "contribution",
+    "point": "作者在一个统一的 on-policy 框架里实现了 >50 个实现/超参“选择”，并训练了超过 25 万个 agent 做大规模实证。",
+    "quote_en": "we (1) implement >50 choices in a unified on-policy algorithm implementation, (2) conducted a large-scale (more than 250'000 agents trained) experimental study",
+    "where": "p.1 §1 Our contributions",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "实验在 5 个不同复杂度的连续控制环境上做。",
+    "quote_en": "Hopper-v1, Walker2d-v1, HalfCheetah-v1, Ant-v1, and Humanoid-v1",
+    "where": "p.2 §2 Considered setting",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "统一 agent 从 SEED RL 代码库起步实现；验证了当所有选择按 OpenAI baselines 的 PPO 实现取值时能复现 PPO 论文的性能。",
+    "quote_en": "we implemented a single, unified on-policy agent and corresponding training protocol starting from the SEED RL code base",
+    "where": "p.2 §2 Unified on-policy learning algorithm",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "性能度量：每个超参配置训 3 个独立随机种子，Hopper/HalfCheetah/Walker2d 训 100 万步、Ant/Humanoid 训 200 万步。",
+    "quote_en": "we train 3 models with independent random seeds where each model is trained for one million (Hopper, HalfCheetah, Walker2d) or two million (Ant, Humanoid) environment steps",
+    "where": "p.3 §2 Performance measures",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "每 10 万步冻结策略、用 100 个 episode 的平均无折扣回报评估，配置最终得分取 3 个种子的中位数（单种子分=学习曲线下面积）。",
+    "quote_en": "We evaluate trained policies every hundred thousand steps by freezing the policy and computing the average undiscounted episode return of 100 episodes",
+    "where": "p.3 §2 Performance measures",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "分析用两个量：给定某选择值时性能分布的“条件 95 分位数”，以及该选择值在 top 5% 配置里的分布。",
+    "quote_en": "We report the 95th percentile of the performance as well as a confidence interval based on a binomial approximation",
+    "where": "p.3 §2 Difficulty of investigating choices",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "实验分 8 个主题组分别做。",
+    "quote_en": "We run experiments for eight thematic groups",
+    "where": "p.3 §3 Experiments",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "最意外发现：策略初始化方案显著影响性能，但在 RL 文献里几乎从未被提及——让初始动作分布零均值、较小标准差、且与观测无关，能显著加快训练速度。",
+    "quote_en": "the policy initialization scheme significantly influences the performance while it is rarely even mentioned in RL publications. In particular, we have found that initializing the network so that the initial action distribution has zero mean, a rather low standard deviation and is independent of the observation significantly improves the training speed",
+    "where": "p.2 §1 Most surprising finding",
+    "strength": "strong"
+  },
+  {
+    "kind": "result",
+    "point": "策略损失上，PPO 在 5 个环境里有 4 个优于其他损失，在 HalfCheetah 上属于表现最好的一档。",
+    "quote_en": "We observe that PPO performs better than the other losses on 4 out of 5 environments and is one of the top performing losses on HalfCheetah.",
+    "where": "p.4 §3.1 Interpretation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "PG 与 V-trace 在所有任务上都更差，作者归因于它们无法处理一次迭代内变成 off-policy 的数据。",
+    "quote_en": "Perhaps unsurprisingly, PG and V-trace perform worse on all tasks. This is likely caused by their inability to handle data that become off-policy in one iteration",
+    "where": "p.4 §3.1 Interpretation",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "建议用 PPO 策略损失，裁剪阈值从 0.25 起步，并尽量也试更低和更高的值。",
+    "quote_en": "Use the PPO policy loss. Start with the clipping threshold set to 0.25 but also try lower and higher values if possible.",
+    "where": "p.4 §3.1 Recommendation",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "PPO 损失通过裁剪重要性比来鼓励选取优势为正的动作、同时限制单点上策略的改动幅度。",
+    "quote_en": "This loss encourages the policy to take actions which are better than average (have positive advantage) while clipping discourages bigger changes to the policy",
+    "where": "p.12 §B.3",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "网络结构：策略与价值用分离网络在 5 个环境里有 4 个表现更好。",
+    "quote_en": "Separate value and policy networks (C47) appear to lead to better performance on four out of five environments",
+    "where": "p.5 §3.2 Interpretation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "激活函数上 tanh 表现最好、relu 最差。",
+    "quote_en": "As for activation functions, we observe that tanh activations perform best and relu worst.",
+    "where": "p.5 §3.2 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "仅把策略 MLP 最后一层用更小的权重初始化，就让 Humanoid 上性能提升 66%。",
+    "quote_en": "by initializing the policy MLP with smaller weights in the last layer (C57, Fig. 24) this alone boosts the performance on Humanoid by 66%",
+    "where": "p.5 §3.2 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "性能对初始动作标准差很敏感，0.5 在除 Hopper 外的所有环境上最好（Hopper 上更大值更好）。",
+    "quote_en": "the performance is very sensitive to the initial action standard deviation with 0.5 performing best on all environments except Hopper where higher values perform better.",
+    "where": "p.5 §3.2 Interpretation / Fig. 2",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "建议：最后策略层用 100× 更小权重初始化；用 softplus 把网络输出转成动作标准差并加负偏置降低初始标准差。",
+    "quote_en": "Initialize the last policy layer with 100× smaller weights. Use softplus to transform network output into action standard deviation and add a (negative) offset to its input to decrease the initial standard deviation of actions.",
+    "where": "p.5 §3.2 Recommendation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "归一化：输入归一化在除 Hopper 外的所有环境上对好性能都至关重要。",
+    "quote_en": "Input normalization (C64) is crucial for good performance on all environments apart from Hopper",
+    "where": "p.6 §3.3 Interpretation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "价值函数归一化影响很强：对 HalfCheetah 和 Humanoid 至关重要、对 Hopper 和 Ant 略有帮助，却在 Walker2d 上显著有害。",
+    "quote_en": "value function normalization (C66) also influences the performance very strongly — it is crucial for good performance on HalfCheetah and Humanoid, helps slightly on Hopper and Ant and significantly hurts the performance on Walker2d",
+    "where": "p.6 §3.3 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "建议：永远用观测归一化，并检查价值函数归一化是否提升；梯度裁剪可能略有帮助但属次要。",
+    "quote_en": "Always use observation normalization and check if value function normalization improves performance. Gradient clipping might slightly help but is of secondary importance.",
+    "where": "p.6 §3.3 Recommendation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "优势估计：GAE 和 V-trace 都优于 N-step；二者之间没找到显著差异。",
+    "quote_en": "GAE and V-trace appear to perform better than N-step returns",
+    "where": "p.6 §3.4 Interpretation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "Huber loss 在所有环境上都比 MSE 差；PPO 式价值损失裁剪反而有害。",
+    "quote_en": "the Huber loss (C11) performed worse than MSE in all environments",
+    "where": "p.6 §3.4 Interpretation",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "建议：用 GAE 且 λ=0.9，不要用 Huber loss、也不要 PPO 式价值损失裁剪。",
+    "quote_en": "Use GAE with λ = 0.9 but neither Huber loss nor PPO-style value loss clipping.",
+    "where": "p.6 §3.4 Recommendation",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "GAE(λ) 是把多步回报组合起来的方法，λ 控制偏差-方差权衡。",
+    "quote_en": "Generalized Advantage Estimator, GAE(λ) [9] is a method that combines multi-step returns",
+    "where": "p.12 §B.2",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "训练设置：对采集的经验多次遍历对好的样本效率至关重要。",
+    "quote_en": "going over the experience multiple times appears to be crucial for good sample complexity",
+    "where": "p.7 §3.5 Results",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "增加并行环境数会在部分环境上让性能急剧下降（作者归因于经验片段变短、价值自举更早）。",
+    "quote_en": "As we increase the number of parallel environments (C1), performance decreases sharply on some of the environments",
+    "where": "p.7 §3.5 Results",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "建议：多次遍历经验；分配到 minibatch 前先打乱单条 transition；每遍数据重算一次优势。",
+    "quote_en": "Go over experience multiple times. Shuffle individual transitions before assigning them to minibatches and recompute advantages once per data pass",
+    "where": "p.7 §3.5 Recommendation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "时间步处理：性能强烈依赖折扣因子 γ，γ=0.99 在所有环境上都还不错；隔帧跳过在 5 个环境里有 2 个提升性能。",
+    "quote_en": "the performance depends heavily on the discount factor γ (C20) with γ = 0.99 performing reasonably well in all environments. Skipping every other frame (C21) improves the performance on 2 out of 5 environments",
+    "where": "p.7 §3.6 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "建议：折扣因子 γ 是最重要的超参之一，应按环境调（从 0.99 起）。",
+    "quote_en": "Discount factor γ is one of the most important hyperparameters and should be tuned per environment (start with γ = 0.99).",
+    "where": "p.7 §3.6 Recommendation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "优化器：Adam 与 RMSprop 差别很小；学习率影响极强，Adam 默认 0.0003 在所有任务上都好用。",
+    "quote_en": "the learning rate influences the performance very strongly (Fig. 69) with the default value of 0.0003 for Adam (C24) performing well on all tasks.",
+    "where": "p.7 §3.7 Interpretation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "把学习率线性衰减到 0 在 5 个任务里有 4 个提升性能，但除 Ant（高 15%）外提升都很小。",
+    "quote_en": "Linearly decaying the learning rate to 0 increases the performance on 4 out of 5 tasks but the gains are very small apart from Ant, where it leads to 15% higher scores",
+    "where": "p.8 §3.7 (continued)",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "建议：用带动量的 Adam、调好学习率（0.0003 是安全选择）。",
+    "quote_en": "a tuned learning rate (0.0003 is a safe bet)",
+    "where": "p.8 §3.7 Recommendation",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "正则化：没找到任何正则项在这些环境上显著帮助的证据，唯一例外是 HalfCheetah（尤其熵约束有帮助）。",
+    "quote_en": "We do not find evidence that any of the investigated regularizers helps significantly on our environments with the exception of HalfCheetah on which all constraints (especially the entropy constraint) help",
+    "where": "p.8 §3.8 Interpretation",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "正则化收益基本与约束阈值无关，说明效果来自惩罚项被调整前的初始强度、而非目标约束本身；作者推测 PPO 损失已强制信赖域、且谨慎的策略初始化已保证探索，使正则化变得多余。",
+    "quote_en": "the performance boost is largely independent on the constraint threshold (Fig. 83, 84, 87, 89, 90 and 91) which suggests that the effect is caused by the initial high strength of the penalty (before it gets adjusted) and not by the desired constraint.",
+    "where": "p.8 §3.8 Interpretation",
+    "strength": "observed"
+  }
+]

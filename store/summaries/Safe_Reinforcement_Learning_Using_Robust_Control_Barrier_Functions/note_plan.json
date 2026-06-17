@@ -1,0 +1,191 @@
+[
+  {
+    "kind": "contribution",
+    "point": "把安全建模为可微的鲁棒控制屏障函数(RCBF)层,嵌入基于模型的RL框架。",
+    "quote_en": "In this paper, we frame safety as a differentiable robust-control-barrier-function layer in a modelbased RL framework.",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "提出一种模块化学习奖励驱动任务的方法,使其独立于安全约束。",
+    "quote_en": "Moreover, we also propose an approach to modularly learn the underlying reward-driven task, independent of safety constraints.",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "作者声称该方法既能保证安全又能在训练中有效引导探索,包括奖励模块化学习时的零样本迁移。",
+    "quote_en": "We demonstrate that this approach both ensures safety and effectively guides exploration during training in a range of experiments, including zero-shot transfer when the reward is learned in a modular way.",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "RCBF相比[9]的离散时间仿射CBF更通用:即使函数非仿射也能实时控制综合,且可微安全层省去了学习CBF行为的监督学习组件。",
+    "quote_en": "RCBFs are amenable to real-time control synthesis, even if the functions are non-affine, and can encode a wide class of disturbances on the dynamics making them applicable to a large variety of systems. Additionally, the differentiable safety layer eliminates the need to learn the behavior of the CBF and thus a supervised-learning component.",
+    "where": "p.2 §I",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "考虑带未知确定性扰动d的控制仿射系统作为对象。",
+    "quote_en": "x˙(t) = f(x(t)) + g(x(t))u(x(t)) + d(x(t)),",
+    "where": "p.2 §II 式(1)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "底层RL算法采用Soft Actor Critic(SAC),理由是样本效率高,但方法兼容任何现成策略梯度算法。",
+    "quote_en": "we discuss the underlying RL algorithm, namely Soft Actor Critic (SAC) [23], that we utilize as the nominal controller in our framework. The motivation behind using SAC is that it is sample-efficient; however, we note that the methods proposed in this paper are compatible with any off-the-shelf policy-gradient algorithm.",
+    "where": "p.2 §II",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "用高斯过程(GP)估计扰动集D(x),每个维度训一个GP,共n个GP模型;扰动估计含置信参数kc(kc=2对应95.5%置信)。",
+    "quote_en": "therefore, we train one GP per dimension for a total of n GP models.",
+    "where": "p.3 §III-A 式(7)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "置信系数kc由用户选择,kc=2达到95.5%置信。",
+    "quote_en": "The coefficient kc is a user-chosen confidence parameter (e.g., kc = 2 achieves a confidence of 95.5%).",
+    "where": "p.3 §III-A",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "RCBF-QP安全层最小侵入地修改RL动作:目标是最小化补偿项u的范数加松弛变量s的加权平方,松弛变量保证QP可行。",
+    "quote_en": "s ∈ R is a slack-variable that serves to ensure feasibility of the QP, l > 0 is a large weighting term to minimize safety violations",
+    "where": "p.3 §III-B 式(8)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "最终在环境中执行的安全动作是补偿项与RL动作之和 u*=u^S+u^RL。",
+    "quote_en": "the final safe action taken in the environment is given by",
+    "where": "p.3 §III-B 式(9)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "通过KKT条件构成的线性系统对QP求导,实现端到端反向传播,使RL损失显式包含安全动作。",
+    "quote_en": "which enables the propagation of gradients through the QP as in (8) using a linear system formulated from the KKT conditions.",
+    "where": "p.4 §III-C 式(10)(11)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "第二个增强:在已知奖励函数和安全考量时,利用部分学到的动力学生成短时域rollout合成数据加入回放缓冲;短时域是因为模型误差在长时域累积。",
+    "quote_en": "The use of short-horizon rollouts is motivated by the fact that model errors compound over long horizons, and thus the data collected from such rollouts would not benefit the learning and, in the worst case, can significantly impede the agent from learning an optimal policy.",
+    "where": "p.4 §III-C2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "模块化任务学习的核心:仅在计算cost-to-go时将下一步安全层输出置零(u^S_{t+1}=0),而非全部置零,从而学到独立于障碍配置的值函数;且不影响训练期安全(实际执行动作不变)。",
+    "quote_en": "Thus, the modification we propose is to solely discard the safety’s layer output when computing the cost-to-go (i.e., only setting u S t+1 = 0 in (12)).",
+    "where": "p.5 §III-D 式(13)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "模块化方法不影响训练期安全,因为式(9)给出的实际执行动作保持不变。",
+    "quote_en": "It is important to note that this method does not affect the safety of the agent during training since the final action taken in the environment given by (9) remains unchanged.",
+    "where": "p.5 §III-D",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "实验中全程没有发生任何安全违例,验证RCBF-QP在整个训练中保持系统安全。",
+    "quote_en": "we note that no safety violations occurred throughout the experiments, thus validating the effectiveness of the RCBF-QP at keeping the system safe throughout training.",
+    "where": "p.5 §IV-A",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "Unicycle环境中所有方法都收敛到最优策略,MB SAC-RCBF样本效率最好;MF SAC-RCBF仅比两个基线略好,因为圆形障碍下安全层行为平滑。",
+    "quote_en": "As shown, all approaches converge to an optimal policy and MB SAC-RCBF performs best in terms of sample efficiency which highlights the benefit of generating synthetic data. On the other hand, the MF SAC-RCBF approach performs only slightly better than the two baselines",
+    "where": "p.6 §IV-A1 图3",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Car Following环境中MB和MF SAC-RCBF的样本效率都明显优于基线,因为RCBF-QP行为强烈影响该环境的动力学与奖励。",
+    "quote_en": "As opposed to the previous environment, both the MB and MF SAC-RCBF frameworks exhibit significantly better sample efficiency compared to the baselines.",
+    "where": "p.6 §IV-A2 图4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Car Following中无补偿器的基线在多次试验中无法学到有意义策略,说明显式考虑安全层行为对找到最优策略也至关重要。",
+    "quote_en": "This is further highlighted by the inability of the baseline without the compensator at learning a meaningful policy in several trials as shown in Figure 4.",
+    "where": "p.7 §IV-A2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Unicycle零样本迁移到200个不同障碍配置:Mod.SAC-RCBF完成率63%,接近无障碍上界81%,远高于基线21%和SAC-RCBF的17%。",
+    "quote_en": "followed by Modular SAC-RCBF which had a completion average of 63%. On the other hand, both the baseline and SAC-RCBF performed quite poorly solving only 21% and 17% of the environments respectively.",
+    "where": "p.7 §IV-B1 表I",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "Unicycle表I数字:上界SAC无障碍平均回报7.009/完成0.81;基线3.533/0.21;SAC-RCBF 3.223/0.17;Mod.SAC-RCBF 6.189/0.63。",
+    "quote_en": "SAC w/o obstacles (upper bound) 7.009 1.745 0.81",
+    "where": "p.7 表I",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "PVTOL零样本迁移到200环境:Mod.SAC-RCBF完成69%,比SAC-RCBF的52%提升33%,接近上界87%。",
+    "quote_en": "Moreover, Modular SAC-RCBF yields a 33% improvement over SAC-RCBF by completing 69% of the environments as compared to 52%.",
+    "where": "p.8 §IV-B2 表II",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "PVTOL表II数字:上界SAC无障碍/操作员11.969/0.87;基线7.228/0.34;SAC-RCBF 9.450/0.52;Mod.SAC-RCBF 10.656/0.69。",
+    "quote_en": "SAC w/o operator/obs. (upper bound) 11.969 2.376 0.87",
+    "where": "p.8 表II",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "可视化值函数显示SAC-RCBF在障碍周围赋予不合理的低值,而Mod.SAC-RCBF学到与无障碍目标几乎相同的值函数,适合迁移。",
+    "quote_en": "On the other hand, Modular SAC-RCBF learns a value function that is almost identical to the target making it suitable for transfer.",
+    "where": "p.7 §IV-B1 图5",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "每条曲线是10次不同随机种子实验的平均,浅色阴影表示两倍标准差的置信区间。",
+    "quote_en": "Each plot is an average of ten experiments using different seeds, and the light shadowing denotes a confidence interval of two standard deviations.",
+    "where": "p.6 图3/图4",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "Car Following环境为5辆车的链,建模为受扰双积分器,智能体仅控制第4辆车的加速度,奖励为最小化控制力 r(u)=-||u||^2,最小间距δ=3.5。",
+    "quote_en": "the objective of the RL agent is to minimize the total control effort, which is captured through the reward function r(u) = −||u||2, while avoiding collisions.",
+    "where": "p.6 §IV-A2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "Car Following中两个RCBF的相对度为2,PVTOL避障RCBF相对度为3,均借用[21]的级联RCBF公式构造;级联RCBF理论细节留待未来工作、本文不给证明。",
+    "quote_en": "The theoretical particulars of cascaded RCBFs will be discussed in future work, and we present the results without proof here.",
+    "where": "p.6 §IV-A2",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "结论:SAC-RCBF在仿真中提升了RL训练的样本效率和稳态性能;模块化方法产出可迁移到不同安全约束环境的策略。",
+    "quote_en": "The resulting SAC-RCBF approach is empirically validated in simulated environments and is shown to improve both the sample efficiency and steadystate performance during RL training.",
+    "where": "p.8 §V",
+    "strength": "supported"
+  }
+]

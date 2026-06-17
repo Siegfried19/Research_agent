@@ -1,0 +1,163 @@
+[
+  {
+    "kind": "contribution",
+    "point": "核心思想:把『行动策略』与『被 critic 评估的策略』解耦,只对后者施加更贪婪的改进(value improvement),同时保持对参数化行动策略的缓慢梯度改进。",
+    "quote_en": "we propose to decouple the acting policy from the policy evaluated by the critic. This allows the agent to separately improve the critic's policy (e.g. value improvement) with greedier updates while maintaining the slow gradient-based improvement to the parameterized acting policy.",
+    "where": "p.1 摘要",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "把这种『评估一个被独立改进过的策略』的更新步称为 value improvement step,整个方法称为 Value-Improved Actor Critic (VIAC)。",
+    "quote_en": "We refer to an update step which evaluates an independently-improved policy as a value improvement step and to this approach as Value-Improved Actor Critic (VIAC).",
+    "where": "p.2 §1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "动机:贪婪化与学习稳定性之间存在权衡——慢速改变策略有利于稳定。",
+    "quote_en": "slow changes to the policy can also be beneficial for the stability of the learning process, resulting in a tradeoff between greedification and stability.",
+    "where": "p.1 摘要",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "理论结果一:对随机策略而言,『策略改进』本身不足以保证(精确评估的)策略迭代收敛到最优策略。",
+    "quote_en": "Policy improvement is not a sufficient condition for the convergence of Policy Iteration algorithms",
+    "where": "p.5 Theorem 2",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "理论结果二:对所有 sufficient greedification 算子,GPI 及其 value-improved 扩展(Algorithm 1、2)在有限时域 MDP 中收敛到最优策略——下界型(Def 4)有限步收敛,极限型(Def 5)在极限收敛。",
+    "quote_en": "Generalized Policy Iteration algorithms and their Value Improved extension (Algorithms 1 and 2 respectively) converge to the optimal policy for all sufficient greedification operators, in finite iterations (for operators defined in Definition 4) or in the limit (for operators defined in Definition 5), in finite-horizon MDPs.",
+    "where": "p.7 Theorem 3",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "推论:Gumbel MuZero 所用的 GPI 过程在有限时域 MDP 下收敛到最优策略(其算子被证明是 limit-sufficient)。",
+    "quote_en": "The Generalized Policy Iteration process underlying the Gumbel MuZero algorithm family converges to the optimal policy for finite horizon MDPs",
+    "where": "p.7 Corollary 1",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "推论:只要 I1 本身是 sufficient,Algorithm 2 对任意 non-detriment 算子 I2 都收敛到最优策略(I2 不必是 sufficient 甚至不必是 greedification 算子)。",
+    "quote_en": "Algorithm 2 converges to the optimal policy for any non-detriment operator I2 (e.g., operators that satisfy the non-strict inequality of Equation 4), as long as I1 is itself sufficient.",
+    "where": "p.7 Corollary 2",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "value-improvement 有两种落地方式:(i)显式——额外加一个贪婪化算子产生更贪婪的评估策略,用它 bootstrap 价值目标;(ii)隐式——把价值损失换成非对称损失(expectile loss)。",
+    "quote_en": "Value-improvement can be incorporated into existing AC algorithms in one of two ways: (i) Incorporating an additional explicit greedification operator to produce a greedier evaluation policy and use the greedier policy to bootstrap actions from which to generate value targets. (ii) Incorporating an implicit greedification operator, for example by replacing the value loss with an asymmetric loss",
+    "where": "p.7 §4",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "显式 VI-TD3(Algorithm 3)在 TD3 基础上多一行:用 I2 对策略再改进一次得到 π′,再从 π′ 采样动作来算价值目标。",
+    "quote_en": "Further improve the policy",
+    "where": "p.35 Algorithm 3 第9行",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "隐式 value improvement 用 expectile loss:当 τ>0.5 时,价值网络偏向『预测应当增大』的误差而非应当减小的,从而隐式地逼近一个更优策略的价值;τ=0.5 时退化为基线 L2 损失。",
+    "quote_en": "Intuitively, when τ > 0.5 the agent favors errors where the prediction should increase, over predictions where it should reduce.",
+    "where": "p.36 §D.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "τ=0.5 时 expectile 损失等价于基线 L2 损失。",
+    "quote_en": "If τ = 0.5, this loss is equivalent to the baseline L2 loss.",
+    "where": "p.36 §D.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "VI-TD3 的价值目标与 TD3 原目标算法一致,只是用『新鲜贪婪化过的目标网络』π′_θ′ 来采样动作。",
+    "quote_en": "is computed in the same manner to the original target of TD3 but with the fresh greedified target network",
+    "where": "p.36 §D.1",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "重复梯度步(显式贪婪化)在计算上很昂贵;隐式 value improvement 几乎零额外计算与实现成本,且贪婪程度可由 expectile 参数 τ 直接调。",
+    "quote_en": "Repeating gradient steps are very computationally expensive however. Implicit policy improvement on the other hand provides value improvement for negligible compute and implementation cost.",
+    "where": "p.8 §4",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "在 hopper-stand / hopper-hop 上随 expectile 参数 τ 增大,性能先升后降:升到 τ=0.8 左右达峰再衰减,佐证贪婪化可作为一个超参来调的权衡观点。",
+    "quote_en": "Performance increases up to τ = 0.8 and then decays.",
+    "where": "p.8 Figure 2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "主实验:在 DeepMind 控制套件 12 个环境上,VI-TD3/VI-SAC(隐式 expectile,τ=0.75)相比各自基线 TD3/SAC 全面更好或持平,且只带来可忽略的额外计算与实现成本。",
+    "quote_en": "Across all environments, the VI (blue) variations significantly outperform or matches their respective baseline (red) while introducing negligible additional compute and implementation cost.",
+    "where": "p.9 Figure 3 + 正文",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "主实验统计口径:BoN 用 10 个 seed、其余 agent 用 20 个 seed;阴影区为两倍标准误(约 95% 高斯置信区间)。",
+    "quote_en": "Mean and two standard errors (≈ 95% Gaussian CI) in the shaded area of evaluation curves across 10 seeds for BoN and 20 for the other agents.",
+    "where": "p.9 Figure 3 caption",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "用显式 Best-of-N 算子(N=64)做 value improvement 的 VI-TD3 在多数环境取得与 expectile 版相近的性能增益,说明增益不是 expectile 算子独有。",
+    "quote_en": "BoN-based VI-TD3 (N = 64) provides similar performance gains to expectile-based VI-TD3 in most environments, demonstrating that significant performance gains in these domains are not unique to the expectile operator.",
+    "where": "p.9 §4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "增益不能单靠高估偏差解释:在多数环境里显著的性能增益伴随的是无高估增加。",
+    "quote_en": "We find that in the majority of the environments significant performance gains are observed without any over estimation increase.",
+    "where": "p.9 §4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "Table 1『Max performance gain』列(各环境跨 τ 的最大回报增益)给出具体幅度:hopper-stand 353.80±60.77、hopper-hop 217.25±26.38、humanoid-stand 503.93±14.72、humanoid-walk 415.28±29.29。",
+    "quote_en": "353.80 ± 60.77 217.25 ± 26.38 503.93 ± 14.72 415.28 ± 29.29",
+    "where": "p.33 Table 1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "把 value improvement 加到更新的 TD7 上(VI-TD7,expectile),在同一组任务上也观察到相近的性能增益。",
+    "quote_en": "Similar performance gains are observed for VI-TD7 in this domain.",
+    "where": "p.33 Figure 5 caption",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "对照实验:对行动策略在同一批数据上多做(如20次)梯度步并不能带来性能提升——区别于 value improvement。",
+    "quote_en": "Increasing the number of acting-policy updates on the same batch does not contribute to performance.",
+    "where": "p.33 Figure 6 caption",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "实现基于 CleanRL;TD3/SAC 用原作者超参,VI 变体与基线同超参、不额外调参,唯一例外是对 expectile 参数 τ 做网格搜索。",
+    "quote_en": "The VI-variations of all algorithms use the same hyperparameters as the baseline algorithms without any additional tuning, with the exception of grid search for the greedification parameters τ presented in Figure 2.",
+    "where": "p.37 §D.5",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "理论分析的适用边界:仅限有限时域、有限动作空间、离散状态空间的 MDP。",
+    "quote_en": "Our theoretical analysis is limited to finite horizon MDPs with finite action spaces and discrete state spaces",
+    "where": "p.14 NeurIPS Checklist · Limitations",
+    "strength": null
+  }
+]

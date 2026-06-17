@@ -1,0 +1,191 @@
+[
+  {
+    "kind": "contribution",
+    "point": "本文提出 SAC——一个基于最大熵框架的 off-policy actor-critic 深度强化学习算法，同时兼顾样本效率和稳定性。",
+    "quote_en": "In this paper, we propose soft actor-critic, an off-policy actor-critic deep RL algorithm based on the maximum entropy reinforcement learning framework.",
+    "where": "Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "作者指出现有 model-free 深度 RL 有两大痛点：极高的样本复杂度，以及脆弱的收敛性质（需要精细调超参）。",
+    "quote_en": "these methods typically suffer from two major challenges: very high sample complexity and brittle convergence properties, which necessitate meticulous hyperparameter tuning.",
+    "where": "Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "actor 的目标是在最大化期望回报的同时最大化熵，即“在完成任务的同时尽可能随机地行动”。",
+    "quote_en": "the actor aims to maximize expected reward while also maximizing entropy. That is, to succeed at the task while acting as randomly as possible.",
+    "where": "Abstract",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "最大熵目标在标准回报上加了一个策略熵项，温度参数 α 控制熵相对于回报的重要性（α→0 时退回标准 RL）。",
+    "quote_en": "The temperature parameter α determines the relative importance of the entropy term against the reward, and thus controls the stochasticity of the optimal policy.",
+    "where": "p.3 §3.2 Eq (1)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "最大熵目标 Eq (1)：在标准回报上叠加策略熵——J(π)=Σ_t E[r(s_t,a_t)+αH(π(·|s_t))]。",
+    "quote_en": "which favors stochastic policies by augmenting the objective with the expected entropy of the policy over",
+    "where": "p.3 §3.2 Eq (1)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "定义 soft 状态值函数 V(s_t)=E_{a~π}[Q(s_t,a_t)−log π(a_t|s_t)]，通过反复应用 soft Bellman 备份算子 T^π 得到 soft Q 值。",
+    "quote_en": "is the soft state value function. We can obtain the soft value function for any policy π by repeatedly applying",
+    "where": "p.4 §4.1 Eq (3)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "策略改进步把策略向新 Q 函数的指数分布更新，并用 KL 散度的信息投影把它投回可处理的策略族 Π。",
+    "quote_en": "in the policy improvement step, for each state, we update the policy according to",
+    "where": "p.4 §4.1 Eq (4)",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "作者给出 soft policy iteration 的收敛证明：在策略类 Π 内重复 soft 策略评估+改进，可收敛到最优策略。",
+    "quote_en": "Repeated application of soft policy evaluation and soft policy improvement",
+    "where": "p.4 §4.1 Theorem 1",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "收敛证明基于表格（tabular）设定；实际连续域则改用函数逼近、对各网络交替做随机梯度下降，而非跑到收敛。",
+    "quote_en": "Our derivation is based on a tabular setting, to enable theoretical analysis and convergence guarantees, and we extend this method into the general continuous setting in the next section.",
+    "where": "p.4 §4.1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "实用版用三套参数化网络：状态值 V_ψ、soft Q 函数 Q_θ、可处理策略 π_φ，交替用随机梯度下降优化而非跑到收敛。",
+    "quote_en": "we will use function approximators for both the Q-function and the policy, and instead of running evaluation and improvement to convergence, alternate between optimizing both networks with stochastic gradient descent.",
+    "where": "p.4 §4.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "策略用重参数化技巧把动作写成网络变换 a_t=f_φ(ε_t;s_t)（ε 为固定分布噪声，如球面高斯），得到比 likelihood-ratio 更低方差的梯度估计。",
+    "quote_en": "we reparameterize the policy using a neural network transformation",
+    "where": "p.5 §4.2 Eq (11)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "算法用两个独立训练的 Q 函数取最小值，以缓解策略改进步中已知会损害值方法性能的正偏差。",
+    "quote_en": "Our algorithm also makes use of two Q-functions to mitigate positive bias in the policy improvement step that is known to degrade performance of value based methods",
+    "where": "p.5 §4.2",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "作者发现两个 Q 函数能显著加速训练，尤其在更难的任务上——虽然单个 Q 函数也能学会包括 21 维 Humanoid 在内的难任务。",
+    "quote_en": "Although our algorithm can learn challenging tasks, including a 21-dimensional Humanoid, using just a single Q-function, we found two Q-functions significantly speed up training, especially on harder tasks.",
+    "where": "p.5 §4.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "用无界高斯做动作分布、再用可逆的 tanh 压缩到有限区间，并用变量代换得到压缩后动作的对数似然闭式（Eq 21）。",
+    "quote_en": "we apply an invertible squashing function (tanh) to the Gaussian samples, and employ the change of variables formula to compute the likelihoods of the bounded actions.",
+    "where": "p.13 Appendix C Eq (21)",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "实验主要与一个高效 off-policy 方法 DDPG 比较（另含 PPO、SQL、TD3 基线）。",
+    "quote_en": "We compare our method to deep deterministic policy gradient (DDPG)",
+    "where": "p.6 §5",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "每个算法用 5 个不同随机种子训练，每 1000 环境步做一次评估 rollout，曲线为均值、阴影为 5 次试验的最小/最大。",
+    "quote_en": "We train five different instances of each algorithm with different random seeds, with each performing one evaluation rollout every 1000 environment steps. The solid curves corresponds to the mean and the shaded region to the minimum and maximum returns over the five trials.",
+    "where": "p.7 §5.1",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "总体上 SAC 在较易任务上与基线相当，在较难任务上以较大优势在学习速度和最终性能两方面胜出。",
+    "quote_en": "overall, SAC performs comparably to the baseline methods on the easier tasks and outperforms them on the harder tasks with a large margin, both in terms of learning speed and the final performance.",
+    "where": "p.7 §5.1",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "DDPG 在 Ant-v1、Humanoid-v1 和 Humanoid(rllab) 上无法取得任何进展，与前人工作结论一致。",
+    "quote_en": "DDPG fails to make any progress on Ant-v1, Humanoid-v1, and Humanoid (rllab), a result that is corroborated by prior work",
+    "where": "p.7 §5.1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "另一最大熵算法 SQL 也能学会所有任务，但比 SAC 慢、渐近性能更差。",
+    "quote_en": "Another maximum entropy RL algorithm, SQL, can also learn all tasks, but it is slower than SAC and has worse asymptotic performance.",
+    "where": "p.7 §5.1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "消融对比显示：随机策略+熵最大化能显著稳定训练——确定性变体在各种子间方差大得多。",
+    "quote_en": "The comparison indicates that stochasticity can stabilize training as the variability between the seeds becomes much higher with a deterministic policy.",
+    "where": "p.7 Figure 2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "SAC 对奖励缩放特别敏感（奖励尺度等价于最优策略温度的倒数）：太小策略近乎均匀失去利用、太大初期快但很快近确定性陷入局部最优。",
+    "quote_en": "Soft actor-critic is particularly sensitive to the scaling of the reward signal, because it serves the role of the temperature of the energy-based optimal policy and thus controls its stochasticity.",
+    "where": "p.7-8 §5.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "作者称奖励缩放是实践中唯一需要调的超参，其“最大熵框架下温度倒数”的解释为如何调它提供了直觉。",
+    "quote_en": "In practice, we found reward scale to be the only hyperparameter that requires tuning, and its natural interpretation as the inverse of the temperature in the maximum entropy framework provides good intuition for how to adjust this parameter.",
+    "where": "p.8 §5.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "目标平滑系数 τ 的合适范围相对宽，所有任务统一用 0.005；大 τ 易不稳定、小 τ 训练变慢。",
+    "quote_en": "we found the range of suitable values of τ to be relatively wide and we used the same value (0.005) across all of the tasks.",
+    "where": "p.8 §5.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "共享超参（Table 1）：Adam、学习率 3·10⁻⁴、γ=0.99、replay buffer 10⁶、所有网络 2 隐层每层 256 单元、batch 256、ReLU、τ=0.005。",
+    "quote_en": "Table 1 lists the common SAC parameters used in the comparative evaluation in Figure 1 and Figure 4.",
+    "where": "p.14 Table 1",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "各环境奖励缩放（Table 2）：Hopper/Walker2d/HalfCheetah/Ant 均为 5，Humanoid-v1（17 维动作）为 20，Humanoid rllab（21 维动作）为 10。",
+    "quote_en": "Table 2 lists the reward scale parameter that was tuned for each environment.",
+    "where": "p.14 Table 2",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "作者总结：SAC 的样本效率以较大优势超过 DDPG，结论是随机的熵最大化 RL 为提升鲁棒性和稳定性提供了有前景的方向。",
+    "quote_en": "In fact, the sample efficiency of this approach actually exceeds that of DDPG by a substantial margin.",
+    "where": "p.8 §6",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "附录 E：硬目标更新变体（每 1000 次迭代直接拷贝权重）和确定性消融变体也能学会所有任务，性能与 SAC 相当（除 Humanoid rllab 上 SAC 最快）。",
+    "quote_en": "Both of these methods can learn all of the tasks and they perform comparably to SAC on all but Humanoid (rllab) task, on which SAC is the fastest.",
+    "where": "p.14 Appendix E",
+    "strength": "observed"
+  }
+]

@@ -1,0 +1,247 @@
+[
+  {
+    "kind": "contribution",
+    "point": "提出把 model-free RL 控制器、基于控制屏障函数(CBF)的 model-based 控制器、以及对未知系统动力学的在线学习三者结合的控制架构,以在学习过程中保证安全。",
+    "quote_en": "we propose a controller architecture that combines (1)\na model-free RL-based controller with (2) model-based controllers utilizing control barrier functions (CBFs) and (3) online learning of the unknown system dynamics, in order to\nensure safety during learning.",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "作者声称 RL-CBF 是第一个把 CBF 控制器与 model-free RL 结合、对非线性控制系统实现端到端安全 RL 的算法,并通过用屏障函数引导策略探索提升学习效率。",
+    "quote_en": "Our main contributions are: (1) we develop the first algorithm that integrates CBF-based controllers with model-free RL to achieve end-to-end safe RL for nonlinear control\nsystems, and (2) we show improved learning efficiency by\nguiding the policy exploration with barrier functions.",
+    "where": "p.2 末段",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "RL-CBF 在学习过程中以高概率保证安全,且与所用的具体 RL 算法无关。",
+    "quote_en": "RL-CBF, guarantees safety with high probability during the learning process,\nregardless of the RL algorithm used, and demonstrates greater\npolicy exploration efficiency.",
+    "where": "p.1 Abstract",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "系统采用控制仿射、确定性的离散动力学,状态演化为 f(st)+g(st)at+d(st),其中 f、g 是已知名义模型,d 是未知部分。",
+    "quote_en": "st+1 = f(st) + g(st)at + d(st),",
+    "where": "p.2 式(1)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "名义模型可能很差(如忽略摩擦与柔顺性的机器人模型),所以必须靠数据学到更好的动力学模型。",
+    "quote_en": "In practice, the nominal model may be quite bad (e.g.\na robot model that ignores friction and compliance), and we\nmust learn a much better dynamic model through data.",
+    "where": "p.2 Preliminaries",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "用高斯过程(GP)估计未知动力学 d(s),给出均值与方差,从而得到高概率置信区间,并随数据增多而收缩。",
+    "quote_en": "with probability (1 − δ) where kδ is a design parameter that\ndetermines δ (e.g. 95% confidence is achieved at kδ = 2).",
+    "where": "p.3 式(5)下方",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "本文用仅约 1000 条最新数据的批训练来回避 GP 矩阵求逆随数据量 N^3 增长的计算瓶颈。",
+    "quote_en": "we bypass this issue in this work by batch training the\nGP model with only the latest batch of ≈ 1000 data points.",
+    "where": "p.3 Gaussian Processes",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "安全集 C 定义为连续可微函数 h 的超水平集 {s: h(s)≥0},安全即要求该集合前向不变(forward invariant)。",
+    "quote_en": "To maintain safety during the learning process, the system\nstate must always remain within the safe set C (i.e. the set C\nis forward invariant).",
+    "where": "p.3 Control Barrier Functions",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "本文把注意力限制在仿射屏障函数 h = p^T s + q,使安全集 C 由相交半空间(多面体)构成。",
+    "quote_en": "we restrict our attention to affine barrier\nfunctions of form h = p",
+    "where": "p.3 Control Barrier Functions",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "把 CBF 条件结合 GP 的不确定性界,重写成每个时间步可高效求解的二次规划(QP),含松弛变量 epsilon 与大惩罚常数,在不确定动力学下以最小控制量尽量满足安全条件。",
+    "quote_en": "we can reformulate the CBF condition (8) into the following quadratic\nprogram (QP) that can be efficiently solved at each time step:",
+    "where": "p.3 式(9)上方",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "第一种(补偿式)架构:总控制 = RL 控制器 + CBF 控制器,CBF 把 RL 提出的动作投影到安全策略集,只做保证安全所需的最小干预,但不引导探索。",
+    "quote_en": "The concept is akin to shielded RL (Alshiekh et al. 2017;\nFisac et al. 2018), since the CBF controller compensates for\nthe RL controller to ensure safety, but does not guide exploration of the RL algorithm.",
+    "where": "p.4 式(13)下方",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "补偿式架构的问题:策略是围绕未部署的 RL 控制器 u_RL 更新,而非围绕实际部署在安全区的控制器 uk 更新,因而不能有效引导探索。",
+    "quote_en": "This is because the RL policy being updated around, u",
+    "where": "p.5 左栏",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "第二种(引导式 RL-CBF)架构:总控制器纳入所有先前的 CBF 控制器之和,使策略围绕之前实际部署的安全控制器更新,从而提升学习效率。",
+    "quote_en": "Defining the controller in this fashion leads to policy\nupdates around the previously deployed controller, which\nadds to the efficiency of the learning process by encouraging\nthe policy to operate in desired areas of the state space.",
+    "where": "p.5 式(15)下方",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "Theorem 2:用式(15)控制律,若 QP(16)存在 epsilon_max=0 的解,则安全集 C 以概率(1−δ)前向不变;且若用 TRPO,控制律 uk−u_CBF 还能保持 TRPO 的性能下界保证。",
+    "quote_en": "Using the control law uk(s) from (15), if there\nexists a solution to problem (16) such that",
+    "where": "p.6 Theorem 2",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "若动力学无不确定性,则安全以概率 1 得到保证。",
+    "quote_en": "If we have no uncertainty in the dynamics, then safety is guaranteed with probability 1.",
+    "where": "p.6 左栏",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "随迭代进行,引导式 RL 控制器很快学会在安全区运行,CBF 控制器 u_CBF 迅速衰减到 0、变为不激活。",
+    "quote_en": "rapidly decays to 0 as we iterate. This is because\nthe guided RL controller quickly learns to operate in the safe\nregion, so the CBF controller u",
+    "where": "p.6 左栏",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "朴素实现需存 k−1 个神经网络并依次解 k−1 个 QP,不可行;故用一个 MLP u_bar 近似所有先前 CBF 控制器之和,只需存两个网络、解一个 QP。",
+    "quote_en": "we approximate u",
+    "where": "p.6 Computationally Efficient Algorithm",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "即便用 MLP 近似,概率(1−δ)的安全性仍然成立,因为近似只影响引导 RL 项,CBF 控制器仍在解(16);代价是 Theorem 2 的性能保证不一定再成立。",
+    "quote_en": "The tradeoff is that\nthe performance guarantee in Theorem 2 does not necessarily hold with this approximation.",
+    "where": "p.6 右栏",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "时间索引 t 表示每次策略迭代内的时间步、CBF 控制器每个时间步更新;k 表示策略迭代,RL 策略与 GP 模型按 episode 在 k 间隔更新。",
+    "quote_en": "The CBF controller updates throughout the task (computed\nat each time step, t), whereas the RL policy and GP model\nupdate at episodic policy iteration intervals indexed by k.",
+    "where": "p.4 右栏末",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "实现了两个版本:由 TRPO 派生的 TRPO-CBF 和由 DDPG 派生的 DDPG-CBF;代码开源。",
+    "quote_en": "We implement two versions of the RL-CBF algorithm with\nexisting model-free RL algorithms: TRPO-CBF, derived\nfrom TRPO (Schulman et al. 2015), and DDPG-CBF, derived from DDPG (Lillicrap et al. 2015).",
+    "where": "p.6 Experiments",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "倒立摆实验:OpenAI gym 的 pendulum-v0,安全区设为 θ∈[−1,1] 弧度,奖励 r=θ^2+0.1θ̇^2+0.001u^2。",
+    "quote_en": "We set the safe region to be θ ∈ [−1, 1] radians,\nand define the reward function r = θ",
+    "where": "p.6 Inverted Pendulum",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "倒立摆真实参数 m=1,l=1,力矩限幅 u∈[−15,15];名义模型故意取 m=1.4,l=1.4,即模型参数有 40% 误差。",
+    "quote_en": "To\nintroduce model uncertainty, our nominal model assumes\nm = 1.4, l = 1.4 (40% error in model parameters).",
+    "where": "p.6 Inverted Pendulum 式(17)下",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "倒立摆上两个 RL-CBF 算法很快收敛到接近最优解,并显著优于对应的无 CBF 基线。",
+    "quote_en": "The two RL-CBF algorithms converge near the\noptimal solution very rapidly, and significantly outperform\nthe corresponding baseline algorithms without the CBFs.",
+    "where": "p.6 Inverted Pendulum",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "TRPO 与 DDPG 有时也能收敛到与 RL-CBF 相当的高性能控制器,但较不可靠、更慢。",
+    "quote_en": "We note that TRPO and DDPG sometimes converge on\na high-performance controller (comparable to TRPO-CBF\nand DDPG-CBF), though this occurs less reliably and more\nslowly, resulting in the poorer learning curves.",
+    "where": "p.6 Inverted Pendulum",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "倒立摆上 RL-CBF 控制器在整个学习过程中维持安全(从不离开安全区),而 TRPO 与 DDPG 在学习中严重违反安全。",
+    "quote_en": "leave the safe region) throughout the learning process, as\nalso seen in Figure 3. In contrast, TRPO and DDPG severely\nviolate safety while learning the optimal policy.",
+    "where": "p.7 左栏 + 图3",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "倒立摆中,首个策略下 CBF 把摆角维持在安全区边缘做最小干预,而最后一次迭代时 CBF 完全不激活(u_CBF=0),因为引导后的 RL 控制器本身已安全。",
+    "quote_en": "By the last iteration\nthough, the CBF controller is completely inactive (u",
+    "where": "p.7 左栏 + 图4",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "跟车实验:一条直路上五辆车排成队列,控制第 4 辆车的加减速,目标是在拥堵中最大化燃油效率并避免碰撞。",
+    "quote_en": "Consider a chain of five cars following each other on a\nstraight road. We control the acceleration/deceleration of the\n4",
+    "where": "p.7 Simulated Car Following",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "跟车任务中奖励项鼓励保持 3 米车距(软约束),而 RL-CBF 的 CBF 强制 2 米安全车距(硬约束);第 4 辆车只有自身的粗糙模型(kd=0)和对前后车的不准确模型,并对各车加速度加了高斯噪声。",
+    "quote_en": "For the RLCBF controllers, the CBF enforces a 2 meter safe distance\nbetween cars (hard constraint).",
+    "where": "p.8 左栏",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "跟车实验中,用任一 RL-CBF 控制器时车辆间均无安全违规;而单用 TRPO 或 DDPG(无 CBF)时几乎所有试验都发生碰撞,即便在学习后期也是如此。",
+    "quote_en": "we see that there were no safety violations\nbetween the cars during our simulated experiments when using either of the RL-CBF controllers. When using TRPO and\nDDPG alone without CBF safety, almost all trials had collisions, even in the later stages of learning.",
+    "where": "p.8 左栏 + 图5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "跟车实验中 TRPO-CBF 学得更快且优于 TRPO;DDPG-CBF 也优于 DDPG,但两者都没收敛到高性能控制器。",
+    "quote_en": "TRPO-CBF\nlearns faster and outperforms TRPO (DDPG-CBF also outperforms DDPG though neither algorithm converged on a high-performance controller in our\nexperiments).",
+    "where": "p.8 左栏",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "尽管 DDPG 与 DDPG-CBF 未能收敛到好策略,DDPG-CBF(和 TRPO-CBF)始终维持安全控制器——这体现 RL-CBF 能独立于学习性能保证安全。",
+    "quote_en": "Figure 5 shows that DDPG-CBF (and TRPOCBF) always maintained a safe controller. This is a crucial\nbenefit of the RL-CBF approach, as it guarantees safety independent of the system’s learning performance.",
+    "where": "p.8 左栏",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "作者指出某些实验里 TRPO 也能找到与 TRPO-CBF 相当的控制器,但由于随机种子常常并非如此。",
+    "quote_en": "in some experiments, TRPO finds a comparable controller to TRPO-CBF,\nbut this is often not the case due to randomness in seeds.",
+    "where": "p.8 左栏",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "该框架的额外优势:可方便地替换/集成新的 RL 算法,并能从测量中纳入更好的模型信息以在线改进 CBF 控制器。",
+    "quote_en": "has\nthe additional advantages of being able to (1) easily integrate new RL algorithms (in place of TRPO/DDPG) as they\nare developed, and (2) incorporate better model information\nfrom measurements to online improve the CBF controller.",
+    "where": "p.8 Conclusion",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "作者自述重大假设:本工作假定给定一个可被渲染成前向不变的有效安全集 h(s),而计算这种有效安全集本身非平凡且计算量大。",
+    "quote_en": "A significant assumption in this work is that we are given\na valid safe set, h(s), which can be rendered forward invariant.",
+    "where": "p.8 Conclusion",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "若没有给定有效安全集,可能进入无法保持安全的状态(epsilon_max≥0);未来工作需在学控制器的同时学习安全集。",
+    "quote_en": "in future work it will be important to\nlearn the safe set in addition to the controller.",
+    "where": "p.8 Conclusion",
+    "strength": "supported"
+  }
+]

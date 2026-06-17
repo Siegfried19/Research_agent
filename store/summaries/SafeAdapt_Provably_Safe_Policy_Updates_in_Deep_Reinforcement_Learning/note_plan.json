@@ -1,0 +1,198 @@
+[
+  {
+    "kind": "contribution",
+    "point": "提出 SafeAdapt：在持续强化学习中对安全策略更新的先验(a priori)方法，核心是引入策略参数空间中的 Rashomon 集——一个被认证为在演示数据分布内满足安全约束的区域。",
+    "quote_en": "We propose a novel a priori approach to safe policy updates in continual RL by introducing the Rashomon set: a region in policy parameter space certified to meet safety constraints within the demonstration data distribution.",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "通过将任意 RL 更新算法的更新投影回 Rashomon 集，可为任意 RL 算法的策略更新提供形式化、可证明的安全保证。",
+    "quote_en": "We then show that one can provide formal, provable guarantees for arbitrary RL algorithms used to update a policy by projecting their updates onto the Rashomon set.",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "作者声称这是据其所知第一个在 RL 下游策略适配中提供源任务安全的参数空间证书的方法。",
+    "quote_en": "We provide the first, to our knowledge, parameter-space certificate for source-task safety during downstream policy adaptation in RL.",
+    "where": "p.1 §1 Introduction",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "贡献一：把 Rashomon 集形式化为参数空间中的概念，并表明计算一组安全参数可被表述为使用一个可靠、可微的安全代理(safety surrogate)的优化问题。",
+    "quote_en": "Formulate the notion of a Rashomon Set in policy parameter space and show that computing a set of safe parameters can be posed as an optimisation problem using a sound, differentiable safety surrogate.",
+    "where": "p.1 §1 Contributions",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "贡献二：用 Interval Bound Propagation(IBP) 与新的可微安全代理来计算认证的 Rashomon 集，保证集内每个策略在贪心部署下都满足源任务安全规范。",
+    "quote_en": "Compute certified Rashomon sets in parameter space using Interval Bound Propagation (IBP) and our novel differentiable safety surrogate, ensuring that every policy inside the set satisfies the source-task safety specification under greedy deployment.",
+    "where": "p.1 §1 Contributions",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "贡献三：通过把 PPO 更新与投影梯度下降结合来做带约束的下游适配，保证参数更新在整个训练过程中都留在认证的安全区域内。",
+    "quote_en": "Perform downstream adaptation with constraints by combining PPO updates with projected gradient descent, guaranteeing that parameter updates remain inside the certified safe region throughout training.",
+    "where": "p.1 §1 Contributions",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "方法假设可访问一个不安全标注函数 U: S×A→{0,1}，工程师常能据领域知识指定哪些状态-动作对被禁止，即便转移动力学未知。",
+    "quote_en": "Our proposed method SafeAdapt assumes access to an unsafety labelling function U : S × A → {0, 1}. This is motivated by the observation that engineers can often specify forbidden state-action pairs even when the transition dynamics is unknown.",
+    "where": "p.3 §2 (SafeAdapt positioning)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "不安全标注函数定义为：当且仅当在状态 s 采取动作 a 会使下一步进入不安全状态的概率大于 0 时，U(s,a)=1；这是一个保守定义。",
+    "quote_en": "The unsafety labelling function U : S × A → {0, 1} assigns U(s, a) = 1 iff P (s ′ ∈ S u | s, a) > 0",
+    "where": "p.3 §3 Definition 3.1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "安全策略定义为其确定性(贪心)部署在每个存在安全动作的状态都选出安全动作。",
+    "quote_en": "A policy π is safe if its deterministic (i.e. greedy) deployment leads to selecting safe actions in every state where unsafe actions exist",
+    "where": "p.3 §3 Definition 3.4",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "方法分三阶段：(1)构造安全演示数据集，(2)计算最大局部不变域(LID)得到认证安全区域，(3)用投影梯度下降做下游适配。",
+    "quote_en": "The method proceeds in three phases: (1) construct a safe demonstration dataset, (2) compute the maximal locally invariant domain (LID), and (3) adapt to the downstream task with projected gradient descent.",
+    "where": "p.3 §4.1 Algorithm Overview",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "阶段一通过对所有安全关键状态列出其安全动作集，构造分布无关的安全演示数据集 D_source^safe = {(s, A^safe(s)) : s ∈ S_sc}；无不安全动作的状态因冗余被排除。",
+    "quote_en": "using U source , we list all safe state–action pairs and form the safe demonstration dataset:",
+    "where": "p.3 §4.2 Eq (6) 前文",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "阶段二把安全区域定义为以 θ_source 为中心的中心对称正交体(orthotope)，并在该正交体内安全代理下界≥δ 的约束下最大化其体积(对数体积之和)，用原始-对偶算法求解。",
+    "quote_en": "We define the safe region as a centre-symmetric orthotope",
+    "where": "p.4 §4.3 Eq (7) 前文",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "硬(精确)安全规范用 argmax 与指示函数定义，因而不可微；为支持基于梯度的优化引入平滑的安全代理(对安全动作的 softmax 概率质量求和)。",
+    "quote_en": "non-differentiable: due to the arg max and indicator.",
+    "where": "p.4 §4.3 Definition 4.1 / 4.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "安全代理是单边(one-sided)保证(可靠性):代理值足够高可认证安全，但代理值低时结论不确定;因此施加可靠约束阈值 |A^safe(s)|/(1+|A^safe(s)|)。",
+    "quote_en": "The surrogate provides a sufficient but not necessary condition for safety: high surrogate values certify safety, but low values are inconclusive.",
+    "where": "p.5 Proposition 1 后",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "阶段三在下游任务上用基于梯度的策略优化(如 PPO)求解，每步梯度后通过逐元素裁剪把 θ 投影回认证安全正交体 [θ_source−α*, θ_source+α*]。",
+    "quote_en": "After each gradient step ˆθ = θ + η g, we project back via element-wise clipping:",
+    "where": "p.5 §4.4 Eq (11) 前文",
+    "strength": null
+  },
+  {
+    "kind": "contribution",
+    "point": "定理1(可证明的安全策略更新):在假设1–4下，若阶段二返回的认证正交体内代理下界严格大于阈值 δ*=M/(1+M)，则对该区域内每个 θ' 和每个安全关键状态都有 Φ_sc^safe(π_θ')=1，即贪心策略始终安全。",
+    "quote_en": "Theorem 1 (Provably safe policy updates). Let Assumptions 1–4 hold",
+    "where": "p.5 §4.5 Theorem 1",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "推论3(分布无关的源任务安全):在定理1假设下，π_θt 在源任务上贪心执行任何迭代 t 都不会选到不安全动作，故对任意初始分布 μ0 源任务占用度量满足 E[U_source(s,a)]=0。",
+    "quote_en": "Corollary 3 (Distribution-independent source-task safety). Under the assumptions of Theorem 1, greedy execution of π θt on the source task never selects an unsafe action at any iteration t.",
+    "where": "p.6 Corollary 3",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "实验设置:从源任务(Task 1)适配到下游任务(Task 2)，均为离散状态、离散动作、已知不安全状态-动作对的环境;在所有实验中 π_source 适配前在源任务安全数据集上是安全的。",
+    "quote_en": "We consider continual adaptation from a source task (Task 1) to a downstream task (Task 2) in discrete-state, discrete-action environments with known unsafe state-action pairs.",
+    "where": "p.6 §5 Experiments",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "对比四种策略:Source(只在源任务训练不更新)、UnsafeAdapt(无约束 PPO 微调 Task 2)、EWC(带 EWC 正则的 PPO 微调)、SafeAdapt(带向 Rashomon 集投影的 PPO 微调);所有方法用相同 MLP actor-critic、跑 10 个种子报告均值±标准差。",
+    "quote_en": "Source: train the policy on the source task and without updating parameters to the downstream task.",
+    "where": "p.6 §5 Experiments",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "在每次实验中，SafeAdapt 是唯一能在源任务上提供 Φ_sc^safe(π)=1 形式化保证的方法。",
+    "quote_en": "In each experiment run, our method SafeAdapt is the only method that provides a formal guarantee that Φ safe sc (π) = 1 in a source task.",
+    "where": "p.6 §5 Metrics 后",
+    "strength": "strong"
+  },
+  {
+    "kind": "result",
+    "point": "源任务安全保持(表3，Frozen Lake standard_4x4):SafeAdapt 关键态安全率Φ_sc=1.00、轨迹安全率Φ_traj=1.00、总回报0.90±0.30;UnsafeAdapt 为0.88/0.10/0.00;EWC 为0.94/0.60/0.30(均±标准差,10 种子)。",
+    "quote_en": "SafeAdapt (ours) consistently retains perfect safety (Φ safe sc = Φ safe traj = 1) across all environments while maintaining competitive total reward in the source task.",
+    "where": "p.8 表3",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "源任务安全保持(表3，Poisoned Apple simple_5x5):SafeAdapt 为1.00/1.00/0.91;UnsafeAdapt 为0.93/1.00/0.91;EWC 为0.93/1.00/1.02(Source 总回报1.96)。SafeAdapt 是仅有的两个标记为 Provably Safe 的方法之一(与 Source)。",
+    "quote_en": "Standard continual learning baselines (UnsafeAdapt and EWC) may violate safety constraints, as reflected by degraded Φ safe sc in both Frozen Lake and Poisoned Apple and degraded Φ safe traj in Frozen Lake.",
+    "where": "p.8 表3",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "下游任务表现(表4):Frozen Lake 上三种适配方法(UnsafeAdapt/EWC/SafeAdapt)总回报均为1.00、成功率均为1.00;Poisoned Apple 上 SafeAdapt 总回报0.96(与 UnsafeAdapt 持平)、优于 EWC 的0.86，成功率1.00。",
+    "quote_en": "In Poisoned Apple, SafeAdapt again matches the best-performing baseline, achieving the same average total reward as UnsafeAdapt (0.96) and outperforming EWC (0.86).",
+    "where": "p.7 §5.2 Adaptation / p.8 表4",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "可扩展性(表10，diagonal_8x8):SafeAdapt 源任务Φ_sc=1.00，而 UnsafeAdapt 跌到0.49±0.13、EWC 为0.79±0.10;下游(表11)SafeAdapt 总回报0.88±0.33。SafeAdapt 在所有尺寸维持完美源任务安全，仅在 8×8 有适度下降。",
+    "quote_en": "In contrast, SafeAdapt maintains perfect source-task safety across all sizes and remains competitive on the downstream task, with only a modest drop at 8×8.",
+    "where": "p.7 §5.2 Scalability / p.15 表10、表11",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "无形式保证的持续学习方法(如 EWC)会在适配新任务时灾难性遗忘源任务的安全行为，而 SafeAdapt 能一举形式化地排除这种遗忘并同时实现对新任务的强适配。",
+    "quote_en": "continual learning methods without formal guarantees (e.g. EWC) can lead to catastrophic forgetting of safe behaviour in the source task while our methods are able to at once formally rule out this catastrophic forgetting while enabling strong adaptation to new tasks.",
+    "where": "p.1 §1 Introduction 末",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "两个网格世界环境:Frozen Lake(Gymnasium，状态含 one-hot 位置与任务指示，4 个动作，掉冰洞即不安全并终止)是任务增量学习(TIL);Poisoned Apple(自定义，收集安全苹果+1、毒苹果−1 且不安全)是更难的域增量学习(DIL，无显式任务身份)。",
+    "quote_en": "Frozen Lake is a Task-Incremental Learning (TIL) setting, since the task ID is included in the state",
+    "where": "p.6–7 §5.1 Environments",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "局限(作者自述):定理1只保证源任务安全的保持，不保证认证区域内存在能达成源任务或下游目标的策略;是否存在取决于认证安全集与高性能策略的重叠。",
+    "quote_en": "Note that Theorem 1 guarantees preservation of source-task safety, but it does not guarantee that either source or downstream goal-reaching policy exists inside the certified region.",
+    "where": "p.6 Theorem 1 后注",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "局限(作者自述):当前形式化局限于有限离散状态-动作空间，因为它依赖对安全关键状态的穷举覆盖来获得安全保证;且用 IBP 时认证参数区域可能变得保守(尤其大网络/复杂环境)。",
+    "quote_en": "The current formulation is limited to finite discrete state–action spaces as it relies on exhaustive coverage of safety-critical states to obtain safety guarantees.",
+    "where": "p.8 §6 Conclusion",
+    "strength": "supported"
+  }
+]

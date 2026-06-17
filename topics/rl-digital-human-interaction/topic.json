@@ -12,5 +12,22 @@
     "embodied conversational agent reinforcement learning virtual human"
   ],
   "window_years": 20,
-  "target": 100
+  "target": 100,
+  "score_anchors": [
+    {
+      "title": "Synthesizing Physical Character-Scene Interactions",
+      "score": 96,
+      "reason": "物理仿真角色与场景交互合成,直接命中'用 RL 训练数字人与环境交互'核心"
+    },
+    {
+      "title": "Collision Avoidance in Pedestrian-Rich Environments With Deep Reinforcement Learning",
+      "score": 46,
+      "reason": "深度 RL 行人密集环境避障属机器人导航,沾'与人交互'边但非数字人全身控制——典型骑墙"
+    },
+    {
+      "title": "Quantum Speedup for Active Learning Agents",
+      "score": 10,
+      "reason": "量子加速主动学习智能体,'agents'误撞,与数字人/物理控制完全无关——关键词碰瓷"
+    }
+  ]
 }

@@ -1,0 +1,240 @@
+[
+  {
+    "kind": "contribution",
+    "point": "提出 MCPO,把不安全奖励信号从最大化目标中排除掉",
+    "quote_en": "we propose a novel approach, named Masked Constrained Policy Optimization (MCPO), which excludes the unsafe reward signals from the maximization objective.",
+    "where": "p.2 §1",
+    "strength": "strong"
+  },
+  {
+    "kind": "contribution",
+    "point": "贡献一:说明 CMDP 的优化目标如何被不安全奖励信号冗余地修改",
+    "quote_en": "an illustration of how the optimization criterion of a CMDP is redundantly modified by unsafe reward signals",
+    "where": "p.2 §1",
+    "strength": "supported"
+  },
+  {
+    "kind": "contribution",
+    "point": "贡献二:提出算法把任务设计者从手调不安全奖励信号的繁重任务中解放出来",
+    "quote_en": "a proposed algorithm to free RL task designers from the unnecessary time-consuming and challenging task of hand-tuning unsafe reward signals",
+    "where": "p.2 §1",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "masking 的定义:基于谓词真假把某些值置零",
+    "quote_en": "the method of masking, which zeroes certain values based on a predicate being true or false",
+    "where": "p.2 §1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "MCPO 在奖励优势函数上定义一个 mask",
+    "quote_en": "Masked Constrained Policy Optimization (MCPO) defines a mask on the reward advantage function.",
+    "where": "p.4 §4.4",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "建立在重要性采样、TRPO 和 CPO 三个概念之上",
+    "quote_en": "based on the concepts of importance sampling, trust region policy optimization and constrained policy optimization",
+    "where": "p.2 §1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "第一步:把基于不安全奖励的 TD 残差置零(式14)",
+    "quote_en": "First, the TD residuals based on an unsafe reward are set to zero.",
+    "where": "p.4 §4.4.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "第二步:不安全奖励还要从价值函数估计的累积未来奖励中排除,而这不是简单把奖励替换成零",
+    "quote_en": "the unsafe reward should be excluded from the expectation of accumulated future rewards",
+    "where": "p.5 §4.4.2",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "当不安全状态-动作导致未完成任务就终止时,预测误差被丢弃(置零)",
+    "quote_en": "The errors are discarded (i.e. set to zero) when unsafe state-actions have caused termination without task completion.",
+    "where": "p.5 §4.4.2 (式16)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "实践中限制只估计 n 步的单步奖励,n+1 步后用状态价值自举",
+    "quote_en": "we limit the estimation of singular rewards for",
+    "where": "p.5 §4.4.3 (式17)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "更高效做法:用 CMDP 的安全代价来算式14和16,因为不安全状态指示等价于代价为1的指示",
+    "quote_en": "A more efficient approach is to compute (14) and (16) based on the safety costs of the CMDP",
+    "where": "p.5 §4.4.3",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "MCPO 优化的性能 J▽ 定义为仅那些没有因进入不安全状态而终止的轨迹的期望回报",
+    "quote_en": "MCPO aims to optimize the performance",
+    "where": "p.5-6 §4.4.6",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "CPO 是 CMDP 的信赖域策略搜索方法,通过限制每次迭代策略改变的幅度来限制逼近误差的影响",
+    "quote_en": "Constrained Policy Optimization (CPO) is a trust region policy search method for CMDPs, which provides such guarantees by limiting the influence of approximation errors in the learning process",
+    "where": "p.1-2 §1",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "玩具例子:r△=0 时智能体会学到策略 πr(把安全约束推到上界)",
+    "quote_en": "In this case, the agent would learn to behave according to policy",
+    "where": "p.3 §3 表1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "玩具例子:r△=-100 时智能体会找到过度保守的策略 πb",
+    "quote_en": "the agent would find the overly conservative policy",
+    "where": "p.3 §3 表1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "玩具例子:r△=-10 时才找到最优 δ-safe 路径 πg,且该值是依据各策略期望奖励与代价精心挑出的",
+    "quote_en": "which was carefully selected based on the expected rewards and costs obtained by each policy",
+    "where": "p.3 §3 表1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "要选出能找到最优 δ-safe 策略的 r△ 值,任务设计者必须事先就知道该策略——构成循环依赖",
+    "quote_en": "the task designer has to know such policy in advance",
+    "where": "p.3 §3",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "实验超参:γ=0.995,Λ=0.95,KL 步长 κ=0.01",
+    "quote_en": "We set the discount factor as",
+    "where": "p.6 §5",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "每个学习过程跑100次迭代、每迭代5·10^4步,结果取自10个随机种子",
+    "quote_en": "Results are collected from",
+    "where": "p.6 §5",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "实现基于开源工具包 garage",
+    "quote_en": "Our implementation is based on the open source toolkit",
+    "where": "p.6 §5",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "策略用多元高斯分布,均值由两隐层(64,32)、tanh 激活的神经网络输出",
+    "quote_en": "neural networks with two hidden layers of (64,32) nodes and tanh activation functions",
+    "where": "p.6 §5",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "MCPO 用 n=32 个奖励估计(带自举)作为神经网络的 n 个输出节点",
+    "quote_en": "reward estimates (with bootstrapping) are modeled as",
+    "where": "p.6 §5",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "LakeWorld(δ=0.2,ρ=0.25,r△=-500):CPO 比 MCPO 取得更高回报、更低进入不安全状态的概率",
+    "quote_en": "CPO achieves higher returns and lower probability of entering the unsafe state than MCPO",
+    "where": "p.7 §5.1.1 图3a/3b",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "但 CPO 实际学到的是原任务目标(最短路径)下的次优策略",
+    "quote_en": "CPO actually learns a suboptimal policy of the original task objective",
+    "where": "p.7 §5.1.1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "把 ρ 设为0、对每个种子采样10^3条已完成任务的轨迹后,MCPO 在满足约束的同时取得比 CPO 更高的任务性能",
+    "quote_en": "MCPO achieves higher task performance than CPO, while meeting the constraints.",
+    "where": "p.8 §5.1.1 图3c",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "r△=-5000 时 CPO 变得完全风险厌恶、牺牲任务性能;而 MCPO 性能与 r△=-500 时相同",
+    "quote_en": "MCPO achieves equal performance to the case of",
+    "where": "p.8 §5.1.1 图4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "这进一步表明 MCPO 成功忽略了不安全奖励",
+    "quote_en": "This further indicates that MCPO successfully neglects the unsafe reward.",
+    "where": "p.8 §5.1.1",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "CoastWorld(δ=0.1,ρ=0.33,r△=0):CPO 不仅学到次优策略,而且风险显著高于 MCPO",
+    "quote_en": "not only does CPO learn a suboptimal policy, but also one that is substantially higher than MCPO in risk",
+    "where": "p.8 §5.1.2 图5",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "CoastWorld 中完成任务的平均回报再次显示 MCPO 找到比 CPO 更短的路径",
+    "quote_en": "shows again that MCPO finds a shorter path than CPO",
+    "where": "p.8 §5.1.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "觅食任务:在11个奖励块中收集最高的6个;5个无风险块奖励10,5个块奖励 r_i=100-20i、风险 ρ_i=0.5-0.1i,外加1个奖励10风险0.92的块",
+    "quote_en": "There are five patches which have no risk and provide a reward of 10",
+    "where": "p.8 §5.2 图6",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "觅食任务(150迭代,δ=0.1):MCPO 学会朝更高奖励导航,而两算法用同一安全约束",
+    "quote_en": "MCPO has learned to navigate towards higher rewards than CPO, while both algorithms rely on the same safety constraint.",
+    "where": "p.8 §5.2 图7c",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "结论:在不安全奖励未被正确手调时,对未因风险终止的回合,MCPO 在累积奖励均值上胜过 CPO",
+    "quote_en": "MCPO outperforms CPO in the average of accumulated rewards, for the episodes that were not terminated due to risk, when unsafe reward signals are not properly hand-tuned",
+    "where": "p.8 §6",
+    "strength": "supported"
+  },
+  {
+    "kind": "method",
+    "point": "局限:当某策略下不安全状态发生概率很高时,部分奖励估计器因预测误差被遮蔽而很少被更新",
+    "quote_en": "some reward estimators are rarely updated when the likelihood of unsafe states under",
+    "where": "p.5 §4.4.5",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "局限:用采样回报 G_t 做估计时,在高风险环境下许多样本会被丢弃,采样效率更低",
+    "quote_en": "We therefore expect this method to exhibit lower sampling efficiency compared to other masked estimators.",
+    "where": "p.5 §4.4.4",
+    "strength": null
+  }
+]

@@ -1,0 +1,233 @@
+[
+  {
+    "kind": "contribution",
+    "point": "本文系统解剖 RLHF 中 PPO 的内部机理,识别出'策略约束'是 PPO 有效实现的关键,并提出加强版 PPO-max 以提升策略模型训练稳定性。",
+    "quote_en": "We identify policy constraints being the key factor for the effective implementation of the PPO algorithm. Therefore, we explore the PPO-max, an advanced version of PPO algorithm, to efficiently improve the training stability of the policy model.",
+    "where": "p.1 Abstract",
+    "strength": "strong"
+  },
+  {
+    "kind": "result",
+    "point": "在 7B 和 13B 的 SFT 模型上评测 PPO-max,显示出与 ChatGPT 可比的对齐表现。",
+    "quote_en": "We evaluate PPO-max on 7B and 13B SFT models, demonstrating comparable alignment performance with ChatGPT.",
+    "where": "p.2 §1 Introduction",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "作者发现奖励模型的质量直接决定了策略模型的上界。",
+    "quote_en": "We find that the quality of the reward model directly determines the upper bound of the policy model.",
+    "where": "p.2 §1 Introduction",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "PPO-max 缓解了原始 PPO 训练的不稳定,使得能用更大语料跑更长的训练步数。",
+    "quote_en": "PPO-max alleviates the instability of vanilla PPO training and enables longer training steps with a larger training corpus.",
+    "where": "p.2 §1 Introduction",
+    "strength": "observed"
+  },
+  {
+    "kind": "contribution",
+    "point": "三点贡献:发布中英文奖励模型、分析 PPO 内部机理并提出 PPO-max、开源完整 PPO-max 代码。",
+    "quote_en": "1) we release competitive Chinese and English reward models, respectively, which have good cross-model generalization ability, alleviating the cost of relabeling human preference data; 2) we conduct in-depth analysis on the inner workings of PPO algorithm and propose the PPO-max algorithm to ensure stable model training; and 3) we release the complete PPO-max codes to ensure that the LLMs in the current SFT stage can be better aligned with humans.",
+    "where": "p.3 §1 末",
+    "strength": "strong"
+  },
+  {
+    "kind": "method",
+    "point": "奖励模型架构:去掉预训练 transformer 的解嵌入层,在最后一层加一个线性层,把标量奖励赋给最后一个 token;奖励越大样本越好。",
+    "quote_en": "For the RM architecture, we use pre-trained transformer-based language models with the last unembedding layer removed and add an additional linear layer to the final transformer layer. Given any text, the reward model will assign a scalar reward value to the last token, and the larger the reward value, the better the sample.",
+    "where": "p.4 §3.1 Reward Modeling",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "奖励建模损失用成对比较的 pairwise loss(公式1),并按照 Stiennon 等引入对偏好回复的自回归 LM 模仿损失、以系数 β_rm 加权(公式2)。",
+    "quote_en": "Additionally, we follow [27] to use imitation learning, which introduces the autoregressive LM loss on the preferred response of each pair, allowing the model to imitate the preferred response in each sentence pair. In practice, we add the coefficient β_rm the LM loss respectively.",
+    "where": "p.4 §3.1 公式(1)(2)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "总奖励中加入 KL 惩罚项(公式3):r_total = r(x,y) − η·KL(π^RL || π^SFT),η 控制 KL 惩罚强度,既作熵奖励促探索,又防止 RL 策略偏离奖励模型训练时见过的分布。",
+    "quote_en": "where η is KL reward coefficient and controls the strength of the KL penalty. This KL divergence term plays two significant roles within this context.",
+    "where": "p.4-5 §3.1 公式(3)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "用 GAE(广义优势估计,公式9)在偏差-方差间折中:λ=0 时高偏差(退化为TD误差),λ=1 时高方差(蒙特卡洛)。",
+    "quote_en": "This definition of GAE smoothly interpolates between high bias (when λ = 0) and high variance (when λ = 1) estimators, effectively managing the trade-off.",
+    "where": "p.6 §3.2.2 公式(9)(10)(11)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "PPO-Clip 用裁剪后的概率比目标(公式15)把新策略限制在旧策略附近,ε 控制偏离幅度;critic 用 MSE 损失(公式16);PPO-ptx 在策略优化中混入预训练 LM 损失(公式17)缓解语言能力退化。",
+    "quote_en": "PPO-Clip attempts to keep the new policy close to the old policy, but instead of putting a constraint on the KL divergence like TRPO, it uses a clipped version of the policy ratio in its objective.",
+    "where": "p.7 §3.2.3 公式(15)(16)(17)",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "英文奖励模型从 LLaMA-7B 起训,用 HH-RLHF 的 16万对样本(11.8万 helpful + 4.2万 harmless)作训练集,余下约 8.5k 中抽 1k 作测试集。",
+    "quote_en": "We use 160k pairwise samples of the HH-RLHF dataset[17] which consists of 118k helpful and 42k harmless instances as training set. From the remaining 8.5k data, we randomly selected approximately 0.7k helpful and 0.3k harmless examples for a total of 1k data as the test set, and the rest is used as the validation set.",
+    "where": "p.8 §4.1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "中文奖励模型基于 OpenChineseLLaMA,雇专业标注员人工标 3.9万对样本(3.1万 helpful + 8千 harmless),训练集 2.4万 helpful + 6千 harmless。",
+    "quote_en": "We hired professional annotators to manually label 39k pairwise samples including 31k helpful and 8k harmless samples. We constructed the training set by randomly sampling 24k helpful and 6k harmless instances, and then we allocated 2.4k helpful and 0.6k harmless samples from the remaining data at random to form the test set.",
+    "where": "p.8 §4.1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "RM 训练超参:学习率 5e-6、前 10% 步 warmup、动态 batch(最大128/最小4)、固定 1000 步(约 1.06 epoch)、β_rm=1。",
+    "quote_en": "The learning rate is set to 5e-6 with a warmup over the first 10% steps. We use a dynamic batch method instead of a fixed value, which balances the number of tokens in each batch as much as possible for a more efficient and stable training phase. The batch size changes according to the number of tokens in a batch, with a maximum of 128 and a minimum of 4. We fixed the training step to 1000, approximately 1.06 epoch for the whole training phase. We set β_rm = 1",
+    "where": "p.8 §4.2",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "RM 准确率在 200 步后(约 0.2 epoch)提升明显放缓,但用 200 步的 RM 初始化 PPO 反而表现不佳,说明准确率单独不足以作为 RM 的评判标准。",
+    "quote_en": "Besides, we find that the rate of improvement significantly slows down after 200 steps for both models, approximately equivalent to 0.2 epochs, the accuracy of which is comparable to that obtained after training for a complete epoch. However, when utilizing the 200-step model as the initialization for PPO, we observe unsatisfactory performance. Thus, accuracy alone is insufficient as a criterion for the RM.",
+    "where": "p.9 §4.4",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "原始 PPO 训练存在'模式坍塌':训练好的策略模型倾向用特定模式欺骗奖励模型骗取异常高分。",
+    "quote_en": "However, we observe that the trained policy model has a tendency to cheat the reward model through specific patterns for anomalous higher scores.",
+    "where": "p.11 §5.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "训练损失稳定收敛、奖励升高,但从人类与 GPT-4 评测看并不对应更好的策略行为;奖励分和损失值不能指示 PPO 是否在正确优化。",
+    "quote_en": "We observed stable convergence processes in training loss, but higher rewards do not reflect better policy behaviors from the perspective of human and GPT-4 evaluation. This means that the reward scores and training losses do not indicate whether the PPO is optimizing correctly.",
+    "where": "p.12 §5.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "坍塌的模型一致地输出更长的回复、并对这种生成模式表现出更低的困惑度;作者据此用困惑度、策略-参考模型 KL 散度、回复长度作为更有信息量的监控指标。",
+    "quote_en": "We simultaneously observe that the collapsed model uniformly delivers longer responses and exhibits lower perplexity for such generative patterns.",
+    "where": "p.12 §5.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "奖励缩放(reward scaling)并不能引导正确的策略优化,加不加它 PPO 训练轨迹一致;作者主张需要更紧的约束来保证训练稳定。",
+    "quote_en": "In our experiments, we believe that tighter constraints are required to ensure training stability.",
+    "where": "p.13 §5.3.1 Reward Scaling",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "在策略约束的对比中,所有修改都能诱导收敛,但只有对策略熵或 KL 散度的惩罚能提供长期稳定的优化。",
+    "quote_en": "We show that all modifications can induce convergence, but only a penalty of the policy entropy or KL divergence can provide a long-lasting stable optimization.",
+    "where": "p.14 图7 caption / §5.3.2",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "重要性采样(等价于无限经验缓冲)能进一步稳定 PPO 训练,但会损害策略模型的最终表现。",
+    "quote_en": "Experimental results indicate that this implementation further stabilizes PPO training, but compromises the final performance of the policy model.",
+    "where": "p.15 §5.3.2 Importance Sampling",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "在正确配置下,熵奖励(entropy bonus)相对 KL 惩罚没有明显优势,且对参数选择与代码实现极其敏感,作者不推荐。",
+    "quote_en": "With correct configurations, we did not find an obvious advantage of this trick relative to KL-penalty.",
+    "where": "p.15 §5.3.2 Entropy Bonus",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "token 级 KL 惩罚把 λ 设为 0.05 时,RLHF 能显著提升回复质量,同时几乎不改动语言建模(对原策略几乎零 KL 散度)。",
+    "quote_en": "Interestingly, we show that RLHF is able to significantly improve the response quality while barely modifying the language modeling (exhibiting an almost zero KL divergence from the original policy).",
+    "where": "p.15 §5.3.2 Token Level KL-Penalty 公式(19)",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "未经 SFT 的策略模型在 PPO 训练中明显无能,说明构建有监督的策略模型在 RLHF 中不可或缺;而 critic 模型的初始化方式对 PPO 收敛影响不大。",
+    "quote_en": "In contrast, a policy model initialized without SFT training is clearly incapable in PPO training, which indicates that the construction of a supervised policy model is indispensable in RLHF.",
+    "where": "p.15 §5.3.3 Pretrained Initialization",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "critic 模型预训练有助于提供更好的优势估计、提升训练稳定;作者建议用 critic 模型预训练替代学习率 warmup 作为通用初始化策略。",
+    "quote_en": "We recommend replacing the learning rate warmup with the critic model pre-training as a generic initialization strategy.",
+    "where": "p.16 §5.3.3 Critic Model Initialization",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "PPO-max 的实现组合:基于历史均值方差对当前组奖励做归一化+裁剪,再加 KL 惩罚约束策略;用奖励模型初始化 critic 并在正式 PPO 前预训练;用全局梯度裁剪、小经验缓冲;加预训练 LM 损失并裁剪值函数损失。",
+    "quote_en": "We normalize and clip the current group of rewards based on historical mean and variance records, and subsequently add a KL-penalty term to constrain the policy optimization. In the model loading phase, we initialize the critic model with our reward model and pre-train it before applying PPO formally. We use global gradient clipping and set a small size of the experience buffer. To reduce alignment tax, we add pre-train language model loss in policy optimization as InstructGPT [16] and simultaneously clip the value function loss.",
+    "where": "p.16-17 §5.4 PPO-max Setup",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "PPO-max 在 1 万步(10K steps)训练中保持长期稳定的策略优化(图9)。",
+    "quote_en": "10K steps training dynamics of PPO-max. PPO-max ensures long-term stable policy optimization for the model.",
+    "where": "p.17 图9 caption",
+    "strength": "observed"
+  },
+  {
+    "kind": "method",
+    "point": "PPO 训练设置:四个模型(策略/价值/奖励/参考);策略与参考由 7B SFT 初始化;策略与 critic 学习率分别 5e-7 和 1.65e-6,前 10% 步 warmup。",
+    "quote_en": "The learning rate of policy model and critic model is set to 5e-7 and 1.65e-6 with a warmup over the first 10% steps.",
+    "where": "p.11 §5.1",
+    "strength": null
+  },
+  {
+    "kind": "method",
+    "point": "PPO 训练数据为人工构造的 HH 数据集,含 8k harmless 与 20k helpful 查询;采样 batch=128、训练策略与 critic 的 batch=32;实验在每台 8×80G A100、1TB 内存、128 CPU 的机器上,用 ZERO2 + 梯度检查点。",
+    "quote_en": "We train the models on a manually constructed HH dataset containing 8k harmless queries and 20k helpful queries and we fix the number of steps instead of the number of epochs. In all experiments, we set a batch size of 128 for sampling from the environment and a batch size of 32 for training policy model and critic model.",
+    "where": "p.11 §5.1",
+    "strength": null
+  },
+  {
+    "kind": "result",
+    "point": "人类评测:英文数据上 RLHF 模型在 Harmless 留出集获 62% 评分,而 SFT 仅 5%;Helpful 留出集 RLHF 44% 对 SFT 30%。",
+    "quote_en": "Specifically, the RLHF model on the English dataset exhibits significant advantages on the Harmless held-out dataset, receiving a rating of 62% compared to 5% for the SFT model.",
+    "where": "p.18 §6.2 / 图10",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "对比 ChatGPT 的 harmless 评测:RLHF 仍落后于 ChatGPT,但相比 SFT 显著降低被击败率——英文从 45% 降到 24%,中文从 37% 降到 29%。",
+    "quote_en": "Specifically, the RLHF model trained on English text managed to decrease the defeat rate from 45% to 24%. Similarly, the RLHF model trained on Chinese text achieved a reduction in the defeat rate from 37% to 29%.",
+    "where": "p.19 §6.3 / 图11",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "C-Eval 测试显示 PPO 后中文 NLU 能力下降,而把预训练数据加入 PPO 阶段的 PPO-ptx 能有效缓解这种下降。",
+    "quote_en": "The experimental results indicate a decrease in NLU capabilities after employing PPO. By incorporating pre-training data into the PPO training phase, PPO-ptx effectively alleviates the decline in NLU capabilities.",
+    "where": "p.19 §6.4 / 图12",
+    "strength": "observed"
+  },
+  {
+    "kind": "result",
+    "point": "作者自述局限:研究主要聚焦 7B 模型,尚未考察模型规模与数据规模对 RLHF 表现的影响。",
+    "quote_en": "While our study primarily focuses on a 7-billion-parameter model, we have yet to investigate the impact of model size and data scale on the performance of RLHF.",
+    "where": "p.20 Limitations (Scaling Law)",
+    "strength": "supported"
+  },
+  {
+    "kind": "result",
+    "point": "作者自述局限:奖励分不能可靠地作为训练阶段预测 RLHF 表现的指标,需要寻找更合适的性能指标。",
+    "quote_en": "Additionally, the reward score cannot reliably serve as an indicator for predicting RLHF performance during the training phase. It implies that a more suitable performance indicator during the training phase needs to be sought.",
+    "where": "p.20 Limitations (Performance Indicator)",
+    "strength": "supported"
+  }
+]

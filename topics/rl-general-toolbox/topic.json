@@ -19,5 +19,22 @@
     "deep reinforcement learning continuous control benchmark algorithms comparison"
   ],
   "window_years": 12,
-  "target": 100
+  "target": 100,
+  "score_anchors": [
+    {
+      "title": "Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor",
+      "score": 95,
+      "reason": "SAC 原始算法,直接命中工具箱算法谱核心(侧面4 off-policy 改进);经典奠基、不易过时"
+    },
+    {
+      "title": "Continuous control for robot based on deep reinforcement learning",
+      "score": 45,
+      "reason": "泛泛的连续控制 DRL 学位论文,沾 RL+机器人但摘要无具体 reward 设计/超参经验/do-don't,不针对工具箱要解决的'可操作'问题——典型骑墙"
+    },
+    {
+      "title": "A New Strategy for the Exploration of Venus",
+      "score": 8,
+      "reason": "金星行星探测战略,'exploration'一词误撞 RL 探索,实质与 RL 训练完全无关——关键词碰瓷的典型"
+    }
+  ]
 }

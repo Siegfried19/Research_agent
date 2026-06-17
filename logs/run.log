@@ -200,3 +200,32 @@
 2026-06-17T05:20:52Z	rl-digital-human-interaction	stage:worklist start
 2026-06-17T05:20:52Z	rl-digital-human-interaction	stage:worklist end(rc=0)
 2026-06-17T05:43:42Z	pipeline	WIPE+QUEUE(2026-06-17): 清空总结层(summary_versions 241->0, 221篇全退 pdf_downloaded, store/summaries 清空, 核查产物清空; 保留 papers/paper_topic/citations/PDF), 备份 logs/wipe-summaries-20260617. 新增夜间队列模式 auto-sum-next(run.py: select_next_topic/queue_report/burn_down_msg/topic_progress + topics.priority 列; chain 加 worklist), cron 切 auto-sum-next 20 并冒烟验证通过(gt priority=1 先做). 用量探针 LLM_USAGE_LOG(claude/codex.py).
+2026-06-17T06:04:57Z	rl-general-toolbox	stage:worklist start
+2026-06-17T06:04:57Z	rl-general-toolbox	stage:worklist end(rc=0)
+2026-06-17T06:04:57Z	rl-general-toolbox	stage:sum start
+2026-06-17T06:50:42Z	rl-general-toolbox	summarize_auto: 20 ok, 0 failed/skipped
+2026-06-17T06:50:42Z	rl-general-toolbox	stage:sum end(rc=0)
+2026-06-17T06:50:42Z	rl-general-toolbox	stage:finalize start
+2026-06-17T06:50:42Z	rl-general-toolbox	stage:finalize end(rc=0)
+2026-06-17T06:50:42Z	rl-general-toolbox	stage:verify start
+2026-06-17T07:28:57Z	-	correct_summaries: 20/20 corrected
+2026-06-17T07:29:09Z	rl-general-toolbox	escalate_verify: verified=20 pass=0 minor=16 major=4 corrected=20 stubborn=0 errors=20
+2026-06-17T07:29:09Z	rl-general-toolbox	stage:verify end(rc=0)
+2026-06-17T09:30:01Z	rl-general-toolbox	stage:worklist start
+2026-06-17T09:30:01Z	rl-general-toolbox	stage:worklist end(rc=0)
+2026-06-17T09:30:01Z	rl-general-toolbox	stage:sum start
+2026-06-17T10:12:47Z	rl-general-toolbox	summarize_auto: 19 ok, 1 failed/skipped
+2026-06-17T10:12:47Z	rl-general-toolbox	stage:sum end(rc=0)
+2026-06-17T10:12:47Z	rl-general-toolbox	stage:finalize start
+2026-06-17T10:12:47Z	rl-general-toolbox	stage:finalize end(rc=0)
+2026-06-17T10:12:47Z	rl-general-toolbox	stage:verify start
+2026-06-17T10:13:18Z	rl-general-toolbox	escalate_verify: verified=0 pass=0 minor=0 major=0 corrected=0 stubborn=0 errors=39
+2026-06-17T10:13:18Z	rl-general-toolbox	stage:verify end(rc=0)
+2026-06-17T14:22:50Z	rl-general-toolbox	stage:verify start
+2026-06-17T14:52:03Z	-	correct_summaries: 18/18 corrected
+2026-06-17T14:52:33Z	rl-general-toolbox	escalate_verify: verified=19 pass=1 minor=14 major=4 corrected=18 stubborn=0 errors=58
+2026-06-17T14:52:33Z	rl-general-toolbox	stage:verify end(rc=0)
+2026-06-17T17:08:00Z	cold	score_auto: 6 scored, 0 batches failed, anchors=3
+2026-06-17T17:08:20Z	cold	score_auto: 6 scored, 0 batches failed, anchors=3
+2026-06-17T17:08:20Z	cold	score_auto: 6 scored, 0 batches failed, anchors=3
+2026-06-17T17:34:10Z	pipeline	SCORE-DRIFT-FIX(2026-06-17,未提交): score_auto.py 落漂移修法——rubric通用骨架(替digital-human硬编码)+topic.json.score_anchors注入+证据接地; batch10→20+批内洗牌; boundary_rerank(去留线±8×5取均值,首跑target截断/增量资格闸,写zz_boundary靠文件名排序覆盖,commit.py没动); 无锚点全自动自举(裸跑整遍→autopick高/边界/低3张写回topic.json→带锚重打,标尺取整遍非第一批). gt/dhi手填锚点+推TG. 删pick_anchors.py(自举全自动). 三层验证过,未跑临时库端到端. 详见 logs/SESSION-2026-06-17-score-drift-impl.md + docs/score-drift-research-findings.md
