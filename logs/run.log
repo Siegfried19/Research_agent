@@ -174,3 +174,11 @@
 2026-06-10T23:51:23Z	-	correct_summaries: 6/6 corrected
 2026-06-10T23:55:32Z	rl-general-toolbox	escalate_verify: verified=49 pass=10 minor=39 major=0 corrected=6 stubborn=0 errors=0
 2026-06-15T20:28:03Z	-	REFACTOR: pipeline/ 扁平27脚本→分层(git mv 25): stages/(主链14) + tools/(旁路11) + lib/(不动);run.py/ask.py 留根(入口+出口②API)。搬动脚本加 path shim 3行解析 from lib。run.py阶段表+文档已同步,run auto 行为不变;验证全过(py_compile/import/子进程/路由)。详情见 pipeline/ARCHITECTURE.md。
+2026-06-16T00:35:40Z	rl-digital-human-interaction	verify_summaries: checked=3 pass=2 minor=0 major=1 errors=0
+2026-06-16T01:39:47Z	rl-general-toolbox	verify_summaries: checked=3 pass=0 minor=3 major=0 errors=0
+2026-06-16T01:58:51Z	rl-general-toolbox	verify_summaries: checked=13 pass=5 minor=8 major=0 errors=84
+2026-06-16T02:55:29Z	rl-general-toolbox	verify_summaries: checked=2 pass=2 minor=0 major=0 errors=0
+2026-06-16T22:19:12Z	x	stage:sum start
+2026-06-16T22:19:12Z	x	stage:sum end(rc=120)
+2026-06-17T00:14:44Z	rl-general-toolbox	summarize_auto: 0 ok, 0 failed/skipped
+2026-06-17T00:34:35Z	pipeline	nightly auto-run: run.py 拆 auto-pull/auto-sum[N] + summarize_auto --limit + docs/nightly-cron-deploy.md(cron 未装)

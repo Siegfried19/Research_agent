@@ -1,8 +1,11 @@
 """Auto-escalating verification driver (固化"命中就扩面"升级阶梯).
-Round loop: verify a sample → if the fresh-sample major rate >= threshold,
-auto-correct the majors (correct_summaries) and DOUBLE the sample → repeat.
-Corrected versions are re-verified automatically next round (must rule).
-Stops when: fresh major rate drops below threshold AND no corrections pending
+Round loop: verify (default 100% = all unverified) → auto-correct EVERY non-pass
+(major, minor AND unverifiable; token is no longer a constraint — daily ~10-paper
+batches, redo everything that isn't clean) via correct_summaries; if the
+fresh-sample major rate >= threshold also DOUBLE the sample → repeat. For an
+unverifiable item the rewrite re-reads the PDF to ground it, softening/removing
+what still can't be supported. Corrected versions are re-verified next round.
+Stops when: fresh major rate below threshold AND no corrections pending
 re-check, or every paper is verified, or max-rounds is hit.
 
 --start-pct 100 = full-sweep mode: check ALL unverified summaries, correct
@@ -39,7 +42,7 @@ def main():
         sys.exit(1)
     argv = sys.argv[1:]
     topic_id = argv[0]
-    pct = flag(argv, "--start-pct", 10.0)
+    pct = flag(argv, "--start-pct", 100.0)  # 默认全审(每次就 ~10 篇,不抽样)
     threshold = flag(argv, "--threshold", 10.0)          # fresh-sample major %, escalate at/above
     concurrency = flag(argv, "--concurrency", 3, int)
     max_rounds = flag(argv, "--max-rounds", 6, int)
@@ -74,13 +77,18 @@ def main():
             break
 
         majors = [r for r in ok if r["verdict"] == "major"]
-        fixable = [m for m in majors if attempts.get(m["id"], 0) < max_attempts]
-        stubborn |= {m["id"] for m in majors if attempts.get(m["id"], 0) >= max_attempts}
+        # token 不再是约束(用户 2026-06-16 改每晚两次、每次~10 篇,全审+要质量):
+        # 非 pass 的全部重做——major/minor/unverifiable 都进修正。correct 对 unverifiable 的处理=
+        # 重读原文补实出处,补不上就软化/删去(别留无依据断言)。两次仍不过转人工。
+        problems = [r for r in ok if r["verdict"] in ("major", "minor", "unverifiable")]
+        fixable = [m for m in problems if attempts.get(m["id"], 0) < max_attempts]
+        stubborn |= {m["id"] for m in problems if attempts.get(m["id"], 0) >= max_attempts}
         fresh_ok = [r for r in ok if r["id"] in fresh_ids]
         fresh_major_pct = (100.0 * sum(1 for r in fresh_ok if r["verdict"] == "major")
                            / len(fresh_ok)) if fresh_ok else 0.0
         log.info(f"escalate r{rnd}: pass={sum(1 for r in ok if r['verdict'] == 'pass')} "
                  f"minor={sum(1 for r in ok if r['verdict'] == 'minor')} major={len(majors)} "
+                 f"unverifiable={sum(1 for r in ok if r['verdict'] == 'unverifiable')} "
                  f"| fresh major rate {fresh_major_pct:.0f}% (threshold {threshold:.0f}%)")
 
         pending_recheck = False
@@ -104,7 +112,7 @@ def main():
             r["issues"] = (r.get("issues") or []) + [{
                 "severity": "major",
                 "quote": "(escalate_verify)",
-                "problem": f"修正 {max_attempts} 次后复核仍为 major,需人工分诊"}]
+                "problem": f"修正 {max_attempts} 次后复核仍有问题(major/minor/unverifiable),需人工分诊"}]
     n_pass, n_minor, n_major = write_report(
         topic_id, results, all_failed,
         note=f"本报告由 escalate_verify 汇总(多轮升级抽检,major 自动修正+复核;"

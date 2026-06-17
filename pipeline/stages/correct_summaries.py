@@ -30,6 +30,7 @@ def cprompt(title, current_md, issues, next_version, paper_id, source_block):
 
 要求:
 - **逐条修正错误清单里的问题**:数字、方向、论断强度都以论文原文为准;被夸大的表述收敛到原文实际支持的程度。
+- 清单里标 **[unverifiable]** 的条目=核查员这轮没能核实(不一定是错):**重读原文**,能找到依据就补上明确出处/引文;若原文确实找不到依据,就把该句**改写到原文支持的程度或删去**,不要保留无依据的断言。
 - 错误清单之外的内容**尽量原样保留**(不要无端改写没问题的段落),但凡涉及具体数字/结论的句子,顺手对照原文再核一遍。
 - 总结者自己的评注(领域地位、与研究主题的契合度、对后续工作的影响等)允许保留,但必须放在"局限与我的质疑"或明确以"(总结者注)"标出,**不得写成论文自身的论断**。
 - 保持原有 markdown 结构与三段置顶模板,全文中文。
@@ -74,6 +75,10 @@ def run_corrections(work, concurrency=2):
         out = ROOT / "store" / "summaries" / p["slug"] / f"v{nv}.md"
         if out.exists():
             log.info(f"skip (v{nv} exists): {(p['title'] or '')[:50]}")
+            continue
+        # 非 pass 的都重做(用户 2026-06-16:一次就 ~10 篇,全修)。issues 原样带上,含
+        # unverifiable——cprompt 对它的指令=重读原文补实出处,补不上就软化/删去,别留无依据断言。
+        if not w["issues"]:
             continue
         todo.append({"paperId": p["id"], "title": p["title"], "issues": w["issues"],
                      "currentPath": str(ROOT / cur["path"]), "nextVersion": nv, "outPath": str(out),

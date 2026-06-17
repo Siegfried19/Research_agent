@@ -14,6 +14,10 @@
     "flag_min_relevance": 45,
     "codex_panel": false
   },
+  "summarize": {
+    "_comment": "总结撰写。grounding_gate=true:写正文前 agent 先列 note_plan(每条论断带原文英文引文+出处+strength),再跑 tools/grounding_gate.py 机械核对引文真在 PDF 里,钉不住打回重写(治张冠李戴,零 token)。设 false=只列 note_plan 不验门(最小版),靠事后 Codex 兜底。",
+    "grounding_gate": true
+  },
   "verify": {
     "_comment": "Codex 跨模型核查。codex_self_render=true:给 Codex(gpt-5.5)隔离临时目录+PDF+workspace-write 沙箱,涉及公式/图表它自己渲染相关页面再看(比预渲染全部页更聪明,能zoom图表;代价更慢更耗额度、非确定)。设 false=纯文本核查(只喂 pdftotext,公式/图表里的错查不出)。",
     "codex_self_render": true

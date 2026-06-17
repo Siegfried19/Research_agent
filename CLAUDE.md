@@ -35,6 +35,11 @@ python3 pipeline/run.py <id> verify      # escalate_verify.py --start-pct 100: C
 ```
 > `claude` CLI 必须已登录。测试可设 `RESEARCH_DB=/tmp/x.sqlite` 用临时库,不碰生产 `db/papers.sqlite`。
 
+**夜间自动化拆分（2026-06-16）**：为"常开机器半夜自动跑、白天把 token 留给用户",`auto` 按 token 消耗+要不要人切成两半:
+- `python3 pipeline/run.py <id> auto-pull` = discover→score→commit→fetch→recover→hunt→**tierb**→worklist。**白天/有人时手动跑**(tierb 要点付费墙验证),只花小量 token(score/hunt)。
+- `python3 pipeline/run.py <id> auto-sum [N]` = sum→finalize→verify。**夜间 cron 无人值守**,token 大户;continue-on-error(撞限流不中断、次晚幂等补齐)+ 起跑/收尾发 Telegram。第三参 `N`=本批最多总结 N 篇(`summarize_auto --limit`,按 rank 取,幂等续做)。**节奏(用户 2026-06-16 定):一晚跑两批、各 10 篇、相隔 ~4.5h**(踩 token 滚动窗口重置;两条 cron 行 1:00/5:30 各 `auto-sum 10`)。
+- 切点理由:tierb(唯一要人)卡链子中间,sum/verify(token 大户)在后半段——前半白天连人带验证搞定,后半烧 token 的丢夜里。`auto`(全程)保留不动。**部署到常开机器的完整 runbook(cron 行/干净环境 PATH 坑/前提)→ `docs/nightly-cron-deploy.md`。**
+
 新主题：建 `topics/<id>/topic.json`（字段：id/title/idea/queries/window_years/target）。
 **检索词(queries)由你根据用户给的研究思路生成**（多组英文关键词，覆盖不同侧面）。
 
@@ -115,11 +120,17 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
   - ⚠️ 与 tierb 协作：bot 常驻时独占 getUpdates，所以每条消息落一份 `logs/bot_inbox.jsonl`；`wait_for_reply()` 检测到 bot 在跑（logs/bot.pid 进程活着）就改读 inbox 并写 `logs/bot_wait.json` 声明关键词，bot 对命中关键词的消息只转交不回 claude。bot 死了自动回退老的 getUpdates 轮询。
 - 若换机器：`config/telegram.json` 不在仓库里，需要用户重新 `settoken` + `chatid`。
 
-## 当前状态（截至 2026-06-09）
-- 主题 `rl-digital-human-interaction`（强化学习训练可与环境交互的数字人），首测 target=40。
-- **2026-06-09 清掉 6 篇垃圾/跑题**（IJISRT 掠夺刊 #29、跑题的 #36/#33、错配的 #38/#32/#39），rank 已重算 → **34 篇**。
-- **Tier B 积压清零**：ASE/AMP（其实是 OA，arXiv 直取）、Walk This Way（ACM OA 过 Cloudflare）、plrev（ScienceDirect，OpenAthens 全文）全部拿到。
-- **现 34 篇全部已总结**（1 篇有 v2）/ 13 条引用边。topic.md 已渲染。
+## 当前状态（截至 2026-06-15）
+- **两个主题已建成**（跨主题比较的前提已具备）：
+  - `rl-digital-human-interaction`（RL 训练可与环境交互的数字人）：**129 篇全已总结**（首测 34 篇后已放量）。
+  - `rl-general-toolbox`（RL 通用工具箱）：**100 篇全已总结**。
+  - 全库共 **221 篇**有总结（两主题约 8 篇重叠），summary_versions 分布：v1=202 篇 / v2=18 / v3=1。
+- **总结核查流程刚升级（本会话重点）**：verify/correct 统一**以 PDF 为唯一原文来源**（commit 0d0ce64）、Codex **自渲染 PDF 看公式/图表**（26c3bb8），hunt/sum 加"张冠李戴"防线（b5dafc1/145c94a）。
+  - 本会话正在**用新流程重跑两主题核查、与旧流程逐篇对比质量**（先备份旧产物+重置 verified.json→抽样验证 OK→待全量）。详见下文"跨模型评审团"节 + `logs/verify-baseline-20260615/`（旧核查 baseline 快照）。
+  - 抽样实测：v2（旧流程已修正过的篇）仍被新流程揪出 major（"张冠李戴"型——把被引文献的数字论断安到本篇头上），说明新流程确有增量。
+- **2026-06-09 大改造①：流水线全自动化**——打分/总结改 `claude -p`、付费墙固化成 `fetch_tierb`、`run auto` 一条龙。我(Claude)不再是运行时,只在搭建/调试时介入。
+- **工作模式（用户 2026-06-10 定）：对话驱动，不解耦**。开新主题=用户来聊研究思路→讨论边界→我生成检索词**给用户过目确认**→建 topic.json→我起 `run auto` 后台跑+挂监控（盯日志、出问题修、汇报漏斗数据）。每周增量=用户说一句,我跑同一条命令盯完汇报。`claude -p` 是我调度的执行层,不是替代我。
+- **2026-06-09 大改造②：整套从 Node/JS 迁移到 Python**(用户要长期维护、Python 生态更适合论文/PDF/未来语义过滤)。20 个 JS + run.sh 全部重写为 `pipeline/*.py`,JS 已删净;DB(`db/papers.sqlite`)原样复用。lib 加了 `log.py`(一等公民日志)。**唯一没在 Python 形态下端到端实跑的是 `fetch_tierb` 的浏览器抓取**(零件都验证过,下个付费墙主题盯一次)。
 - **2026-06-09 大改造①：流水线全自动化**——打分/总结改 `claude -p`、付费墙固化成 `fetch_tierb`、`run auto` 一条龙。我(Claude)不再是运行时,只在搭建/调试时介入。
 - **工作模式（用户 2026-06-10 定）：对话驱动，不解耦**。开新主题=用户来聊研究思路→讨论边界→我生成检索词**给用户过目确认**→建 topic.json→我起 `run auto` 后台跑+挂监控（盯日志、出问题修、汇报漏斗数据）。每周增量=用户说一句,我跑同一条命令盯完汇报。`claude -p` 是我调度的执行层,不是替代我。
 - **2026-06-09 大改造②：整套从 Node/JS 迁移到 Python**(用户要长期维护、Python 生态更适合论文/PDF/未来语义过滤)。20 个 JS + run.sh 全部重写为 `pipeline/*.py`,JS 已删净;DB(`db/papers.sqlite`)原样复用。lib 加了 `log.py`(一等公民日志)。各阶段已逐个测过;真端到端(discover→score→commit→render)在临时库验证通过。**唯一没在 Python 形态下端到端实跑的是 `fetch_tierb` 的浏览器抓取**(本主题已无付费墙篇;零件都验证过,下个付费墙主题盯一次)。
@@ -146,22 +157,22 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
 2. **相互关联、有方便接口的知识库**（建设中）：SQLite 库 + 引用图 + 检索接口（`ask.py` FTS5 已有；向量/引用图扩展/合成知识层按需再上）。
 3. **知识库的三个出口（按近→远）**：
    - ① **用户本人来查答案**——`ask.py "<问题>" --answer`（已有）。
-   - ② **别的项目里的 agent 做任务卡住时来查**——`ask.py --json` + 全局 `~/.claude/CLAUDE.md` 发现机制（已有）。
+   - ② **别的项目里的 agent 做任务卡住时来查**——`ask.py --json` 已有；但**全局 `~/.claude/CLAUDE.md` 发现机制指针 2026-06-16 已撤回**（ask.py 还没修好，先别让外部 agent 用上半成品），待就绪再把那节加回全局。
    - ③ **🎯 idea→论文流水线**——用 academic agent（`ref/academic-research-skills`，ARS，CC BY-NC）吃这个库，从研究想法走到论文成稿。**桥已建好(2026-06-10)**：`pipeline/tools/export_corpus.py <topicId|all> [--min-relevance N]` 导出 ARS Material-Passport `literature_corpus[]` YAML（严格对 schema：CSL 作者名、bibtex 风格 citation_key、无 year 拒绝不硬凑；quality_tier 走 tags+user_notes 出口标记；source_pointer 指本地 PDF；topic2 100 条实测过 schema 校验）。**设想流程**：用户给 idea → 流水线建主题攒语料(`run auto`) → `export_corpus` → ARS `academic-pipeline`(corpus-first,先吃我们的库、外搜补缺) → 研究报告/论文稿 → 引用的新论文回灌进库。**还没跑过一次真实 idea 全流程——那是终极验收,等用户回来一起试。** 注意:导出文件含摘要(版权),仅本地用勿外发。
 
 ## 待办 / 下一步
 - ✅ **(2026-06-09 完成)** 4 篇全文+总结;`fetch_tierb` 固化;`score_auto`/`summarize_auto`(claude -p);`run auto` 一条龙;**整套迁移到 Python**;**修了 recover_oa**(arxiv/repository 优先 + 用 ext_ids.arxiv 不只靠标题)。
 1. **端到端实跑验证 `fetch_tierb.py`**：本主题已无待抓篇,脚本只测过"无事可做"+语法+各零件(手动验证过)。下个有付费墙的主题要盯一次完整 tierb 跑(尤其 findPdfUrl 跨出版商、challenge 检测、混合 B/A 抓取)。
 2. ✅ **(2026-06-09 完成,06-10 改"标记优先")文章评价/筛选体系——硬信号层**：`lib/quality.py` + `config/quality/` 名单 + discover/commit 双闸 + suspect 标记贯穿总结(质疑模式)/渲染(⚠️) + `audit_quality.py` 回溯审计（见上文"质量评价体系"节）。对 129 篇审计:block=0/suspect=0,标记已落库。
-   - ✅ **(2026-06-10 完成)跨模型评审团**：`lib/codex.py` + score 魔鬼代言人(`quality.codex_panel`,默认关) + `verify_summaries.py` 总结核查(suspect 必核+10%抽检),见上文"跨模型评审团"节。**待用户决定**:下轮跑时把 `codex_panel` 打开试真池子。
-3. **放大到 200**（topic.json target 改 200，`python3 pipeline/run.py <id> auto`；commit 增量追加）。
-4. 跨主题比较需要先有第 2 个主题。
+   - ✅ **(2026-06-10 完成,06-15 升级)跨模型评审团**：`lib/codex.py` + score 魔鬼代言人(`quality.codex_panel`,**用户 06-10 拍板保持关**,异议火力集中总结侧) + 总结核查闭环(`verify_summaries`→`correct_summaries`→`escalate_verify`)。**06-15 升级**:verify/correct 统一以 PDF 为唯一原文来源 + Codex 自渲染 PDF 看公式图表，见上文"跨模型评审团"节。
+3. **继续放大主题规模**（两主题已各 129/100 篇；增量追加：topic.json 调 target → `python3 pipeline/run.py <id> auto`，commit 自动增量+重算 rank）。
+4. ✅ **跨主题比较前提已具备**（现有 2 主题）：`python3 pipeline/tools/cross_topic.py`（自带全库引用边重建）。还没实跑过一次跨主题分析——待跑。
 5. (小) claude -p 并发撞 Max 限流就调小 `sum`/`score` 的 concurrency 参数（默认 3/4）。
 6. **🌟 大计划:把论文库变成"遇到问题就来查的知识库"(RAG over corpus)** —— 用户在别的 project 卡住时,让 agent 来这个库里检索答案。结论:**可行**(curated 语料+总结+全文+引用图,RAG 底子好);**数据库大小不是瓶颈**(sqlite 只存元数据/摘要,全文在 store/text;真正难点是"检索准不准")。
    - ⚠️ 检索层必须认 `papers.quality_tier`:suspect 默认过滤或降权+答案中显式标注来源可疑(质量体系 2026-06-10 起是"标记进库"不是"拒之门外",出口不过滤=污染答案)。
    - **落地路径(按性价比,分阶段)**:① 先做 **FTS5 全文搜 + `ask.py "<问题>"` 入口**(sqlite 内置,零依赖,curated 库里够用)→ ② 不够再上**语义向量**(嵌入总结,sentence-transformers 本地 或 嵌入 API + sqlite-vec)→ ③ **混合+claude -p 重排** → ④ **引用图扩展**(命中后顺 citations 拉邻居)→ ⑤ **两段式**(先总结层快筛、再对最相关几篇拉全文深读)。**别一上来堆向量,先 FTS5。**
    - **"持续学习"的正确理解**:不是微调模型(贵+脆+不值,RAG 完胜),而是三层让"语料变聪明":(a)语料每周增长;(b)**合成知识层**——定期 claude -p 把跨论文的方法/共识/矛盾/趋势蒸馏成主题笔记,= 一份活的文献综述(cross_topic.py 有雏形);(c)问答记忆,存过往结论别重推。检索时取用这三层。
-   - 状态:**① 已落地(2026-06-10)**——`pipeline/ask.py "<问题>" [-n N] [--answer] [--reindex]`。索引=独立 `db/fts.sqlite`(gitignored,可随时重建,不碰生产库):fts_sum(trigram,标题+摘要+中文总结) + fts_text(porter,英文全文),按 mtime 增量。查询:英文取词+中文按停用词切段(≤4字精确短语,长段拆滑窗trigram,2字词 instr 全扫兜底——**FTS5 虚拟表上 LIKE 静默返回0,必须用 instr**)。出口认 quality_tier:suspect 减半+⚠️标注,flag 注"预印本"。`--answer`=claude -p 综合前5命中出带引用中文回答(实测会老实说"库里没有")。下一步看使用反馈再决定要不要 ②向量/④引用图。**主要用户是别的项目里的 agent**(用户定):他们做任务卡住时来查——`--json` 给机器可读结果(绝对路径,拿 summary_path/text_path 自己深读);发现机制=`~/.claude/CLAUDE.md`(全局,每个项目的会话都会载入,已写入口和用法)。
+   - 状态:**① 已落地(2026-06-10)**——`pipeline/ask.py "<问题>" [-n N] [--answer] [--reindex]`。索引=独立 `db/fts.sqlite`(gitignored,可随时重建,不碰生产库):fts_sum(trigram,标题+摘要+中文总结) + fts_text(porter,英文全文),按 mtime 增量。查询:英文取词+中文按停用词切段(≤4字精确短语,长段拆滑窗trigram,2字词 instr 全扫兜底——**FTS5 虚拟表上 LIKE 静默返回0,必须用 instr**)。出口认 quality_tier:suspect 减半+⚠️标注,flag 注"预印本"。`--answer`=claude -p 综合前5命中出带引用中文回答(实测会老实说"库里没有")。下一步看使用反馈再决定要不要 ②向量/④引用图。**主要用户是别的项目里的 agent**(用户定):他们做任务卡住时来查——`--json` 给机器可读结果(绝对路径,拿 summary_path/text_path 自己深读);发现机制=`~/.claude/CLAUDE.md`(全局,每个项目的会话都会载入)——⚠️ **2026-06-16 已撤回该指针节(ask.py 没修好,不放半成品给外部 agent),全局现只剩光头;ask.py 就绪后再加回。**
    - 顺带发现:Bipedal Robots(Reinforcement Learning for Robust Parameterized Locomotion Control)以两个 id 重复入库(slug `..._Bipedal_Robots` 和 `..._2`,两主题各自发现、merge 没合上),待去重。
 
 详见 `logs/SESSION-*.md`（操作记录）和 `logs/run.log`（机器日志）。
