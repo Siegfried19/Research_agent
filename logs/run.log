@@ -182,3 +182,21 @@
 2026-06-16T22:19:12Z	x	stage:sum end(rc=120)
 2026-06-17T00:14:44Z	rl-general-toolbox	summarize_auto: 0 ok, 0 failed/skipped
 2026-06-17T00:34:35Z	pipeline	nightly auto-run: run.py 拆 auto-pull/auto-sum[N] + summarize_auto --limit + docs/nightly-cron-deploy.md(cron 未装)
+2026-06-17T04:09:57Z	rl-general-toolbox	stage:worklist start
+2026-06-17T04:09:57Z	rl-general-toolbox	stage:worklist end(rc=0)
+2026-06-17T04:10:08Z	rl-general-toolbox	stage:sum start
+2026-06-17T04:10:29Z	rl-general-toolbox	stage:sum start
+2026-06-17T04:33:57Z	rl-general-toolbox	summarize_auto: 10 ok, 0 failed/skipped
+2026-06-17T04:33:57Z	rl-general-toolbox	stage:sum end(rc=0)
+2026-06-17T04:34:28Z	rl-general-toolbox	summarize_auto: 10 ok, 0 failed/skipped
+2026-06-17T04:34:28Z	rl-general-toolbox	stage:sum end(rc=0)
+2026-06-17T04:34:51Z	rl-general-toolbox	stage:finalize start
+2026-06-17T04:34:51Z	rl-general-toolbox	stage:finalize end(rc=0)
+2026-06-17T04:56:48Z	rl-general-toolbox	stage:worklist start
+2026-06-17T04:56:48Z	rl-general-toolbox	stage:worklist end(rc=0)
+2026-06-17T04:56:56Z	rl-general-toolbox	stage:sum start
+2026-06-17T05:20:52Z	rl-general-toolbox	stage:worklist start
+2026-06-17T05:20:52Z	rl-general-toolbox	stage:worklist end(rc=0)
+2026-06-17T05:20:52Z	rl-digital-human-interaction	stage:worklist start
+2026-06-17T05:20:52Z	rl-digital-human-interaction	stage:worklist end(rc=0)
+2026-06-17T05:43:42Z	pipeline	WIPE+QUEUE(2026-06-17): 清空总结层(summary_versions 241->0, 221篇全退 pdf_downloaded, store/summaries 清空, 核查产物清空; 保留 papers/paper_topic/citations/PDF), 备份 logs/wipe-summaries-20260617. 新增夜间队列模式 auto-sum-next(run.py: select_next_topic/queue_report/burn_down_msg/topic_progress + topics.priority 列; chain 加 worklist), cron 切 auto-sum-next 20 并冒烟验证通过(gt priority=1 先做). 用量探针 LLM_USAGE_LOG(claude/codex.py).

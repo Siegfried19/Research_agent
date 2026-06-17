@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS topics (
   window_years  INTEGER DEFAULT 20,
   target        INTEGER DEFAULT 200,
   created_at    TEXT,
-  last_run_at   TEXT
+  last_run_at   TEXT,
+  priority      INTEGER DEFAULT 0   -- auto-sum-next 队列排序:高在前,同则按建立序(rowid)
 );
 CREATE TABLE IF NOT EXISTS paper_topic (
   topic_id         TEXT,
@@ -89,7 +90,8 @@ CREATE INDEX IF NOT EXISTS idx_cit_dst       ON citations(dst_paper_id);
 
 ADD_COLUMNS = [("papers", "slug", "TEXT"),
                ("papers", "quality_tier", "TEXT"),      # block/suspect/flag/ok/trusted (lib/quality.py)
-               ("papers", "quality_signals", "TEXT")]   # 逗号分隔的命中信号
+               ("papers", "quality_signals", "TEXT"),    # 逗号分隔的命中信号
+               ("topics", "priority", "INTEGER DEFAULT 0")]  # auto-sum-next 队列排序
 
 
 def _ensure_columns(conn):

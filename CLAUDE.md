@@ -37,7 +37,8 @@ python3 pipeline/run.py <id> verify      # escalate_verify.py --start-pct 100: C
 
 **夜间自动化拆分（2026-06-16）**：为"常开机器半夜自动跑、白天把 token 留给用户",`auto` 按 token 消耗+要不要人切成两半:
 - `python3 pipeline/run.py <id> auto-pull` = discover→score→commit→fetch→recover→hunt→**tierb**→worklist。**白天/有人时手动跑**(tierb 要点付费墙验证),只花小量 token(score/hunt)。
-- `python3 pipeline/run.py <id> auto-sum [N]` = sum→finalize→verify。**夜间 cron 无人值守**,token 大户;continue-on-error(撞限流不中断、次晚幂等补齐)+ 起跑/收尾发 Telegram。第三参 `N`=本批最多总结 N 篇(`summarize_auto --limit`,按 rank 取,幂等续做)。**节奏(用户 2026-06-16 定):一晚跑两批、各 10 篇、相隔 ~4.5h**(踩 token 滚动窗口重置;两条 cron 行 1:00/5:30 各 `auto-sum 10`)。
+- `python3 pipeline/run.py <id> auto-sum [N]` = sum→finalize→verify。**夜间 cron 无人值守**,token 大户;continue-on-error(撞限流不中断、次晚幂等补齐)+ 起跑/收尾发 Telegram。第三参 `N`=本批最多总结 N 篇(`summarize_auto --limit`,按 rank 取,幂等续做)。**节奏(用户 2026-06-16 定,2026-06-17 把批量从 10 提到 20):一晚跑两批、各 20 篇、相隔 ~4.5h**(踩 token 滚动窗口重置;两条 cron 行 1:00/5:30)。提量依据:10 篇用量校准实测单篇 summarize ~$3.36 等效/Max 实付$0、verify codex ~131s/篇。
+> **2026-06-17 起 cron 用队列模式 `auto-sum-next [N]`**(取代写死单主题的 `auto-sum <id> [N]`,后者保留可手动用):每批从 `topics` 表按 `priority DESC, 建立序` 挑**第一个还有可做篇的主题**做 ≤N 篇,做完自动顺到下一主题——加新主题自动进队、不改 cron;一次只跑一个主题=串行不抢额度。插队=调 `topics.priority`(可经 Telegram bot 让我改,当晚生效)。收尾 Telegram 发 本主题燃尽(🎉/⚠️/✅)+**全队列各主题剩余**;全清发🎉;0进展(疑似坏PDF)发⚠️。`run_auto_sum` chain 头部加了 worklist(切主题自洽)。**cron 已真装并冒烟验证过(PATH 含 ~/.local/bin + nvm codex 目录),队列 priority:gt=1 先做、dhi=0。** 实现见 run.py 的 `select_next_topic/queue_report/burn_down_msg/topic_progress`。
 - 切点理由:tierb(唯一要人)卡链子中间,sum/verify(token 大户)在后半段——前半白天连人带验证搞定,后半烧 token 的丢夜里。`auto`(全程)保留不动。**部署到常开机器的完整 runbook(cron 行/干净环境 PATH 坑/前提)→ `docs/nightly-cron-deploy.md`。**
 
 新主题：建 `topics/<id>/topic.json`（字段：id/title/idea/queries/window_years/target）。

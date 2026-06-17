@@ -5,13 +5,26 @@ in via stdin; result comes from stdout.
 To add a second model (e.g. Codex) for a cross-model review panel, copy this file
 to lib/codex.py and swap the command (see MEMORY: cross-model-codex-panel).
 """
+import json
 import os
 import shutil
 import subprocess
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "claude")
 MODEL = os.environ.get("SUMMARY_MODEL", "opus")
+# 用量探针(2026-06-17,可逆):LLM_USAGE_LOG 指向一个 JSONL 文件时,改用 `--output-format json`
+# 取回 token/cost,逐次 append 一行。默认 unset → 行为与从前一字不差(纯文本 stdout)。
+USAGE_LOG = os.environ.get("LLM_USAGE_LOG")
+
+
+def _log_usage(engine, rec):
+    try:
+        with open(USAGE_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"engine": engine, **rec}, ensure_ascii=False) + "\n")
+    except Exception:  # noqa: BLE001  探针绝不阻断主流程
+        pass
 
 
 def run_claude(prompt, model=None, timeout=300, tools=None):
@@ -24,13 +37,34 @@ def run_claude(prompt, model=None, timeout=300, tools=None):
     cmd = [binp, "-p", "--model", model or MODEL]
     if tools:
         cmd += ["--allowedTools", ",".join(tools)]
+    if USAGE_LOG:
+        cmd += ["--output-format", "json"]
+    t0 = time.time()
     proc = subprocess.run(
         cmd,
         input=prompt, capture_output=True, text=True, encoding="utf-8", timeout=timeout,
     )
     if proc.returncode != 0:
         raise RuntimeError(f"claude -p exit {proc.returncode}: {(proc.stderr or '').strip()[:300]}")
-    return (proc.stdout or "").strip()
+    out = (proc.stdout or "").strip()
+    if USAGE_LOG:
+        try:
+            obj = json.loads(out)
+            u = obj.get("usage") or {}
+            _log_usage("claude", {
+                "wall_s": round(time.time() - t0, 1),
+                "duration_ms": obj.get("duration_ms"),
+                "num_turns": obj.get("num_turns"),
+                "input_tokens": u.get("input_tokens"),
+                "output_tokens": u.get("output_tokens"),
+                "cache_creation_input_tokens": u.get("cache_creation_input_tokens"),
+                "cache_read_input_tokens": u.get("cache_read_input_tokens"),
+                "total_cost_usd": obj.get("total_cost_usd"),
+            })
+            return (obj.get("result") or "").strip()
+        except Exception:  # noqa: BLE001  json 解析失败就退回原始 stdout,不丢结果
+            return out
+    return out
 
 
 def pool(items, worker, limit=3):

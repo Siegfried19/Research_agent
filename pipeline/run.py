@@ -33,7 +33,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from lib.db import ROOT
+from lib.db import ROOT, open_db
 from lib.log import run_log
 from lib.notify import notify
 
@@ -104,7 +104,9 @@ def run_auto_sum(tid, limit=None, concurrency=2):
     sum_args = [tid, str(concurrency)]
     if limit:
         sum_args += ["--limit", str(limit)]
+    # worklist 放最前:队列模式会切主题,先重建该主题的 worklist 才自洽(便宜+幂等)。
     chain = [
+        ("worklist", steps("worklist", tid)),
         ("sum",      [("stages/summarize_auto.py", sum_args)]),
         ("finalize", steps("finalize", tid)),
         ("verify",   steps("verify", tid)),
@@ -117,6 +119,70 @@ def run_auto_sum(tid, limit=None, concurrency=2):
             print(f"[auto-sum] stage {name} failed (rc={rc})", file=sys.stderr)
             final_rc = rc  # keep going
     return final_rc
+
+
+def topic_progress(tid):
+    """夜间燃尽报告用:返回该主题 (已总结, 还能做的剩余, 无PDF做不了的) 三个数。
+    'doable' = status=pdf_downloaded 且 PDF 文件确实在盘上(排除永远做不了的,
+    否则每晚误报"还有剩余")。让通知能分清"做完了"和"又跑了普通一晚"。"""
+    conn = open_db()
+    rows = conn.execute(
+        """SELECT p.status AS status, p.pdf_path AS pdf_path FROM papers p
+             JOIN paper_topic pt ON pt.paper_id=p.id WHERE pt.topic_id=?""", (tid,)).fetchall()
+    conn.close()
+    summarized = sum(1 for r in rows if r["status"] == "summarized")
+    doable = stuck = 0
+    for r in rows:
+        if r["status"] != "pdf_downloaded":
+            continue
+        pp = r["pdf_path"]
+        path = (Path(pp) if pp and Path(pp).is_absolute() else (ROOT / pp) if pp else None)
+        if path and path.exists():
+            doable += 1
+        else:
+            stuck += 1
+    return summarized, doable, stuck
+
+
+def burn_down_msg(tid, rc, limit):
+    """单主题做完后的一句燃尽报告(🎉做完 / ⚠️即将耗尽 / ✅有余量)。"""
+    done, doable, stuck = topic_progress(tid)
+    stuck_note = f"  (另有 {stuck} 篇无PDF做不了)" if stuck else ""
+    night = limit * 2 if limit else None  # 一晚两批 -> 一晚的量
+    if doable == 0:
+        return f"🎉 auto-sum done: {tid} (rc={rc}) — 该主题 {done} 篇全部已总结,无剩余{stuck_note}"
+    if night and doable <= night:
+        return (f"⚠️ auto-sum done: {tid} (rc={rc}) — 仅剩 {doable} 篇,不足下一晚({night}),"
+                f"即将耗尽,需补论文/换主题{stuck_note}")
+    flag = "✅" if rc == 0 else "⚠️"
+    return f"{flag} auto-sum done: {tid} (rc={rc}) — 已总结 {done} 篇,剩余 {doable} 篇待做{stuck_note}"
+
+
+def all_topics_ordered():
+    """所有主题 id,按 priority 高在前、相同则按建立序(rowid)。队列排序的唯一真相。"""
+    conn = open_db()
+    rows = conn.execute("SELECT id FROM topics ORDER BY priority DESC, rowid ASC").fetchall()
+    conn.close()
+    return [r["id"] for r in rows]
+
+
+def select_next_topic():
+    """挑优先级最高、且还有可做篇(doable>0)的主题;全队列做完返回 None。纯查库。"""
+    for tid in all_topics_ordered():
+        _, doable, _ = topic_progress(tid)
+        if doable > 0:
+            return tid
+    return None
+
+
+def queue_report():
+    """全队列剩余燃尽:逐主题列出还剩多少、已做多少。"""
+    lines = ["📊 全队列剩余:"]
+    for tid in all_topics_ordered():
+        done, doable, stuck = topic_progress(tid)
+        sn = f" +{stuck}无PDF" if stuck else ""
+        lines.append(f"   • {tid}: 剩 {doable} 篇 (已做 {done}){sn}")
+    return "\n".join(lines)
 
 
 def run_stage(stage, tid):
@@ -139,7 +205,9 @@ def main():
     if len(sys.argv) < 3:
         print("usage: run.py <topicId> <stage>\n"
               "stages: discover|score|commit|fetch|recover|hunt|tierb|worklist|sum|finalize|verify\n"
-              "        auto (all) | auto-pull (attended half) | auto-sum [N] (nightly cron, cap N/run)", file=sys.stderr)
+              "        auto (all) | auto-pull (attended half) | auto-sum [N] (nightly, single topic)\n"
+              "        auto-sum-next [N] (nightly queue: picks top-priority topic with work;\n"
+              "                           <topicId> ignored — reads topics table)", file=sys.stderr)
         sys.exit(1)
     tid, stage = sys.argv[1], sys.argv[2]
     if stage == "auto":
@@ -155,7 +223,24 @@ def main():
         limit = int(sys.argv[3]) if len(sys.argv) > 3 else None
         notify(f"🌙 auto-sum start: {tid}" + (f" (≤{limit})" if limit else ""))
         rc = run_auto_sum(tid, limit=limit)
-        notify(f"{'✅' if rc == 0 else '⚠️'} auto-sum done: {tid} (rc={rc})")
+        notify(burn_down_msg(tid, rc, limit))  # 单主题燃尽报告(2026-06-17)
+        sys.exit(rc)
+    if stage == "auto-sum-next":
+        # 队列模式:从 topics 表按 priority 挑第一个还有活的主题跑,做完自动顺到下一个。
+        # cron 只挂这一个,不写死主题;加新主题自动进队,优先级在 topics.priority。
+        limit = int(sys.argv[3]) if len(sys.argv) > 3 else None
+        target = select_next_topic()
+        if target is None:
+            notify("🎉 auto-sum-next: 队列所有主题已总结完,无剩余\n" + queue_report())
+            sys.exit(0)
+        done_before, _, _ = topic_progress(target)
+        notify(f"🌙 auto-sum start: {target} (≤{limit}) [队列选中]")
+        rc = run_auto_sum(target, limit=limit)
+        done_after, doable_after, _ = topic_progress(target)
+        msg = burn_down_msg(target, rc, limit)
+        if done_after == done_before and doable_after > 0:
+            msg += "\n⚠️ 本轮 0 进展(可能卡坏PDF),队列未推进——需人工看"
+        notify(msg + "\n" + queue_report())
         sys.exit(rc)
     sys.exit(run_stage(stage, tid))
 

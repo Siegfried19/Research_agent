@@ -36,23 +36,29 @@
    没配 notify 不报错(降级成打印),但夜间 cron 就收不到结果通知了。
 5. **装 cron 行**(见下)。
 
-## cron 行(一晚两批,各 10 篇,相隔 ~4.5h)
+## cron 行(队列模式,一晚两批,各 20 篇,相隔 ~4.5h)
 
-用户要的节奏:**每晚跑两次、一次 10 篇**。`auto-sum <N>` 第三参 = 本批最多总结 N 篇(见下"批量与 token 重置")。`crontab -e` 加两行:
+用户要的节奏:**每晚跑两次、一次 20 篇**(2026-06-17:看过 10 篇用量校准后从 10 提到 20)。
+
+**2026-06-17 起用队列模式 `auto-sum-next`**(取代写死单主题的 `auto-sum <id>`):每次跑**从 `topics` 表按 `priority` 挑第一个"还有可做篇"的主题**做 ≤N 篇,做完自动顺到下一个主题。好处:加新主题自动进队、不用改 cron;一次只跑一个主题=串行不抢 Max 额度。第一个位置参数是占位符(被忽略,只为满足 `<topicId> <stage>` 位置)。`crontab -e` 加两行:
 
 ```cron
-0 1 * * *  cd ~/Projects/Research_agent && /usr/bin/python3 pipeline/run.py <id> auto-sum 10 >> logs/cron-sum.log 2>&1
-30 5 * * * cd ~/Projects/Research_agent && /usr/bin/python3 pipeline/run.py <id> auto-sum 10 >> logs/cron-sum.log 2>&1
+0 1 * * *  cd ~/Projects/Research_agent && /usr/bin/python3 pipeline/run.py queue auto-sum-next 20 >> logs/cron-sum.log 2>&1
+30 5 * * * cd ~/Projects/Research_agent && /usr/bin/python3 pipeline/run.py queue auto-sum-next 20 >> logs/cron-sum.log 2>&1
 ```
+
+> **队列顺序/插队**:排序 = `topics.priority DESC, 建立序(rowid) ASC`,默认都 0=按建立先后。想让某主题先做就调高它的 `priority`(`UPDATE topics SET priority=1 WHERE id='...'`)——清单每晚现读,当晚生效。可经 Telegram bot 让 claude 帮你改。
+> **报告**:每批收尾发 Telegram = 本主题燃尽(🎉做完/⚠️即将耗尽/✅有余量) + **全队列各主题剩余**;全清完发 🎉;某批 0 进展(疑似卡坏PDF)发 ⚠️ 提醒人工看。
+> **旧版单主题** `auto-sum <id> [N]` 保留不动,想只跑某一个主题时仍可用。
 
 ### 批量与 token 重置(为什么是两批 + 间隔 4.5h)
 
 - Claude Max 额度是**滚动窗口(~4–5h)**,重置时刻 = 窗口内**第一次用之后 N 小时**,**浮动**,cron 无法精确卡在重置瞬间。
-- 实用等价:**两个固定钟点相隔 ~4.5h**(上例 1:00 / 5:30),让第二批落进新窗口。批量小(10 篇)本就跑不光一个窗口,所以对齐不苛刻。
-- `auto-sum 10` 里 `sum` 只总结 rank 最高的 10 篇没总结的(`summarize_auto --limit 10`,幂等,下批接着往下),`verify` 仍扫全部未核查的但被 codex 用量熔断 + 每晚只新增 10 篇自然收口。
-- 想加量/改节奏:调 N 或加 cron 行即可。**首夜若有大量"已总结未核查"积压**,verify 会被 codex 限流熔断、只清一部分,余下后续每晚续清(verified.json 按轮落盘,进度不丢)。
+- 实用等价:**两个固定钟点相隔 ~4.5h**(上例 1:00 / 5:30),让第二批落进新窗口。20 篇/批(实测单篇 summarize ~$3.36 等效/Max 实付$0)一般仍在一个窗口内,跨窗口也由幂等+continue-on-error 兜住,所以对齐不苛刻。
+- `auto-sum-next 20` 里 `sum` 只总结被选中主题里 rank 最高的 20 篇没总结的(`summarize_auto --limit 20`,幂等,下批接着往下),`verify` 仍扫全部未核查的但被 codex 用量熔断 + 每晚只新增 20 篇自然收口。每批前会先重建该主题 worklist(`run_auto_sum` chain 头部,便宜幂等)以便切主题后自洽。
+- 想加量/改节奏:调 N 即可。**首夜若有大量"已总结未核查"积压**,verify 会被 codex 限流熔断、只清一部分,余下后续每晚续清(verified.json 按轮落盘,进度不丢)。
 
-- `<id>` 换成主题(`rl-general-toolbox` / `rl-digital-human-interaction` / 新主题)。多主题就把两行复制成各自的 id(注意错开时间,别让两主题同时抢额度)。
+- **多主题不用复制 cron 行**:队列模式一次只跑一个主题、串行排队(天然不抢额度),加新主题自动进队。要控制先做谁就调 `topics.priority`。
 - **cron 的环境很干净**(不读 `.bashrc`),三个坑:
   1. **Python 用绝对路径**(`which python3` 查,常是 `/usr/bin/python3`)。
   2. **`claude` / `codex` 可能不在 cron 的 PATH 里** → 子进程找不到会让 sum/verify 失败。解法:cron 行最前面补 PATH,例如

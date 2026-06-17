@@ -42,3 +42,9 @@ __pycache__/
 db/fts.sqlite
 topics/*/literature_corpus.yaml
 store/literature_corpus_all.yaml
+
+# 本地备份/临时(2026-06-17):重做前的安全快照 + cron 运行日志,不入库
+logs/redo-*/
+logs/wipe-*/
+logs/cron-*.log
+logs/cron-smoke.sh

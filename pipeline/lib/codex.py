@@ -9,9 +9,10 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
-from .claude import pool  # noqa: F401  (re-export: same bounded-concurrency pool)
+from .claude import pool, _log_usage, USAGE_LOG  # noqa: F401  (re-export pool; reuse usage probe)
 
 CODEX_BIN = os.environ.get("CODEX_BIN", "codex")
 CODEX_MODEL = os.environ.get("CODEX_MODEL")  # None = account default
@@ -40,6 +41,7 @@ def run_codex(prompt, model=None, timeout=300, images=None, sandbox=None, cwd=No
     for img in (images or []):
         cmd += ["-i", img]
     cmd.append("-")  # read prompt from stdin
+    t0 = time.time()
     try:
         proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True,
                               encoding="utf-8", timeout=timeout)
@@ -49,4 +51,8 @@ def run_codex(prompt, model=None, timeout=300, images=None, sandbox=None, cwd=No
             return out_file.read_text(encoding="utf-8").strip()
         return (proc.stdout or "").strip()  # fallback: old codex without the flag
     finally:
+        if USAGE_LOG:
+            # codex 不经 --output-last-message 暴露 token,这里只记时长(配额是 ChatGPT 侧,
+            # 主要关心 claude 的 token;codex 时长用于估全量核查耗时)。
+            _log_usage("codex", {"wall_s": round(time.time() - t0, 1)})
         out_file.unlink(missing_ok=True)
