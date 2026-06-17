@@ -29,15 +29,6 @@ GATE_ON = bool((load_config().get("summarize") or {}).get("grounding_gate", True
 GATE_SCRIPT = ROOT / "pipeline" / "tools" / "grounding_gate.py"
 
 
-def _text_from_file(w):
-    tp = w.get("text_path")
-    if tp and Path(tp).exists():
-        t = Path(tp).read_text(encoding="utf-8", errors="ignore")
-        if len(t.strip()) > 200:
-            return t
-    return None
-
-
 def _text_from_pdf(w):
     pp = w.get("pdf_path")
     if pp and Path(pp).exists():
@@ -62,16 +53,11 @@ def clean_output(md):
     return md
 
 
-def full_text(w, prefer_pdf=False):
-    """抽出论文纯文本。sum 阶段已不用它,但 verify_summaries / correct_summaries 仍 import 它,
-    把原文喂给核查/修正模型。prefer_pdf=True 时优先对 PDF 跑 pdftotext(让核查者和撰写者
-    读同一份 PDF),抽不到再退已存的 text_path;默认相反(text_path 优先,无则 pdftotext)。"""
-    order = (_text_from_pdf, _text_from_file) if prefer_pdf else (_text_from_file, _text_from_pdf)
-    for fn in order:
-        t = fn(w)
-        if t:
-            return t
-    return None
+def full_text(w):
+    """对 PDF 跑 pdftotext 抽出纯文本(临时文件,用完即删)。sum 阶段直读 PDF 不用它,
+    但 verify_summaries 的省钱模式(codex_self_render=false)仍 import 它把原文喂给核查模型。
+    PDF 是唯一原文来源(2026-06-16 起不再有 store/text);抽不出返回 None。"""
+    return _text_from_pdf(w)
 
 
 def quality_directive(w):

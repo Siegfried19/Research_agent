@@ -3,14 +3,14 @@
   python3 pipeline/ask.py "<问题或关键词>" [-n N] [--json] [--answer] [--reindex]
 
 主要用户是**别的项目里的 agent**(做任务卡住时来查),所以:
-  --json  输出机器可读结果(绝对路径),拿到 summary_path/text_path 自己 Read 深读。
-  人类/agent 通用工作流: 先检索 → 读最相关几篇的总结 → 需要细节再读全文。
+  --json  输出机器可读结果(绝对路径),拿到 summary_path 自己 Read 深读(细节再读 PDF)。
+  人类/agent 通用工作流: 先检索 → 读最相关几篇的中文总结 → 需要细节再读 PDF。
 可从任意 cwd 以绝对路径调用: python3 ~/Projects/Research_agent/pipeline/ask.py "..."
 
 Index (db/fts.sqlite, disposable & rebuildable, NOT the production DB):
   fts_sum  trigram tokenizer — title + abstract + latest Chinese summary
-  fts_text porter tokenizer  — English full text (store/text/*.txt)
-Incremental: re-indexes a paper only when its summary/text file mtime changed.
+  (英文全文 store/text 已于 2026-06-16 移除,检索只覆盖标题/摘要/中文总结)
+Incremental: re-indexes a paper only when its summary file mtime changed.
 
 Retrieval honours papers.quality_tier (标记进库,出口必须认标记):
   suspect -> score halved + ⚠️低可信 label; flag -> 预印本(未同行评审) note.
@@ -40,23 +40,20 @@ EN_STOP = set("the a an and or of for in on to with how what why when is are doe
 
 
 def ensure_index(force=False):
-    """(Re)build db/fts.sqlite incrementally from papers + summaries + full text."""
+    """(Re)build db/fts.sqlite incrementally from papers + summaries (中文总结)."""
     main = open_db()
     fts = sqlite3.connect(str(FTS_PATH))
     fts.executescript(
         "CREATE VIRTUAL TABLE IF NOT EXISTS fts_sum  USING fts5(slug, body, tokenize='trigram');"
-        "CREATE VIRTUAL TABLE IF NOT EXISTS fts_text USING fts5(slug, body, tokenize='porter unicode61');"
-        "CREATE TABLE IF NOT EXISTS meta (slug TEXT PRIMARY KEY, sum_mtime REAL, text_mtime REAL);")
+        "CREATE TABLE IF NOT EXISTS meta (slug TEXT PRIMARY KEY, sum_mtime REAL);")
     latest = {r["paper_id"]: r["path"] for r in main.execute(
         "SELECT paper_id, path, MAX(version) FROM summary_versions GROUP BY paper_id")}
-    seen = {r[0]: (r[1] or 0, r[2] or 0) for r in fts.execute("SELECT slug, sum_mtime, text_mtime FROM meta")}
+    seen = {r[0]: (r[1] or 0) for r in fts.execute("SELECT slug, sum_mtime FROM meta")}
     n = 0
-    for p in main.execute("SELECT id, slug, title, abstract, text_path FROM papers WHERE slug IS NOT NULL"):
+    for p in main.execute("SELECT id, slug, title, abstract FROM papers WHERE slug IS NOT NULL"):
         spath = ROOT / latest[p["id"]] if p["id"] in latest else None
-        tpath = ROOT / p["text_path"] if p["text_path"] else None
         sm = spath.stat().st_mtime if spath and spath.exists() else 0
-        tm = tpath.stat().st_mtime if tpath and tpath.exists() else 0
-        if not force and seen.get(p["slug"]) == (sm, tm):
+        if not force and seen.get(p["slug"]) == sm:
             continue
         body = p["title"] or ""
         if p["abstract"]:
@@ -65,11 +62,7 @@ def ensure_index(force=False):
             body += "\n" + spath.read_text(encoding="utf-8", errors="replace")
         fts.execute("DELETE FROM fts_sum WHERE slug=?", (p["slug"],))
         fts.execute("INSERT INTO fts_sum VALUES (?,?)", (p["slug"], body))
-        fts.execute("DELETE FROM fts_text WHERE slug=?", (p["slug"],))
-        if tm:
-            fts.execute("INSERT INTO fts_text VALUES (?,?)",
-                        (p["slug"], tpath.read_text(encoding="utf-8", errors="replace")))
-        fts.execute("INSERT OR REPLACE INTO meta VALUES (?,?,?)", (p["slug"], sm, tm))
+        fts.execute("INSERT OR REPLACE INTO meta VALUES (?,?)", (p["slug"], sm))
         n += 1
     fts.commit()
     main.close()
@@ -111,12 +104,6 @@ def search(fts, q, topn):
         for slug, bm, snip in fts.execute(
                 "SELECT slug, bm25(fts_sum), snippet(fts_sum,1,'【','】','…',16) "
                 "FROM fts_sum WHERE fts_sum MATCH ?", (m_sum,)):
-            add(slug, -bm * 2.0, snip)  # 总结层权重 x2
-    m_txt = " OR ".join(f'"{t}"' for t in dict.fromkeys(en))
-    if m_txt:
-        for slug, bm, snip in fts.execute(
-                "SELECT slug, bm25(fts_text), snippet(fts_text,1,'【','】','…',16) "
-                "FROM fts_text WHERE fts_text MATCH ?", (m_txt,)):
             add(slug, -bm, snip)
     for t in cjk2:  # trigram 索引不到 2 字词 -> 总结层 instr 全扫兜底(语料小,扫得动;
         # 注意 FTS5 虚拟表上 LIKE 静默返回 0 行,必须用 instr)
@@ -169,7 +156,7 @@ def as_json(hits, q):
                  "summary_dir": str(ROOT / "store" / "summaries" / r["slug"])}
                 for r in h["related"]],  # 库内引用邻居(顺藤摸瓜用)
             "summary_path": str(vs[-1]) if vs else None,   # 中文结构化总结(先读这个)
-            "text_path": str(ROOT / p["text_path"]) if p["text_path"] else None,  # 英文全文
+            "pdf_path": str(ROOT / p["pdf_path"]) if p["pdf_path"] else None,  # 原文 PDF(要细节直读它)
         })
     print(_json.dumps({"query": q, "hits": out}, ensure_ascii=False, indent=1))
 
@@ -192,7 +179,7 @@ def show(hits, q):
         for r in h["related"][:4]:
             arrow = "→引用" if r["rel"] == "cites" else "←被引"
             print(f"   {arrow}: {r['title'][:70]}")
-        print(f"   总结: store/summaries/{h['slug']}/  全文: {p['text_path'] or '-'}\n")
+        print(f"   总结: store/summaries/{h['slug']}/  PDF: {p['pdf_path'] or '-'}\n")
 
 
 def answer(hits, q):

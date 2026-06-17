@@ -1,9 +1,9 @@
-"""Phase 2: download open-access PDFs for a topic's selected papers, extract text.
+"""Phase 2: download open-access PDFs for a topic's selected papers.
 Usage: python3 pipeline/stages/fetch_oa.py <topicId|all>
+PDF 是唯一原文来源(总结/核查都直读 PDF);不再抽存 store/text 文本(2026-06-16 移除)。
 """
 import json
 import re
-import subprocess
 import sys
 
 # --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
@@ -15,7 +15,6 @@ from lib.log import get_logger, run_log
 
 config = load_config()
 PDF_DIR = ROOT / config["paths"]["pdfs"]
-TXT_DIR = ROOT / "store" / "text"
 log = get_logger("fetch_oa")
 
 
@@ -41,24 +40,12 @@ def urls_for(r):
     return urls
 
 
-def extract_text(pdf_path, txt_path):
-    try:
-        subprocess.run(["pdftotext", "-q", "-enc", "UTF-8", str(pdf_path), str(txt_path)],
-                       timeout=60, check=False)
-        if txt_path.exists() and txt_path.stat().st_size > 200:
-            return True
-    except Exception:
-        pass
-    return False
-
-
 def main():
     if len(sys.argv) < 2:
         print("usage: fetch_oa.py <topicId|all>", file=sys.stderr)
         sys.exit(1)
     topic_id = sys.argv[1]
     PDF_DIR.mkdir(parents=True, exist_ok=True)
-    TXT_DIR.mkdir(parents=True, exist_ok=True)
     conn = open_db()
     if topic_id == "all":
         rows = conn.execute(
@@ -72,11 +59,10 @@ def main():
     log.info(f"# OA download: {len(rows)} candidates")
     ua = config["download"]["user_agent"]
     timeout = config["download"]["timeout_ms"] / 1000
-    ok = fail = text_ok = 0
+    ok = fail = 0
     for r in rows:
         base = r["slug"] or file_id(r["id"])
         pdf_path = PDF_DIR / (base + ".pdf")
-        txt_path = TXT_DIR / (base + ".txt")
         bytes_, last_err = None, None
         for u in urls_for(r):
             try:
@@ -85,24 +71,20 @@ def main():
             except (HttpError, Exception) as e:  # noqa: BLE001
                 last_err = e
         if bytes_ is None:
-            conn.execute("UPDATE papers SET pdf_path=NULL, text_path=NULL, status='pdf_failed', pdf_fetched_at=? WHERE id=?",
+            conn.execute("UPDATE papers SET pdf_path=NULL, status='pdf_failed', pdf_fetched_at=? WHERE id=?",
                          (now_iso(), r["id"]))
             fail += 1
             log.info(f"  FAIL [{last_err}] {(r['title'] or '')[:50]}")
         else:
-            tpath = None
-            if extract_text(pdf_path, txt_path):
-                tpath = str(txt_path.relative_to(ROOT))
-                text_ok += 1
-            conn.execute("UPDATE papers SET pdf_path=?, text_path=?, status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
-                         (str(pdf_path.relative_to(ROOT)), tpath, now_iso(), r["id"]))
+            conn.execute("UPDATE papers SET pdf_path=?, status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
+                         (str(pdf_path.relative_to(ROOT)), now_iso(), r["id"]))
             ok += 1
             log.info(f"  OK   [{bytes_ // 1024}KB] {(r['title'] or '')[:55]}")
         conn.commit()
         sleep(config["download"]["delay_ms"] / 1000)
     conn.close()
-    log.info(f"\n# Done: {ok} pdf, {text_ok} text extracted, {fail} failed")
-    run_log(topic_id, f"fetch_oa: {ok} pdf, {text_ok} text, {fail} failed")
+    log.info(f"\n# Done: {ok} pdf, {fail} failed")
+    run_log(topic_id, f"fetch_oa: {ok} pdf, {fail} failed")
 
 
 if __name__ == "__main__":

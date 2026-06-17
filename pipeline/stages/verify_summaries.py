@@ -159,8 +159,8 @@ def verify_batch(picked, concurrency):
         w = {"id": r["id"], "pdf_path": str(ROOT / r["pdf_path"]) if r.get("pdf_path") else None}
         summary = spath.read_text(encoding="utf-8")
         # summarized 的篇必然曾有 PDF(sum 阶段无 PDF 直接跳过、不产出总结)。这里没 PDF =
-        # 异常(被删/移动)→ 记错误跳过、进报告"未能核查"让人看,绝不退回 text_path 等别的来源
-        # 去核一份本就从 PDF 写出来的总结(那正是我们要摆脱的偷换来源)。
+        # 异常(被删/移动)→ 记错误跳过、进报告"未能核查"让人看(PDF 是唯一原文来源,
+        # 没 PDF 就不核,绝不另找来源去核一份本就从 PDF 写出来的总结)。
         if not (w["pdf_path"] and Path(w["pdf_path"]).exists()):
             return {"id": r["id"], "error": "no pdf on disk (anomaly: summarized paper lost its PDF)"}
         # note_plan(撰写者的坐标清单)与总结同目录;有则让 Codex 定点核对+查无锚论断,
@@ -182,7 +182,7 @@ def verify_batch(picked, concurrency):
             prompt, timeout = vprompt(r["title"], summary, pdf_mode=True, note_plan=note_plan), 900
         else:
             # 调试/省钱:不开沙箱,把这份 PDF 的 pdftotext 文本喂进 prompt(同源,但看不到公式/图表)。
-            text = full_text(w, prefer_pdf=True)
+            text = full_text(w)
             if not text:
                 return {"id": r["id"], "error": "pdf on disk but text extraction failed"}
             truncated = len(text) > MAX_CHARS

@@ -28,7 +28,7 @@ def mv(a, b):
 
 def main():
     conn = open_db()
-    papers = conn.execute("SELECT id, title, slug, pdf_path, text_path FROM papers ORDER BY discovered_at").fetchall()
+    papers = conn.execute("SELECT id, title, slug, pdf_path FROM papers ORDER BY discovered_at").fetchall()
     renamed = slugged = 0
     for p in papers:
         slug = p["slug"] or unique_slug(conn, p["title"], p["id"])
@@ -38,14 +38,10 @@ def main():
         old = old_file_id(p["id"])
         if mv(ROOT / "store/pdfs" / (old + ".pdf"), ROOT / "store/pdfs" / (slug + ".pdf")):
             renamed += 1
-        if mv(ROOT / "store/text" / (old + ".txt"), ROOT / "store/text" / (slug + ".txt")):
-            renamed += 1
         if mv(ROOT / "store/summaries" / old, ROOT / "store/summaries" / slug):
             renamed += 1
         if p["pdf_path"]:
             conn.execute("UPDATE papers SET pdf_path=? WHERE id=?", (f"store/pdfs/{slug}.pdf", p["id"]))
-        if p["text_path"]:
-            conn.execute("UPDATE papers SET text_path=? WHERE id=?", (f"store/text/{slug}.txt", p["id"]))
         for sv in conn.execute("SELECT version, path FROM summary_versions WHERE paper_id=?", (p["id"],)).fetchall():
             fn = Path(sv["path"]).name
             conn.execute("UPDATE summary_versions SET path=? WHERE paper_id=? AND version=?",

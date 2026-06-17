@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS papers (
   ext_ids         TEXT,
   ref_ext_ids     TEXT,
   pdf_path        TEXT,
-  text_path       TEXT,
+  text_path       TEXT,  -- DEPRECATED(2026-06-16):不再抽存 store/text,此列恒为 NULL;留列免动 prod 库
   status          TEXT DEFAULT 'discovered',
   is_edge         INTEGER DEFAULT 0,
   discovered_at   TEXT,

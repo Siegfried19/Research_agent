@@ -6,7 +6,7 @@ import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, DB_PATH
 
-DIRS = ["db", "store/pdfs", "store/summaries", "store/text", "store/dl_tmp", "topics", "runs", "logs"]
+DIRS = ["db", "store/pdfs", "store/summaries", "store/dl_tmp", "topics", "runs", "logs"]
 
 
 def main():

@@ -56,9 +56,9 @@ def remove_papers(conn, topic_id, paper_ids):
         conn.execute("DELETE FROM paper_topic WHERE topic_id=? AND paper_id=?", (topic_id, pid))
         other = conn.execute("SELECT COUNT(*) c FROM paper_topic WHERE paper_id=?", (pid,)).fetchone()["c"]
         if other == 0:
-            row = conn.execute("SELECT pdf_path, text_path FROM papers WHERE id=?", (pid,)).fetchone()
-            if row:
-                removed_files += [p for p in (row["pdf_path"], row["text_path"]) if p]
+            row = conn.execute("SELECT pdf_path FROM papers WHERE id=?", (pid,)).fetchone()
+            if row and row["pdf_path"]:
+                removed_files.append(row["pdf_path"])
             conn.execute("DELETE FROM citations WHERE src_paper_id=? OR dst_paper_id=?", (pid, pid))
             conn.execute("DELETE FROM summary_versions WHERE paper_id=?", (pid,))
             conn.execute("DELETE FROM papers WHERE id=?", (pid,))

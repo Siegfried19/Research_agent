@@ -38,7 +38,6 @@ except Exception:  # noqa: BLE001
 config = load_config()
 TB = config.get("tier_b", {})
 PDF_DIR = ROOT / config["paths"]["pdfs"]
-TXT_DIR = ROOT / "store" / "text"
 DL_DIR = ROOT / "store" / "dl_tmp"
 DISPLAY = os.environ.get("DISPLAY_FOR_CHROME", ":1")
 UDD = os.environ.get("CHROME_USER_DATA_DIR", str(Path.home() / ".config" / "google-chrome-scrape"))
@@ -323,20 +322,9 @@ def verify_pdf(p):
         return False
 
 
-def extract_text(pdf_path, txt_path):
-    try:
-        subprocess.run(["pdftotext", "-q", "-enc", "UTF-8", str(pdf_path), str(txt_path)], timeout=60, check=False)
-        if txt_path.exists() and txt_path.stat().st_size > 200:
-            return str(txt_path.relative_to(ROOT))
-    except Exception:
-        pass
-    return None
-
-
 def fetch_one(conn, r):
     slug = r["slug"] or re.sub(r"[^a-z0-9._-]", "_", r["id"], flags=re.I)[:180]
     pdf_path = PDF_DIR / (slug + ".pdf")
-    txt_path = TXT_DIR / (slug + ".txt")
     tlog(f"\n>>> {(r['title'] or '')[:55]}  [{r['id']}]")
 
     br("open", redirector(r["id"]), timeout=60)
@@ -371,9 +359,8 @@ def fetch_one(conn, r):
         pdf_path.unlink(missing_ok=True)
         return "pdf_failed"
 
-    tpath = extract_text(pdf_path, txt_path)
-    conn.execute("UPDATE papers SET pdf_path=?, text_path=?, status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
-                 (str(pdf_path.relative_to(ROOT)), tpath, now_iso(), r["id"]))
+    conn.execute("UPDATE papers SET pdf_path=?, status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
+                 (str(pdf_path.relative_to(ROOT)), now_iso(), r["id"]))
     conn.commit()
     tlog(f"  OK [{pdf_path.stat().st_size // 1024}KB] -> pdf_downloaded")
     return "pdf_downloaded"
@@ -385,7 +372,6 @@ def main():
         sys.exit(1)
     topic_id = sys.argv[1]
     PDF_DIR.mkdir(parents=True, exist_ok=True)
-    TXT_DIR.mkdir(parents=True, exist_ok=True)
     conn = open_db()
     rows = conn.execute(
         """SELECT p.id, p.title, p.slug, p.status, p.landing_url

@@ -38,7 +38,6 @@ def main():
             "doi": r["doi"], "landing_url": r["landing_url"], "is_edge": bool(r["is_edge"]),
             "relevance": r["relevance"], "relevance_reason": r["relevance_reason"],
             "quality_tier": r["quality_tier"], "quality_signals": r["quality_signals"],
-            "text_path": str(ROOT / r["text_path"]) if r["text_path"] else None,
             "pdf_path": str(ROOT / r["pdf_path"]) if r["pdf_path"] else None,
             "summary_dir": str(sdir),
             "summary_path": str(sdir / "v1.md"),
@@ -47,9 +46,8 @@ def main():
     out = ROOT / "topics" / topic_id / "summarize_worklist.json"
     out.write_text(json.dumps({"topicId": topic_id, "total": len(work), "work": work},
                               ensure_ascii=False, indent=2), encoding="utf-8")
-    with_text = sum(1 for w in work if w["text_path"])
     print(f"worklist: {len(work)} papers -> topics/{topic_id}/summarize_worklist.json")
-    print(f"  with-text: {with_text}  pdf-only: {sum(1 for w in work if not w['text_path'] and w['pdf_path'])}")
+    print(f"  with-pdf: {sum(1 for w in work if w['pdf_path'])}")
 
 
 if __name__ == "__main__":

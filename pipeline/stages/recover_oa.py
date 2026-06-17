@@ -10,7 +10,6 @@ OpenAlex truncated to e.g. "ASE"/"AMP").
 """
 import json
 import re
-import subprocess
 import sys
 from urllib.parse import quote
 
@@ -24,7 +23,6 @@ from lib.log import get_logger, run_log
 
 config = load_config()
 PDF_DIR = ROOT / config["paths"]["pdfs"]
-TXT_DIR = ROOT / "store" / "text"
 MAIL = "a0904251001@gmail.com"
 log = get_logger("recover_oa")
 
@@ -142,21 +140,9 @@ def candidate_urls(r):
     return list(zip(urls, vias))
 
 
-def extract_text(pdf_path, txt_path):
-    try:
-        subprocess.run(["pdftotext", "-q", "-enc", "UTF-8", str(pdf_path), str(txt_path)],
-                       timeout=60, check=False)
-        if txt_path.exists() and txt_path.stat().st_size > 200:
-            return str(txt_path.relative_to(ROOT))
-    except Exception:
-        pass
-    return None
-
-
 def main():
     topic_id = sys.argv[1] if len(sys.argv) > 1 else "all"
     PDF_DIR.mkdir(parents=True, exist_ok=True)
-    TXT_DIR.mkdir(parents=True, exist_ok=True)
     conn = open_db()
     if topic_id == "all":
         rows = conn.execute(
@@ -173,7 +159,6 @@ def main():
     for r in rows:
         base = r["slug"] or re.sub(r"[^a-z0-9._-]", "_", r["id"], flags=re.I)[:180]
         pdf_path = PDF_DIR / (base + ".pdf")
-        txt_path = TXT_DIR / (base + ".txt")
         cands = candidate_urls(r)
         if not cands:
             log.info(f"  --   no free source: {(r['title'] or '')[:50]}")
@@ -183,9 +168,8 @@ def main():
         for url, via in cands:
             try:
                 bytes_ = download_pdf(url, pdf_path, config["download"]["user_agent"], timeout)
-                tpath = extract_text(pdf_path, txt_path)
-                conn.execute("UPDATE papers SET pdf_path=?, text_path=?, status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
-                             (str(pdf_path.relative_to(ROOT)), tpath, now_iso(), r["id"]))
+                conn.execute("UPDATE papers SET pdf_path=?, status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
+                             (str(pdf_path.relative_to(ROOT)), now_iso(), r["id"]))
                 conn.commit()
                 recovered += 1
                 log.info(f"  OK [{via}, {bytes_ // 1024}KB] {(r['title'] or '')[:48]}")
