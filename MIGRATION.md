@@ -12,8 +12,9 @@
 | 机器日志 | `logs/run.log`(本仓库) | ✅ 随 git | 一行一事件;**起长任务前先看它,确认没有别的实例在干同一件事** |
 | Claude 项目记忆 | `~/.claude/projects/-home-siegfried-Projects-Research_agent/memory/`* | ❌ 不同步 | agent 的跨会话记忆(蓝图/用户偏好/工作模式)。**只是 CLAUDE.md 的影子**——任何只存在于记忆里的要紧事都该提升进 CLAUDE.md |
 | 全局 agent 提示 | `~/.claude/CLAUDE.md` | ❌ 不同步 | 知识库发现机制(让别的项目的 agent 知道 ask.py)。内容见下方附录,换机器照抄重建 |
-| 数据本体 | `db/papers.sqlite` + `store/summaries/`(仓库) | ✅ 随 git | 论文元数据/总结/引用图 |
-| 全文/PDF | `store/text/`、`store/pdfs/` | ❌ gitignored(版权) | 不同步。换机器后对缺全文的论文重跑 `fetch/recover/hunt/tierb` 即可按 DB 元数据重建 |
+| 元数据/引用图 | `db/papers.sqlite` | ✅ 随 git(已跟踪) | 论文元数据/状态/引用图。换机器前 commit 才带最新;否则只到上次 push |
+| 中文总结全文 | `store/summaries/` | ⚠️ **当前未跟踪**(2026-06-17 核实:git 跟踪 0 文件) | **不随 git!** 整盘拷(rsync -a/cp -a)会带;**clone 式迁移必须单独拷**,否则只剩元数据没总结。老基线 `logs/wipe-summaries-20260617/`(gitignored)同理 |
+| 全文/PDF | `store/pdfs/` | ❌ gitignored(版权) | 不随 git。整盘拷会带;clone 式可对缺全文论文重跑 `fetch/recover/hunt/tierb` 按 DB 元数据重建 |
 | 检索索引 | `db/fts.sqlite` | ❌ gitignored | 可重建:`python3 pipeline/ask.py --reindex` |
 
 \* 实际路径 slug 为 `-home-siegfried-Projects-Research-agent`。
