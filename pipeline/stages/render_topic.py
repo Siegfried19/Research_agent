@@ -2,20 +2,16 @@
 Usage: python3 pipeline/stages/render_topic.py <topicId>
 """
 import json
-import re
 import sys
 
 # --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT
+from lib.slug import file_id
 
 STAT = {"discovered": "⚪ 待取", "pdf_downloaded": "📄 有全文",
         "pdf_failed": "⛔ 取全文失败", "summarized": "✅ 已总结"}
-
-
-def file_id(pid):
-    return re.sub(r"[^a-z0-9._-]", "_", pid, flags=re.I)[:180]
 
 
 def main():

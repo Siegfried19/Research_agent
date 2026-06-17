@@ -20,6 +20,7 @@ from lib.db import open_db, ROOT, load_config, now_iso
 from lib.http import get_json, get_text, download_pdf, sleep
 from lib.merge import norm_title
 from lib.log import get_logger, run_log
+from lib.slug import file_id
 
 config = load_config()
 PDF_DIR = ROOT / config["paths"]["pdfs"]
@@ -157,7 +158,7 @@ def main():
     timeout = config["download"]["timeout_ms"] / 1000
     recovered = 0
     for r in rows:
-        base = r["slug"] or re.sub(r"[^a-z0-9._-]", "_", r["id"], flags=re.I)[:180]
+        base = r["slug"] or file_id(r["id"])
         pdf_path = PDF_DIR / (base + ".pdf")
         cands = candidate_urls(r)
         if not cands:

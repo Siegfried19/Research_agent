@@ -20,7 +20,7 @@ import shutil
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
@@ -29,6 +29,7 @@ import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, load_config, now_iso
 from lib.log import run_log
+from lib.slug import file_id
 try:
     from lib.notify import notify
 except Exception:  # noqa: BLE001
@@ -323,7 +324,7 @@ def verify_pdf(p):
 
 
 def fetch_one(conn, r):
-    slug = r["slug"] or re.sub(r"[^a-z0-9._-]", "_", r["id"], flags=re.I)[:180]
+    slug = r["slug"] or file_id(r["id"])
     pdf_path = PDF_DIR / (slug + ".pdf")
     tlog(f"\n>>> {(r['title'] or '')[:55]}  [{r['id']}]")
 

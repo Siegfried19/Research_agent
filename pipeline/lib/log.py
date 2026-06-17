@@ -18,7 +18,6 @@ import logging
 import sys
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from pathlib import Path
 
 from .db import ROOT
 

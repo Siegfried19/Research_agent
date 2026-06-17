@@ -1,17 +1,13 @@
 """After summarization, register v1 summaries and mark papers summarized.
 Usage: python3 pipeline/stages/register_summaries.py <topicId|all>
 """
-import re
 import sys
 
 # --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, now_iso
-
-
-def file_id(pid):
-    return re.sub(r"[^a-z0-9._-]", "_", pid, flags=re.I)[:180]
+from lib.slug import file_id
 
 
 def main():

@@ -8,7 +8,7 @@ from pathlib import Path
 # --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
-from lib.db import open_db, ROOT, load_config
+from lib.db import open_db, load_config
 from lib import store
 from lib.log import get_logger, run_log
 from lib import quality

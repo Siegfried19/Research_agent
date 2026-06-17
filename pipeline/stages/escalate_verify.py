@@ -24,7 +24,6 @@ import sys
 # --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
-from lib.db import ROOT
 from lib.log import get_logger, run_log
 from verify_summaries import load_candidates, split_must, verify_batch, record_verified, write_report
 from correct_summaries import run_corrections

@@ -12,14 +12,11 @@ _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)
 from lib.db import open_db, ROOT, load_config, now_iso
 from lib.http import download_pdf, sleep, HttpError
 from lib.log import get_logger, run_log
+from lib.slug import file_id
 
 config = load_config()
 PDF_DIR = ROOT / config["paths"]["pdfs"]
 log = get_logger("fetch_oa")
-
-
-def file_id(pid):
-    return re.sub(r"[^a-z0-9._-]", "_", pid, flags=re.I)[:180]
 
 
 def urls_for(r):

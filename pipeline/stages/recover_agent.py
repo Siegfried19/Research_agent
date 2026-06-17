@@ -7,7 +7,6 @@ browser+OpenAthens path.
 Usage: python3 pipeline/stages/recover_agent.py <topicId|all> [concurrency]
 """
 import json
-import re
 import subprocess
 import sys
 import tempfile
@@ -21,6 +20,7 @@ from lib.db import open_db, ROOT, load_config, now_iso
 from lib.http import download_pdf
 from lib.merge import title_matches
 from lib.log import get_logger, run_log
+from lib.slug import file_id
 
 config = load_config()
 PDF_DIR = ROOT / config["paths"]["pdfs"]
@@ -110,7 +110,7 @@ def main():
         if not v.get("url"):
             log.info(f"  --   agent found nothing: {title}")
             continue
-        base = r["slug"] or re.sub(r"[^a-z0-9._-]", "_", r["id"], flags=re.I)[:180]
+        base = r["slug"] or file_id(r["id"])
         pdf_path = PDF_DIR / (base + ".pdf")
         try:
             bytes_ = download_pdf(v["url"], pdf_path, config["download"]["user_agent"], timeout)
