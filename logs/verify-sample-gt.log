@@ -1,0 +1,5 @@
+verify_summaries: 100 summarized, 0 already verified, checking 3 (must[suspect/v2+]=18, sample 5%=4, capped to 3)
+  MINOR (2 issues) Addressing Function Approximation Error in Actor-Critic Meth
+  MINOR (2 issues) Regularization Matters in Policy Optimization - An Empirical
+  MINOR (1 issues) End-To-End Robotic Reinforcement Learning without Reward Eng
+  -> topics/rl-general-toolbox/summary_verification.md

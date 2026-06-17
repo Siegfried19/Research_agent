@@ -1,0 +1,4 @@
+verify_summaries: 100 summarized, 0 already verified, checking 2 (must[suspect/v2+]=18, sample 5%=4, capped to 2)
+  PASS  (0 issues) Addressing Function Approximation Error in Actor-Critic Meth
+  PASS  (0 issues) End-To-End Robotic Reinforcement Learning without Reward Eng
+  -> topics/rl-general-toolbox/summary_verification_claude.md

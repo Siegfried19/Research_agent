@@ -1,0 +1,15 @@
+verify_summaries: 100 summarized, 3 already verified, checking 97 (must[suspect/v2+]=15, sample 100%=82)
+  MINOR (1 issues) Secrets of RLHF in Large Language Models Part I: PPO
+  MINOR (1 issues) Constraint-Conditioned Policy Optimization for Versatile Saf
+  MINOR (2 issues) Multimodal bipedal locomotion generation with passive dynami
+  PASS  (0 issues) Safe Reinforcement Learning with Probabilistic Control Barri
+  PASS  (0 issues) Reinforcement Learning for Robust Parameterized Locomotion C
+  MINOR (1 issues) Input-to-State Safety for Reinforcement Learning.
+  MINOR (1 issues) Learning Complex Dexterous Manipulation with Deep Reinforcem
+  MINOR (1 issues) AFU: Actor-Free critic Updates in off-policy RL for continuo
+  PASS  (0 issues) The Role of Domain Randomization in Training Diffusion Polic
+  MINOR (2 issues) CVaR-Constrained Policy Optimization for Safe Reinforcement 
+  PASS  (0 issues) Safe Off-Policy Deep Reinforcement Learning Algorithm for Vo
+  PASS  (0 issues) VCSAP: Online reinforcement learning exploration method base
+  MINOR (2 issues) Deep Reinforcement Learning That Matters
+  -> topics/rl-general-toolbox/summary_verification.md
