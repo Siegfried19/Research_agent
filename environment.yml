@@ -1,0 +1,15 @@
+# research-agent conda 环境 —— 换机器迁移:  conda env create -f environment.yml
+# 知识库检索升级(2026-06-18)引入:整个项目的 python 环境(嵌入用 torch/sentence-transformers)。
+# 用 conda-forge 渠道(自带新版 libstdc++,根治 anaconda base 的 CXXABI 报错)。
+# torch 走 pip(PyTorch 官方已停 conda 渠道):默认拉 CUDA 版(GPU 机器适用;纯 CPU 机器会偏大但可用)。
+name: research-agent
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - torch
+      - sentence-transformers
+      - sqlite-vec
+      - requests

@@ -40,6 +40,12 @@ __pycache__/
 *.pyc
 .DS_Store
 db/fts.sqlite
+
+# 知识库检索升级(2026-06-18):嵌入模型缓存(~1.2GB,可重下,在检索模块内) + 坐标索引(可重建)
+# README 保留以说明用途,模型本体不入库
+pipeline/retrieve/models/*
+!pipeline/retrieve/models/README.txt
+db/vec.sqlite
 topics/*/literature_corpus.yaml
 store/literature_corpus_all.yaml
 

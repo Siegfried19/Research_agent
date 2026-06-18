@@ -29,6 +29,9 @@ Stages:
 Only `tierb` ever needs you (to click a Cloudflare/Duo challenge) — and it lives
 in `auto-pull`, the attended half. `auto-sum` is fully unattended.
 """
+from lib.envguard import ensure_env
+ensure_env()  # 不在 research-agent 环境就自动切过去(主链子进程经 sys.executable 全继承)
+
 import subprocess
 import sys
 from pathlib import Path

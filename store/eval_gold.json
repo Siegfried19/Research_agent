@@ -1,0 +1,10 @@
+[
+  {"q": "怎么让强化学习智能体在探索时不违反安全约束",
+   "gold_titles": ["End-to-End Safe Reinforcement Learning through Barrier",
+                   "Safe Reinforcement Learning Using Robust Control Barrier",
+                   "Safe exploration in model-based reinforcement learning using control barrier"]},
+  {"q": "用 shielding 屏蔽做安全强化学习",
+   "gold_titles": ["Safe Reinforcement Learning via Shielding"]},
+  {"q": "双足机器人鲁棒跳跃控制",
+   "gold_titles": ["Robust and Versatile Bipedal Jumping"]}
+]

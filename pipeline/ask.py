@@ -1,231 +1,112 @@
-"""Ask the paper library a question — RAG stage ① (FTS5, zero deps).
+"""Ask the paper library a question — 出口①② 公共API(路径冻结,勿移)。
 
-  python3 pipeline/ask.py "<问题或关键词>" [-n N] [--json] [--answer] [--reindex]
+  python3 pipeline/ask.py "<问题>" [-n N] [--json] [--answer] [--reindex] [--no-rerank]
 
-主要用户是**别的项目里的 agent**(做任务卡住时来查),所以:
-  --json  输出机器可读结果(绝对路径),拿到 summary_path 自己 Read 深读(细节再读 PDF)。
-  人类/agent 通用工作流: 先检索 → 读最相关几篇的中文总结 → 需要细节再读 PDF。
-可从任意 cwd 以绝对路径调用: python3 ~/Projects/Research_agent/pipeline/ask.py "..."
+检索流水线(内脏在 pipeline/retrieve/):
+  混合召回(FTS5 关键词 + 向量语义, RRF 融合) → claude -p RCS 精挑 → 带引用回答 / 会说不知道。
+向量那路需 research-agent conda 环境(torch);**base 环境自动回退纯 FTS**(仍可用,只是少了语义召回)。
 
-Index (db/fts.sqlite, disposable & rebuildable, NOT the production DB):
-  fts_sum  trigram tokenizer — title + abstract + latest Chinese summary
-  (英文全文 store/text 已于 2026-06-16 移除,检索只覆盖标题/摘要/中文总结)
-Incremental: re-indexes a paper only when its summary file mtime changed.
-
-Retrieval honours papers.quality_tier (标记进库,出口必须认标记):
-  suspect -> score halved + ⚠️低可信 label; flag -> 预印本(未同行评审) note.
-
---answer feeds the top hits' summaries to headless claude -p and prints a cited
-Chinese answer (says so explicitly when the library doesn't cover the question).
-关键词式提问效果最好;整句也行(中文按停用词切段,英文取词)。
+  默认       人看的命中列表(快,纯召回,不调 claude)
+  --answer   claude -p 综合给带引用中文回答(撑不住就老实说"库里没有")
+  --json     机器可读(给外部 agent):{answerable, answer, sources:[{doi,summary_path,pdf_path,quality_tier}]}
+  --reindex  重建索引(fts + vec)
+  --no-rerank  --answer/--json 时跳过 RCS 精挑(快,但不精排)
 """
+# --- path shim: 让 `from lib...`/`from retrieve...` 解析到 pipeline/ ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+
+from lib.envguard import ensure_env
+ensure_env()  # 不在 research-agent 环境就自动切过去(向量检索要 torch;否则回退纯 FTS)
+
 import argparse
-import re
-import sqlite3
-import sys
-from pathlib import Path
+import json
 
-from lib.db import open_db, ROOT
 from lib.log import get_logger
+from retrieve import search
 
-FTS_PATH = ROOT / "db" / "fts.sqlite"
 log = get_logger("ask")
 
-# 查询切分用的中文功能词(长词在前,先切长的)
-CJK_STOP = ["为什么", "怎么样", "怎样", "怎么", "如何", "什么", "哪些", "哪个", "是否",
-            "可以", "能否", "应该", "我们", "有没有", "关于",
-            "的", "了", "吗", "呢", "在", "和", "与", "或", "及", "用", "做", "是"]
-EN_STOP = set("the a an and or of for in on to with how what why when is are does do "
-              "can could should about any using use".split())
+
+def reindex(force=False):
+    """保证 fts + vec 两个索引都最新(各自增量)。无 torch 环境下静默跳过 vec。"""
+    search.ensure_fts(force=force)
+    try:
+        from retrieve import index
+        index.build_index(force=force)
+    except ImportError:
+        log.info("向量索引跳过(当前环境无 sqlite_vec/torch;FTS 仍可用)")
 
 
-def ensure_index(force=False):
-    """(Re)build db/fts.sqlite incrementally from papers + summaries (中文总结)."""
-    main = open_db()
-    fts = sqlite3.connect(str(FTS_PATH))
-    fts.executescript(
-        "CREATE VIRTUAL TABLE IF NOT EXISTS fts_sum  USING fts5(slug, body, tokenize='trigram');"
-        "CREATE TABLE IF NOT EXISTS meta (slug TEXT PRIMARY KEY, sum_mtime REAL);")
-    latest = {r["paper_id"]: r["path"] for r in main.execute(
-        "SELECT paper_id, path, MAX(version) FROM summary_versions GROUP BY paper_id")}
-    seen = {r[0]: (r[1] or 0) for r in fts.execute("SELECT slug, sum_mtime FROM meta")}
-    n = 0
-    for p in main.execute("SELECT id, slug, title, abstract FROM papers WHERE slug IS NOT NULL"):
-        spath = ROOT / latest[p["id"]] if p["id"] in latest else None
-        sm = spath.stat().st_mtime if spath and spath.exists() else 0
-        if not force and seen.get(p["slug"]) == sm:
-            continue
-        body = p["title"] or ""
-        if p["abstract"]:
-            body += "\n" + p["abstract"]
-        if sm:
-            body += "\n" + spath.read_text(encoding="utf-8", errors="replace")
-        fts.execute("DELETE FROM fts_sum WHERE slug=?", (p["slug"],))
-        fts.execute("INSERT INTO fts_sum VALUES (?,?)", (p["slug"], body))
-        fts.execute("INSERT OR REPLACE INTO meta VALUES (?,?)", (p["slug"], sm))
-        n += 1
-    fts.commit()
-    main.close()
-    if n:
-        log.info(f"index: {n} papers (re)indexed -> {FTS_PATH.relative_to(ROOT)}")
-    return fts
-
-
-def parse_query(q):
-    """-> (english terms, CJK segs >=3 chars, CJK segs ==2 chars)"""
-    en = [w.lower() for w in re.findall(r"[A-Za-z][A-Za-z0-9-]{2,}", q) if w.lower() not in EN_STOP]
-    runs = re.findall(r"[一-鿿]+", q)
-    segs = []
-    for run in runs:
-        for sw in CJK_STOP:
-            run = run.replace(sw, " ")
-        segs += [s for s in run.split() if len(s) >= 2]
-    cjk3 = []
-    for s in segs:
-        if len(s) <= 4:           # 短段整段做精确短语
-            if len(s) >= 3:
-                cjk3.append(s)
-        else:                     # 长段拆滑窗 trigram(OR 召回,bm25 按命中数排序)
-            cjk3 += [s[i:i + 3] for i in range(len(s) - 2)]
-    return en, list(dict.fromkeys(cjk3)), [s for s in segs if len(s) == 2]
-
-
-def search(fts, q, topn):
-    en, cjk3, cjk2 = parse_query(q)
-    scores, snips = {}, {}
-
-    def add(slug, sc, snip=None):
-        scores[slug] = scores.get(slug, 0) + sc
-        if snip and slug not in snips:
-            snips[slug] = snip
-
-    m_sum = " OR ".join(f'"{t}"' for t in dict.fromkeys(en + cjk3))
-    if m_sum:
-        for slug, bm, snip in fts.execute(
-                "SELECT slug, bm25(fts_sum), snippet(fts_sum,1,'【','】','…',16) "
-                "FROM fts_sum WHERE fts_sum MATCH ?", (m_sum,)):
-            add(slug, -bm, snip)
-    for t in cjk2:  # trigram 索引不到 2 字词 -> 总结层 instr 全扫兜底(语料小,扫得动;
-        # 注意 FTS5 虚拟表上 LIKE 静默返回 0 行,必须用 instr)
-        for (slug,) in fts.execute("SELECT slug FROM fts_sum WHERE instr(body,?)>0", (t,)):
-            add(slug, 1.0)
-    if not scores:
-        return []
-
-    main = open_db()
-    hits = []
-    for slug, sc in scores.items():
-        p = main.execute("SELECT * FROM papers WHERE slug=?", (slug,)).fetchone()
-        if not p:
-            continue
-        tier = p["quality_tier"]
-        if tier == "suspect":
-            sc *= 0.5  # 出口认标记:可疑来源降权 + 显式标注
-        topics = main.execute("SELECT topic_id, relevance FROM paper_topic WHERE paper_id=?",
-                              (p["id"],)).fetchall()
-        # 引用图扩展(落地路径④): 库内引用邻居(本篇引用的 + 引用本篇的),组成"相互关联"
-        related = main.execute(
-            """SELECT p2.title, p2.slug, 'cites' AS rel FROM citations c
-                 JOIN papers p2 ON p2.id=c.dst_paper_id WHERE c.src_paper_id=?
-               UNION ALL
-               SELECT p2.title, p2.slug, 'cited_by' FROM citations c
-                 JOIN papers p2 ON p2.id=c.src_paper_id WHERE c.dst_paper_id=?""",
-            (p["id"], p["id"])).fetchall()
-        hits.append({"slug": slug, "score": sc, "p": p, "topics": topics,
-                     "snip": snips.get(slug, ""), "related": related})
-    main.close()
-    hits.sort(key=lambda h: -h["score"])
-    return hits[:topn]
-
-
-def as_json(hits, q):
-    import json as _json
-    out = []
-    for h in hits:
-        p = h["p"]
-        sdir = ROOT / "store" / "summaries" / h["slug"]
-        vs = sorted(sdir.glob("v*.md"))
-        out.append({
-            "title": p["title"], "year": p["year"], "venue": p["venue"], "doi": p["doi"],
-            "score": round(h["score"], 2),
-            "quality_tier": p["quality_tier"],  # suspect=可疑来源慎引, flag=预印本未评审
-            "topics": [{"id": t["topic_id"], "relevance": t["relevance"]} for t in h["topics"]],
-            "snippet": h["snip"][:300],
-            "related_in_library": [
-                {"rel": r["rel"], "title": r["title"],
-                 "summary_dir": str(ROOT / "store" / "summaries" / r["slug"])}
-                for r in h["related"]],  # 库内引用邻居(顺藤摸瓜用)
-            "summary_path": str(vs[-1]) if vs else None,   # 中文结构化总结(先读这个)
-            "pdf_path": str(ROOT / p["pdf_path"]) if p["pdf_path"] else None,  # 原文 PDF(要细节直读它)
-        })
-    print(_json.dumps({"query": q, "hits": out}, ensure_ascii=False, indent=1))
-
-
-def tier_label(p):
-    return {"suspect": " ⚠️低可信来源", "flag": " (预印本,未同行评审)",
-            "trusted": ""}.get(p["quality_tier"] or "", "")
-
-
-def show(hits, q):
+def _show_hits(q, hits):
+    from lib.db import open_db
     print(f"# 库内检索: {q}  ({len(hits)} 命中)\n")
+    main = open_db()
     for i, h in enumerate(hits, 1):
-        p = h["p"]
-        tline = ", ".join(f"{t['topic_id']}(rel {t['relevance']:.0f})" for t in h["topics"])
-        print(f"{i}. [{h['score']:.1f}] {p['title']} ({p['year']}, {p['venue'] or '?'})"
-              f"{tier_label(p)}")
-        print(f"   主题: {tline}")
-        if h["snip"]:
-            print(f"   摘段: {h['snip'][:200]}")
-        for r in h["related"][:4]:
-            arrow = "→引用" if r["rel"] == "cites" else "←被引"
-            print(f"   {arrow}: {r['title'][:70]}")
-        print(f"   总结: store/summaries/{h['slug']}/  PDF: {p['pdf_path'] or '-'}\n")
+        p = h["paper"]
+        tps = main.execute("SELECT topic_id, relevance FROM paper_topic WHERE paper_id=?",
+                           (p["id"],)).fetchall()
+        tline = ", ".join(f"{t['topic_id']}({t['relevance']:.0f})" for t in tps)
+        tier = {"suspect": " ⚠️低可信", "flag": " (预印本)"}.get(p["quality_tier"] or "", "")
+        print(f"{i}. [{h['score']:.3f}] {p['title']} ({p['year']}, {p['venue'] or '?'}){tier}")
+        if tline:
+            print(f"   主题: {tline}")
+        print(f"   总结: store/summaries/{p['slug']}/  PDF: {p['pdf_path'] or '-'}\n")
+    main.close()
 
 
-def answer(hits, q):
-    from lib.claude import run_claude
-    blocks = []
-    for i, h in enumerate(hits[:5], 1):
-        sdir = ROOT / "store" / "summaries" / h["slug"]
-        vs = sorted(sdir.glob("v*.md"))
-        body = vs[-1].read_text(encoding="utf-8", errors="replace")[:5000] if vs else (h["p"]["abstract"] or "")
-        blocks.append(f"[{i}] {h['p']['title']} ({h['p']['year']}, {h['p']['venue'] or '?'})"
-                      f"{tier_label(h['p'])}\n{body}")
-    prompt = (f"你是论文库问答助手。只基于下面提供的论文总结回答问题,引用时标 [编号]。\n"
-              f"带 ⚠️低可信来源 标记的材料,引用时必须显式说明来源可疑。\n"
-              f"材料覆盖不了的部分,直说\"库里没有\",不要编。用中文,简洁。\n\n"
-              f"## 问题\n{q}\n\n## 材料\n" + "\n\n---\n\n".join(blocks))
-    print("\n# 综合回答 (claude -p, 基于前 5 命中)\n")
-    print(run_claude(prompt, timeout=300))
+def _show_answer(q, res):
+    print(f"# 回答: {q}\n")
+    print(res["text"])
+    print("\n## 来源")
+    for s in res["sources"]:
+        tier = f" [{s['quality_tier']}]" if s["quality_tier"] else ""
+        print(f"  [{s['n']}] {s['title']} ({s['year']}){tier}")
+        if s["summary_path"]:
+            print(f"      总结: {s['summary_path']}")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("question", nargs="?", default="")
     ap.add_argument("-n", type=int, default=8)
-    ap.add_argument("--json", action="store_true", help="机器可读输出(绝对路径),给 agent 用")
-    ap.add_argument("--answer", action="store_true", help="claude -p 综合前5命中给出带引用的回答")
-    ap.add_argument("--reindex", action="store_true", help="强制全量重建索引")
+    ap.add_argument("--json", action="store_true", help="机器可读输出(给外部 agent)")
+    ap.add_argument("--answer", action="store_true", help="claude -p 综合给带引用回答")
+    ap.add_argument("--reindex", action="store_true", help="重建 fts + vec 索引")
+    ap.add_argument("--no-rerank", action="store_true", help="跳过 RCS 精挑(快)")
     a = ap.parse_args()
-    if not a.question and not a.reindex:
-        ap.print_help()
-        sys.exit(1)
-    fts = ensure_index(force=a.reindex)
+
+    reindex(force=a.reindex)
     if not a.question:
+        if not a.reindex:
+            ap.print_help()
         return
-    hits = search(fts, a.question, a.n)
+
+    deep = a.answer or a.json
+    hits = search.hybrid(a.question, topn=max(a.n, 20) if deep else a.n)
     if not hits:
         if a.json:
-            print('{"query": %s, "hits": []}' % __import__("json").dumps(a.question, ensure_ascii=False))
+            print(json.dumps({"query": a.question, "answerable": False, "answer": "", "sources": []},
+                             ensure_ascii=False))
         else:
-            print("库里没有命中。换关键词试试(英文术语对全文层更有效)。")
+            print("库里没有命中。换关键词试试。")
         return
-    if a.json:
-        as_json(hits, a.question)
+
+    if deep:
+        from retrieve import answer
+        ranked = hits[:a.n]
+        if not a.no_rerank:
+            from retrieve import rerank
+            ranked = rerank.rcs_rerank(a.question, hits, keep=a.n)
+        res = answer.build(a.question, ranked)
+        if a.json:
+            print(json.dumps({"query": a.question, "answerable": res["answerable"],
+                              "answer": res["text"], "sources": res["sources"]},
+                             ensure_ascii=False, indent=1))
+        else:
+            _show_answer(a.question, res)
     else:
-        show(hits, a.question)
-    if a.answer:
-        answer(hits, a.question)
+        _show_hits(a.question, hits)
 
 
 if __name__ == "__main__":
