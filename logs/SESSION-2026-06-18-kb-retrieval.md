@@ -73,3 +73,38 @@
 - B: 真 gold 集 / Self-RAG 逐句自检(ISSUP) / rerank max_chars=12000 截断(最长11119已逼近)。
 - C: 合成知识层 / 引用图扩展 / 两段式。
 - D: 39篇总结待重做后重跑 index;cron/PATH 切环境(envguard 已能自动 re-exec,未在 cron 实跑验证)。
+
+## 续(2026-06-18 第三段):逐步审查问答 pipeline + 决定上 claude 问题理解层
+> 用户在**逐段严谨审查**整条问答管道(plan→确认→实现→验证→log→commit;见 memory `working-style-review-pace`)。
+
+### 已提交
+- **第0步(建索引)优化** `35bfb2c`:嵌入上限 16384→**24576**(实测fp32/batch1单篇峰值8k=2.3G/16k=3.4G/24k=4.5G,留~1.2G;+`expandable_segments`防碎片+CPU兜底;生产221篇实测峰值仅2671MiB;问答零影响,坐标不变)。索引增量改**两段钥匙**(新 `retrieve/freshness.py`,fts+vec共用):便宜钥匙=md5(title+abstract+path+mtime)不读文件→秒跳(治P3),fts/vec判据统一(治A:abstract改动fts也抓得到),每查询reindex近免费(治B);vec钥匙变了才读全文算body_hash精确确认(零问答风险);+busy_timeout(C)+孤儿回收(D)+旧meta schema自动迁移。全验证过。
+
+### 第1步(混合召回 search.hybrid)审查结论
+- 结构对、防御足、**无文本截断**(只k=50/topn=20召回宽度)。**不调 claude**;向量那路用嵌入模型 Qwen3(非LLM),查询侧带内置前缀 `"Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:"`,文档侧空。
+- **实测坐实两个真 bug(都在 `parse_query` 机械分词)**:
+  - **P-A**:2字母英文缩写被丢(正则要≥3字符)→ "RL"在RL库里关键词召回零贡献;且英文2字符无instr兜底。
+  - **P-B**:单字停用词(用/做/是/和/或/及/在)子串替换把中文复合词劈碎 →"通用"→丢、"应用"→丢;"AI ML 的应用"→FTS完全空手。
+  - 缓解:向量那路部分救场;但base环境(无torch)向量关→这些查询真零命中。
+- 低优先:vec_rank连接没close;fts bm25与cjk2的+1.0量纲不一致(只影响FTS内部序,RRF取名次,影响小);hybrid的except太宽会静默吞向量错误。
+
+### 决定(用户拍板):上**方案A = claude 问题理解层**(token充足,要强的);agentic(方案B)留后面
+- **方案A**(现在做):检索**前**加一层 claude 把问题→更好的检索输入,根治 P-A/P-B(比补正则彻底)。Qwen+FTS 保留当工具。
+- **方案B**(后面=路线图④引用图/⑤两段式/PaperQA2 agentic):claude 自己驱动搜索循环、多跳、顺引用。**A 是 B 的零件,不浪费**(agent 也要复用问题理解+这些工具)。
+
+### 方案A 待实现的具体设计(下个会话照这个写)
+1. **新文件** `pipeline/retrieve/understand.py`,`understand_query(question)`:claude -p(lib/claude.py,强模型)→输出 JSON
+   `{"en_terms":[...], "zh_terms":[...], "hyde":"一段假想中文答案"}`。
+   prompt 要点:展开缩写(RL→reinforcement learning)、关键概念**中英双语**词(标题/摘要英文+总结中文两边都要)、补同义词、写2-4句 HyDE 假想答案(中文,论文总结口吻)。
+2. **接进 `search.hybrid`**(加参数如 `understanding=None`):
+   - FTS那路:不再用易错正则,直接用 claude 给的干净词,每词当**原子短语**(≥3字trigram/2字instr/英文2字instr带大小写)→ 绕开 P-A/P-B。需写个 `terms_to_fts(en,zh)` 格式化器(**不要**把claude的词再喂回 parse_query,否则"通用"又被劈)。
+   - 向量那路:嵌入 **HyDE 文本**(而非光问题)→ 召回更准。
+   - RRF 融合照旧。
+3. **接进 `ask.py`**:仅 `--answer`/`--json`(deep)走理解层;默认快速列表 + claude/torch不可用 → 回退 `parse_query`(所以**顺手把 P-A/P-B 在 parse_query 里也小修一下当兜底**)。
+4. 代价:每次 deep 查询多 1 次 claude(可接受)。
+5. 验证:RL/通用/AI ML 等原来失败的查询现在能召回;base环境回退正常;log+commit。
+
+### 后续(未做,按路线图)
+- 第2步 P2:`rerank.py:52 max_chars=12000` 截断只留头,新长总结尾部(适用边界/批判)会被砍——重做总结后必咬。修法:抬上限/掐头留尾。
+- 第3步 P1:`--no-rerank`+`--answer` 没evidence必瞎答(`answer.py:70`)——禁该组合或no-rerank时用总结摘录当证据。
+- 路线图 ④引用图 / ⑤两段式 / 合成知识层 / 问答记忆 / Self-RAG自检。
