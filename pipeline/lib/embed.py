@@ -18,6 +18,9 @@ from pathlib import Path
 _MODELS_DIR = Path(__file__).resolve().parent.parent / "retrieve" / "models"
 _MODELS_DIR.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("HF_HOME", str(_MODELS_DIR))
+# 防显存碎片:6GB 卡上一次 reindex 在同进程连续嵌很多篇,碎片会攒成"假性 OOM"(实测连续测
+# 24k 会炸、单篇单独跑就过)。开 expandable_segments 后稳。必须在 import torch 前设。
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 MODEL_NAME = "Qwen/Qwen3-Embedding-0.6B"
 _model = None
@@ -25,8 +28,10 @@ _model = None
 
 # 质量优先(用户 2026-06-18 定):满精度(fp32,不降精度) + 不截断长总结 + 逐篇小 batch。
 # 6GB 笔记本 GPU(3060 Laptop)放不下"长序列+大 batch",所以代价全摊在 batch 上(=1,慢但保质)。
-MAX_SEQ = 16384       # 实测最长嵌入体 ~13k 字符(<1万token),16384 覆盖全部真实总结=不截断;
-                      # 仅作安全兜底(<模型原生 32768),防极端长文把显存撑爆。
+MAX_SEQ = 24576       # 模型原生上限 32768。实测(fp32/batch1)单篇显存峰值:8k=2.3G/16k=3.4G/
+                      # 24k=4.5G —— 24576 在 6GB(可用~5.65G)留 ~1.2G 余量(+expandable_segments
+                      # 防碎片 + CPU 兜底)。真实总结最长才 ~7k token,24576 是给未来更长总结的
+                      # 天花板,平时够不着,绝不截断现有总结。
 GPU_BATCH = 1         # 逐篇,质量优先(O(L²)注意力下大 batch + 长序列 + fp32 会爆 6GB 显存)
 
 

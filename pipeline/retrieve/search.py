@@ -30,35 +30,46 @@ EN_STOP = set("the a an and or of for in on to with how what why when is are doe
 
 # ---------------- FTS5 那路(对字) ----------------
 def ensure_fts(force=False):
-    """(增量)建 db/fts.sqlite:trigram 索引 标题+摘要+最新中文总结,按 slug 键。"""
+    """(增量)建 db/fts.sqlite:trigram 索引 标题+摘要+最新中文总结,按 slug 键。
+    增量靠 stale_key(便宜指纹,不读文件);指纹变才重索引(FTS 重索引文本便宜,不必再确认内容)。"""
+    from retrieve.freshness import latest_summary_map, stale_key
     main = open_db()
     fts = sqlite3.connect(str(FTS_PATH))
+    fts.execute("PRAGMA busy_timeout=5000")  # C:两个查询并发写索引时别直接报 locked
     fts.executescript(
         "CREATE VIRTUAL TABLE IF NOT EXISTS fts_sum USING fts5(slug, body, tokenize='trigram');"
-        "CREATE TABLE IF NOT EXISTS meta (slug TEXT PRIMARY KEY, sum_mtime REAL);")
-    latest = {}
-    for r in main.execute("SELECT paper_id, path, version FROM summary_versions ORDER BY paper_id, version"):
-        latest[r["paper_id"]] = r["path"]
-    seen = {r[0]: (r[1] or 0) for r in fts.execute("SELECT slug, sum_mtime FROM meta")}
-    n = 0
+        "CREATE TABLE IF NOT EXISTS meta (slug TEXT PRIMARY KEY, key TEXT);")
+    cols = [r[1] for r in fts.execute("PRAGMA table_info(meta)")]
+    if "key" not in cols:  # 旧 schema(sum_mtime)→重建 meta,强制全量一次(fts.sqlite 可重建无损)
+        fts.executescript("DROP TABLE meta; CREATE TABLE meta (slug TEXT PRIMARY KEY, key TEXT);")
+    latest = latest_summary_map(main)
+    seen = {r[0]: r[1] for r in fts.execute("SELECT slug, key FROM meta")}
+    qualifying, n = set(), 0
     for p in main.execute("SELECT id, slug, title, abstract FROM papers WHERE slug IS NOT NULL"):
-        spath = ROOT / latest[p["id"]] if p["id"] in latest else None
-        sm = spath.stat().st_mtime if spath and spath.exists() else 0
-        if not force and seen.get(p["slug"]) == sm:
+        qualifying.add(p["slug"])
+        path = latest.get(p["id"])
+        spath = ROOT / path if path else None
+        mtime = spath.stat().st_mtime if spath and spath.exists() else 0
+        key = stale_key(p["title"], p["abstract"], path, mtime)
+        if not force and seen.get(p["slug"]) == key:
             continue
         body = p["title"] or ""
         if p["abstract"]:
             body += "\n" + p["abstract"]
-        if sm:
+        if spath and spath.exists():
             body += "\n" + spath.read_text(encoding="utf-8", errors="replace")
         fts.execute("DELETE FROM fts_sum WHERE slug=?", (p["slug"],))
         fts.execute("INSERT INTO fts_sum VALUES (?,?)", (p["slug"], body))
-        fts.execute("INSERT OR REPLACE INTO meta VALUES (?,?)", (p["slug"], sm))
+        fts.execute("INSERT OR REPLACE INTO meta VALUES (?,?)", (p["slug"], key))
         n += 1
+    orphans = [s for s in seen if s not in qualifying]  # D:回收已不在合格集的孤儿行
+    for s in orphans:
+        fts.execute("DELETE FROM fts_sum WHERE slug=?", (s,))
+        fts.execute("DELETE FROM meta WHERE slug=?", (s,))
     fts.commit()
     main.close()
-    if n:
-        log.info(f"fts index: {n} 篇(重)索引 -> {FTS_PATH.relative_to(ROOT)}")
+    if n or orphans:
+        log.info(f"fts index: {n} 篇(重)索引, {len(orphans)} 孤儿回收 -> {FTS_PATH.relative_to(ROOT)}")
     return fts
 
 
