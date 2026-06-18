@@ -183,3 +183,12 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
    - 顺带发现:Bipedal Robots(Reinforcement Learning for Robust Parameterized Locomotion Control)以两个 id 重复入库(slug `..._Bipedal_Robots` 和 `..._2`,两主题各自发现、merge 没合上),待去重。
 
 详见 `logs/SESSION-*.md`（操作记录）和 `logs/run.log`（机器日志）。
+
+## 待办(已讨论未做)：手动加 PDF 入库(2026-06-18 讨论,搁置)
+用户有时自己找论文,**通常直接给 PDF**。要做个手动旁路工具 `tools/add_paper.py <主题id> 论文.pdf...`:
+- **流程**：PDF→①识别身份→②去重→③跳过下载直接落库→跑 sum→verify。**大好处:手上有全文,跳过整条下载链(fetch/recover/hunt/tierb)**。
+- **①识别(命门)**：pdftotext 抽前两页正则抠 DOI/arXiv id → 抠不到则 pdfinfo/首行取标题去 OpenAlex 搜+`title_matches` 模糊配 → 都不行则裸入库(无DOI,判重靠标题归一,弱,打标记)。坚持解析到规范DOI/元数据:去重/质量信号/引用边/导出ARS都靠它,PDF只当全文源。
+- **②去重(用户最关心"可能库里已有")**：靠规范化DOI精确判重(地基已具备:papers.id=norm_doi主键,paper_topic主键=topic+paper)。三情况:已在本主题(报一句/可选重总结)|在别主题(只加paper_topic关联,复用已有PDF+总结,连用户PDF都不要)|全新(往下走)。无DOI时退化为标题归一判重(唯一弱点)。
+- **③落库**：upsert+关联+把PDF按slug复制进store/pdfs(复用store落盘+%PDF校验)+置status=pdf_downloaded。
+- **待拍的决定(3个)**：(a)相关性分——倾向"照常claude打分但强制入选,不被资格/质量闸卡掉";(b)标题匹配要不要停下等用户确认 vs 自动采用高相似命中只记日志;(c)纯PDF无id的退化路径要不要现在做。
+- 工具齐全已确认:pdftotext/pdfinfo都在;summarize已用pdftotext(full_text);sources需加个"按DOI/arXiv单查元数据"(OpenAlex有 works/doi: 端点)。
