@@ -47,14 +47,14 @@ python3 pipeline/run.py <id> verify      # escalate_verify.py --start-pct 100: C
 **打分跨批次校准漂移修法（2026-06-17，未提交）**：`score_auto` 每批独立 claude -p 会让"几分算相关"逐批微漂，落截断线附近翻转去留。改了 4 处：rubric 通用骨架(替掉原写死在 digital-human 的例子)＋`topic.json.score_anchors` 注入每批固定头部钉死刻度＋reason 须引原文(证据接地)；batch 10→20＋批内洗牌(对冲位置偏置)；`boundary_rerank` 对去留线 ±8 分窄带×5次取均值复称(首跑=target截断线/增量=资格闸rel≥30·flag_min)，写 `scores/zz_boundary.json` 靠文件名排序让 commit 合并覆盖(commit.py 没动)。**调研依据+方案 → `docs/score-drift-research-findings.md`。** 新主题**冷启动全自动自举**:`score` 阶段发现 topic.json 无 `score_anchors` 就自动裸跑整遍→从整遍分布挑高/边界/低3张写回 topic.json(`autopick_anchors`,非阻塞推TG告知可事后改)→带锚重打;冻好后增量复用不再自举。`run auto` 一条龙无需人介入。想改自举挑的锚点→直接编辑 topic.json 的 `score_anchors` 后重跑 score。gt/dhi 已手挑锚点填好(比自动准),不会触发自举。
 
 ## 关键约定 / 坑（务必遵守）
-- **Python 3.10+,stdlib sqlite3**(不再需要 node)。**目录分层(2026-06-15)**：入口/公共API 在 `pipeline/` 根(run.py/ask.py)，主链脚本在 `pipeline/stages/`，旁路在 `pipeline/tools/`，共享库 `pipeline/lib/`。stages/tools 里每个脚本顶部有 **path shim 三行**(把 `pipeline/` 加进 `sys.path`)，所以 `from lib.xxx import` 在任何子目录都解析得到 + sibling import(如 `from summarize_auto import`)靠脚本自身目录在 `sys.path[0]`。直接 `python3 pipeline/stages/<x>.py` 或经 run.py 调都成立。
+- **Python 3.10+,stdlib sqlite3**(不再需要 node)。**目录分层(2026-06-18)**：入口/公共API 在 `pipeline/` 根(run.py/ask.py)，主链脚本**按功能段分文件夹** `pipeline/{find,fetch,summarize,verify}/`，旁路在 `pipeline/tools/`，共享库 `pipeline/lib/`。各段/tools 里每个脚本顶部有 **path shim 三行**(把 `pipeline/` 加进 `sys.path`)，所以 `from lib.xxx import` 在任何子目录都解析得到 + 同段 sibling import(如 verify/ 内 `from verify_summaries import`)靠脚本自身目录在 `sys.path[0]`，跨段 import 走包路径(`from summarize.summarize_auto import`)。直接 `python3 pipeline/<段>/<x>.py` 或经 run.py 调都成立。
 - **打分/总结靠 `claude -p` 无头**(lib/claude.py;prompt 走 stdin、结果 stdout、脚本自己读写文件)。要加第二个模型(Codex 评审团)就照 `lib/claude.py` 复制成 `lib/codex.py`。
 - 文件名用**论文标题 slug**（`papers.slug`），不是 DOI。DOI 仍是 `papers.id` 主键。
 - **选篇靠 claude -p 相关性打分，不靠 API 排序**（OpenAlex 的相关性把引用量混进去了，会把高引但跑题的论文顶上来）。
 - **不用 Google Scholar 批量**（无 API、强反爬）。
 - 下载四级：先吃 OA → `recover_oa.py` 规则免费兜底（Unpaywall repository优先 + arXiv 版本枚举 + **DBLP 反查会议自营OA站** PMLR/ACL Anthology/OpenReview，2026-06-10 加,via=dblp-oa）→ `recover_agent.py` **agent 兜底**（claude -p 开 WebSearch/WebFetch 联网找合法免费 PDF，脚本负责下载校验落库；prompt 明令禁 Sci-Hub 类盗版源）→ 最后才 Tier B 付费墙。兜底层设计哲学：**撞到一类拉不下来的就固化一个新渠道**（同 tierb 的 findPdfUrl 出版商适配）。
 - 批量下载要**限速**，别刷崩用户学校的访问 / 触发出版商风控。
-- `claude -p` 偶尔撞 Max 限流失败 → 重跑该阶段即可（已总结/已打分的自动跳过;sum/score 幂等）。撞限流就调小并发：`python3 pipeline/stages/summarize_auto.py <id> 1`。
+- `claude -p` 偶尔撞 Max 限流失败 → 重跑该阶段即可（已总结/已打分的自动跳过;sum/score 幂等）。撞限流就调小并发：`python3 pipeline/summarize/summarize_auto.py <id> 1`。
 
 ## 数据模型（db/papers.sqlite，5 表）
 - `papers` 全局论文库：主键=规范化DOI；`slug`=文件名；`status`=discovered/pdf_downloaded/pdf_failed/summarized
@@ -91,7 +91,7 @@ pipeline/
 
 其它命令：
 ```bash
-python3 pipeline/stages/recover_oa.py <id>     # 免费补全(Unpaywall repository优先 + arXiv)
+python3 pipeline/fetch/recover_oa.py <id>      # 免费补全(Unpaywall repository优先 + arXiv)
 python3 pipeline/tools/suggest_updates.py <id> # (5b)建议哪些老总结该更新
 python3 pipeline/tools/prepare_update.py <doi> # (5a)备更新 → python3 pipeline/tools/update_auto.py → register_updates.py
 python3 pipeline/tools/cross_topic.py          # (6)跨主题（需≥2主题;自带全库引用边重建——commit 只建主题内的边）
