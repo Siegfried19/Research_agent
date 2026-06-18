@@ -4,6 +4,10 @@
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `logs/SESSION-*.md`；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
 
+## 2026-06-18 19:11 EDT — 定 claude_log 用单文件（不做文件夹）
+- 决定：claude_log 用单个 `.md`，不做成文件夹——append-only 时间线单文件最好扫/grep，纯文本几千条也才几百 KB；只有单文件真臃肿了才按年归档进 `claude_log/<年>.md`（YAGNI，现在不做）。
+- 文件：全局 `~/.claude/CLAUDE.md` 补了这条说明。
+
 ## 2026-06-18 19:06 EDT — 立 claude_log 约定 + 补记今日改动
 - 用户拍板：所有项目都要有 `claude_log.md`，做改动就记、带日期时间。落约定到全局 `~/.claude/CLAUDE.md`，本项目建此文件并补记今天三件事（下方）。
 - 文件：新建 `~/.claude/CLAUDE.md`（全局约定）、本 `claude_log.md`；另存一条本项目 feedback 记忆。
