@@ -14,13 +14,9 @@
     "flag_min_relevance": 45,
     "codex_panel": false
   },
-  "summarize": {
-    "_comment": "总结撰写。grounding_gate=true:写正文前 agent 先列 note_plan(每条论断带原文英文引文+出处+strength),再跑 tools/grounding_gate.py 机械核对引文真在 PDF 里,钉不住打回重写(治张冠李戴,零 token)。设 false=只列 note_plan 不验门(最小版),靠事后 Codex 兜底。",
-    "grounding_gate": true
-  },
   "verify": {
-    "_comment": "Codex 跨模型核查。codex_self_render=true:给 Codex(gpt-5.5)隔离临时目录+PDF+workspace-write 沙箱,涉及公式/图表它自己渲染相关页面再看(比预渲染全部页更聪明,能zoom图表;代价更慢更耗额度、非确定)。设 false=纯文本核查(只喂 pdftotext,公式/图表里的错查不出)。",
-    "codex_self_render": true
+    "_comment": "Codex 跨模型核查(2026-06-18 定稿)。永远 self-render:给 Codex(gpt-5.5)隔离临时目录+PDF+workspace-write 沙箱,它自己读全篇、涉及公式/图表自渲染相关页面再看(整篇 PDF 给它,无文本兜底、无截断——总结本就只从 PDF 写,核查同源)。reasoning_effort=medium:中等强度做 claim 级语义核查(方向反转/张冠李戴/过度声称),不用最贵档逐字渲染(省 ChatGPT 配额)。核查 report-only,major 触发整篇重新总结(非打补丁),见 docs/summary-design-principles.md。",
+    "reasoning_effort": "medium"
   },
   "ranking": {
     "relevance_weight": 0.6,

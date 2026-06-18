@@ -1,6 +1,7 @@
-# 总结层设计原则 — DRAFT v1(2026-06-17,已折入 deep-research)
+# 总结层设计原则(2026-06-17 草拟,2026-06-18 定稿并落地)
 
-> 状态:**草案,先给用户过目,不动代码。** v1 已折入 deep-research 证据(`SESSION-2026-06-17-design-research.md`,含可抄项目清单)。
+> 状态:**已定稿 + 已改代码**(2026-06-18,用户拍板)。落地详情见 **§八**;§一~§七是定稿前的推导/证据/未决,保留作背景。
+> v1 已折入 deep-research 证据(`SESSION-2026-06-17-design-research.md`,含可抄项目清单)。
 > 一句话校准:大方向(分诊层/语义忠实/便宜核查)被外部强力支持;**唯"数字不必守"收一格 → "数字精度让位 PDF,但 claim 级语义核查仍顺带守住要命的数字错(misattribution/矛盾)"。**
 > 缘起:清库用新 prompt 重跑后,发现新总结(尤其修正版 v2/v3)质量问题;深挖后重新对齐初衷,得出下面的取向转变。
 > 配套:逐篇对照证据 `SESSION-2026-06-17-summary-version-comparison.md`;codex 问题 `SESSION-2026-06-17-codex-quota.md`。
@@ -54,3 +55,26 @@
 - 语义核查具体怎么落:用 claude 自查(同模型盲点) vs 仍用 codex 但只判方向(省额度)。
 - v2 危险中间态如何不外泄(若保留任何修正环节)。
 - 新原则定型后,是"去掉今天 40 篇重做",还是"直接拿老 221 篇当基线、只补未总结的"。
+
+## 八、定稿 + 已落地(用户 2026-06-18 拍板,本次已改代码)
+讨论后定下并**已实现**(改了 `lib/codex.py`/`config.json`/`verify_summaries.py`/`summarize_auto.py`/`escalate_verify.py`,删了 `correct_summaries.py`):
+
+1. **核查引擎 = Codex 中等强度**(不走便宜小模型 MiniCheck/SummaC——用户:"不要太便宜的")。
+   - `config.json` verify 段 `reasoning_effort: "medium"`;`run_codex(effort=)` 落到 `-c model_reasoning_effort=medium`。
+   - **永远 self-render**:整篇 PDF 给 Codex(隔离沙箱+paper.pdf+workspace-write,自抽文本+渲染图表)。
+   - **删掉省钱文本路径 + 40 万字符截断**(§五"数字不必守"那条收口的延伸):总结本就只从 PDF 写(2026-06-16 移除 store/text),核查同源即可,文本兜底是历史遗留。claude 应急后端改用 Read 工具直读 PDF。**结果:unverifiable 的"被截断"成因消失**,只剩"图表没看清/某段没读到"。
+
+2. **修正环节取消裁决权 = 不再打补丁,改"整篇重新总结"**(§四D 那个致命 bug 的根治)。
+   - 旧 `correct_summaries.py`(在旧版总结上按问题清单改、"其余原样保留")**已删**——它正是"反向裁决核查员+伪造'已核对'背书"的来源。
+   - 新 `summarize_auto.resummarize`:major 触发 → **从 PDF 整篇重写**出 vN+1,复用 build_prompt 全套(note_plan+接地门+7问自查);核查问题只当**避坑提示**喂进去,prompt 明令**不许据清单反推原文、不许照搬旧版、不许写"已核对"背书**(`_resummary_block`)。改完下轮必复核,2 次仍 major 转人工分诊。
+   - 逻辑(用户):"既然要重新总结,裁决就不要了;报修改了就重新总结"——所以没有独立"修正"步,修正=重做。
+
+3. **severity 四态**(`major`/`minor`/`unverifiable`/`pass`):**只有 major 触发重做**;minor(孤立数字精度/措辞略强,精度让位 PDF)+ unverifiable(没核到、非错误)**只进报告**。
+
+4. **核查输出粒度 = 做法 B(整篇 verdict + issues 清单)**,不引入 claim 级三分类。
+   - **做法 A(PaperTrail/FActScore 式 claim 级 Supported/Unsupported/Omitted 逐条判)保留备查**(用户要求):它颗粒度细、对下游 agent 提取友好、Omitted 还覆盖"漏没漏",但**当前核查唯一目的是决定"要不要重做",B 已够**,A 更贵更重、Omitted 主观,服务的是出口③(claim 级知识库)而非核查环节。将来真做 claim 级知识库再上 A。
+
+> 仍按 §六:老 221 篇先不动(备份 `logs/wipe-summaries-20260617/`);"去掉 40 篇重做 vs 拿老 221 当基线"待用户定。本次只改机制,未重跑任何总结。
+
+### 八续(2026-06-18)：summarize/verify 两个 prompt 的重写方案
+机制改完后,进一步定了**总结生成 + 核查 prompt 本身怎么改**(上面 §三/§四A-B 的取向落到具体 prompt 文字)。核心:**去掉 note_plan + 接地门、总结回到"边读边写"**(note_plan 实测制造"无锚论断"假阳性洪水→版本通胀,且接地门只验引文在不在、防不住张冠李戴——危害>收益);数字让位 PDF;论断原子化+内联 strength;加"适用边界"段;codex 端告知数字立场防误报+加方向反转检查。**完整 prompt 文字 + 去 note_plan 的证据 → `docs/summary-prompt-rewrite-plan.md`。** 尚未落代码,先出样例对比再定。

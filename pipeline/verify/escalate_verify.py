@@ -1,19 +1,20 @@
 """Auto-escalating verification driver (固化"命中就扩面"升级阶梯).
-Round loop: verify (default 100% = all unverified) → auto-correct EVERY non-pass
-(major, minor AND unverifiable; token is no longer a constraint — daily ~10-paper
-batches, redo everything that isn't clean) via correct_summaries; if the
-fresh-sample major rate >= threshold also DOUBLE the sample → repeat. For an
-unverifiable item the rewrite re-reads the PDF to ground it, softening/removing
-what still can't be supported. Corrected versions are re-verified next round.
-Stops when: fresh major rate below threshold AND no corrections pending
-re-check, or every paper is verified, or max-rounds is hit.
+Round loop: verify (default 100% = all unverified) → for every MAJOR, redo the
+whole summary from the PDF (summarize_auto.resummarize — a fresh re-summary, not
+a patch; the issue list is fed only as "avoid these pitfalls", no authority to
+reverse-judge the source). minor (isolated number precision / slightly-strong
+wording) and unverifiable (not checked this round) are REPORT-ONLY — not redone.
+If the fresh-sample major rate >= threshold also DOUBLE the sample → repeat.
+Redone versions are re-verified next round.
+Stops when: fresh major rate below threshold AND nothing pending re-check, or
+every paper is verified, or max-rounds is hit.
 
---start-pct 100 = full-sweep mode: check ALL unverified summaries, correct
-majors, re-check once. This is what run.py's `verify` stage uses after `sum`,
-so new summaries enter the library already fact-checked.
+--start-pct 100 = full-sweep mode: check ALL unverified summaries, redo majors,
+re-check once. This is what run.py's `verify` stage uses after `sum`, so new
+summaries enter the library already fact-checked.
 
-Per-paper correction attempts are capped (default 2 per run); a paper still
-major after that is flagged in the report for human triage, not looped forever.
+Per-paper redo attempts are capped (default 2 per run); a paper still major
+after that is flagged in the report for human triage, not looped forever.
 Verification is advisory: exit code is 0 even if issues remain (see report).
 Usage: python3 pipeline/verify/escalate_verify.py <topicId> [--start-pct P] [--threshold T]
        [--concurrency N] [--max-rounds R] [--max-attempts A]
@@ -26,7 +27,7 @@ import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.log import get_logger, run_log
 from verify_summaries import load_candidates, split_must, verify_batch, record_verified, write_report
-from correct_summaries import run_corrections
+from summarize.summarize_auto import resummarize  # 跨段 import:重做=从 PDF 整篇重新总结
 
 log = get_logger("escalate")
 
@@ -76,12 +77,12 @@ def main():
             break
 
         majors = [r for r in ok if r["verdict"] == "major"]
-        # token 不再是约束(用户 2026-06-16 改每晚两次、每次~10 篇,全审+要质量):
-        # 非 pass 的全部重做——major/minor/unverifiable 都进修正。correct 对 unverifiable 的处理=
-        # 重读原文补实出处,补不上就软化/删去(别留无依据断言)。两次仍不过转人工。
-        problems = [r for r in ok if r["verdict"] in ("major", "minor", "unverifiable")]
-        fixable = [m for m in problems if attempts.get(m["id"], 0) < max_attempts]
-        stubborn |= {m["id"] for m in problems if attempts.get(m["id"], 0) >= max_attempts}
+        # 只有 major 触发重做(2026-06-18 定稿):major=会污染"值不值得深入"判断的错
+        # (方向反转/张冠李戴/过度声称/编造原文没有的事实)。minor(孤立数字精度/措辞略强)与
+        # unverifiable(这轮没核到、非错误)只进报告、不重做——精度让位 PDF,没核到重做也没用。
+        # 重做=从 PDF **整篇重新总结**(resummarize,无裁决权),不是在旧版上打补丁。两次仍 major 转人工。
+        fixable = [m for m in majors if attempts.get(m["id"], 0) < max_attempts]
+        stubborn |= {m["id"] for m in majors if attempts.get(m["id"], 0) >= max_attempts}
         fresh_ok = [r for r in ok if r["id"] in fresh_ids]
         fresh_major_pct = (100.0 * sum(1 for r in fresh_ok if r["verdict"] == "major")
                            / len(fresh_ok)) if fresh_ok else 0.0
@@ -94,8 +95,8 @@ def main():
         if fixable:
             for m in fixable:
                 attempts[m["id"]] = attempts.get(m["id"], 0) + 1
-            done = run_corrections([{"paperId": m["id"], "issues": m["issues"]} for m in fixable],
-                                   concurrency)
+            done = resummarize([{"paperId": m["id"], "issues": m["issues"]} for m in fixable],
+                               concurrency, topic_id=topic_id)
             pending_recheck = bool(done)
 
         if fresh_ok and fresh_major_pct >= threshold:
@@ -111,16 +112,16 @@ def main():
             r["issues"] = (r.get("issues") or []) + [{
                 "severity": "major",
                 "quote": "(escalate_verify)",
-                "problem": f"修正 {max_attempts} 次后复核仍有问题(major/minor/unverifiable),需人工分诊"}]
+                "problem": f"重做 {max_attempts} 次后复核仍 major,需人工分诊"}]
     n_pass, n_minor, n_major = write_report(
         topic_id, results, all_failed,
-        note=f"本报告由 escalate_verify 汇总(多轮升级抽检,major 自动修正+复核;"
-             f"标注\"需人工分诊\"的为修正 {max_attempts} 次仍未通过)。")
+        note=f"本报告由 escalate_verify 汇总(多轮升级抽检,major 自动整篇重新总结+复核;"
+             f"标注\"需人工分诊\"的为重做 {max_attempts} 次仍 major)。")
     log.info(f"escalate done: {len(results)} papers verified this run, "
              f"pass={n_pass} minor={n_minor} major={n_major}, "
-             f"corrected={sum(attempts.values())}, stubborn={len(stubborn)}")
+             f"redone={sum(attempts.values())}, stubborn={len(stubborn)}")
     run_log(topic_id, f"escalate_verify: verified={len(results)} pass={n_pass} minor={n_minor} "
-                      f"major={n_major} corrected={sum(attempts.values())} "
+                      f"major={n_major} redone={sum(attempts.values())} "
                       f"stubborn={len(stubborn)} errors={len(all_failed)}")
 
 

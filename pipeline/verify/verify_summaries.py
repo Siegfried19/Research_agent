@@ -3,9 +3,12 @@ Scope: ALL suspect-tier papers + corrected/updated summaries (v>=2 not yet
 re-checked) + a sample of the rest (default 100% = all unverified; small daily
 batches, no reason to sample). Codex gets the summary +
 the paper PDF dropped into an isolated sandbox and reads it ITSELF (extracts text
-for numbers, renders pages for formulas/figures) — no pre-extracted text fed in.
-Verifies numbers/claims, reports issues. REPORT ONLY — never modifies summaries
-(corrections are correct_summaries.py's job).
+for numbers, renders pages for formulas/figures) — whole PDF, no pre-extracted
+text, no truncation (summaries are written from the PDF, so verify uses the same
+source). codex runs at medium reasoning effort (claim-level semantic check).
+Verifies numbers/claims, reports issues. REPORT ONLY — never modifies summaries.
+A major triggers a full fresh re-summary (summarize_auto.resummarize), driven by
+escalate_verify; minor/unverifiable are report-only.
 State: topics/<id>/verified.json maps paper_id -> last verified summary version,
 so re-runs sample fresh papers and corrected versions become eligible again.
 For auto-escalating rounds / full sweeps use escalate_verify.py.
@@ -25,9 +28,7 @@ from lib.db import open_db, ROOT, now_iso, load_config
 from lib.codex import run_codex, pool
 from lib.claude import run_claude
 from lib.log import get_logger, run_log
-from summarize.summarize_auto import full_text  # 跨段 import:verify 复用 summarize 段读全文的函数
 
-MAX_CHARS = 400000
 log = get_logger("verify")
 
 # 临时后端开关(2026-06-15):VERIFY_BACKEND=claude 时改用 claude -p 核查,codex 配额耗尽时应急。
@@ -35,53 +36,37 @@ log = get_logger("verify")
 # (verified_claude.json / summary_verification_claude.md),绝不污染 codex 轨道。默认仍 codex。
 VERIFY_BACKEND = _os.environ.get("VERIFY_BACKEND", "codex").lower()
 
-# B 选项(默认):纯把 PDF 扔给 Codex——给它隔离临时目录(拷入 paper.pdf)+ workspace-write 沙箱,
-# 它自己读全篇:命令行抽文本查数字 + 涉及公式/图/表时自渲染相关页面成图片再看
-# (实测 gpt-5.5 会用 PIL/pdftoppm 渲染甚至裁剪放大)。prompt 里不预喂抽取文本。
-# 关掉=调试/省钱模式:不开沙箱,把这份 PDF 的 pdftotext 文本喂进 prompt(同源,但公式/图表里的错查不出)。
-# 两种模式都以 PDF 为唯一原文来源;PDF 不在盘上 = 异常,记错误跳过(不退回 text_path 偷换来源)。
-USE_SELF_RENDER = (load_config().get("verify") or {}).get("codex_self_render", True) and VERIFY_BACKEND == "codex"
+# 原文一律走 PDF,整篇给核查模型,无文本兜底、无截断(2026-06-18 定稿):总结本就只从 PDF 写,
+# codex 自渲染(隔离临时目录+paper.pdf+workspace-write,自己抽文本查数字+渲染页面看图表)、
+# claude 应急后端用 Read 工具直读 PDF。reasoning_effort 走中等(claim 级语义核查,不用最贵档逐字渲染)。
+REASONING_EFFORT = (load_config().get("verify") or {}).get("reasoning_effort", "medium")
 
 
-def vprompt(title, summary, text=None, truncated=False, pdf_mode=False, note_plan=None):
-    if pdf_mode:
-        # B:原文只以 PDF 形式给 Codex,prompt 里不放抽取文本,让它自己读全篇。
+def vprompt(title, summary, pdf_ref, backend="codex"):
+    # 原文一律以 PDF 形式给核查模型(整篇,无文本兜底、无截断)——总结本就只从 PDF 写,核查同源。
+    if backend == "claude":
+        # 应急后端:claude 用 Read 工具直读 PDF(能看公式/图/表),pdf_ref=PDF 绝对路径。
+        intro = "下面是一篇论文的中文总结,论文原文是一份 PDF。"
+        source_directive = (f"\n- 这篇论文的 PDF 在:**{pdf_ref}**,这是唯一的原文来源。"
+                            "**用 Read 工具读取它的全部页面**来核查(多页论文;超过 20 页用 pages 参数分批读完,"
+                            "不要只看前几页);Read 能直接看到公式/图/表,以原文为准。")
+    else:
+        # codex 自渲染:PDF 拷进沙箱当前目录(./paper.pdf),它自己抽文本+渲染页面看图表。
         intro = "下面是一篇论文的中文总结,论文原文以 PDF 形式放在当前目录(./paper.pdf)。"
         source_directive = ("\n- 当前目录下有这篇论文的 PDF: **./paper.pdf**,这是唯一的原文来源。"
                             "**请你自己读取它来核查**:用命令行(如 pdftotext)抽出全文核对数字与论断,"
                             "务必读完整篇、不要只看前几页;凡涉及公式/图/表的数据,把相关页面渲染成图片"
                             "(放当前目录)再看,以页面图像为准,不要凭可能损坏的抽取文本就判总结有错。")
-        trunc_note = ""
-        source_block = "==== 论文原文 ====\n见当前目录的 ./paper.pdf(按上面要求自行读取)"
-    else:
-        # 兜底:PDF 不在盘上(或开关关闭),退回把抽取文本直接喂进 prompt。
-        intro = "下面是一篇论文的中文总结和论文原文(纯文本)。"
-        source_directive = ""
-        trunc_note = ("\n- ⚠️ 提供的原文在末尾被截断([原文已截断]标记)。对于给定原文中找不到、"
-                      "但可能位于截断部分的内容(如长综述后部的应用案例/附录数据),"
-                      "按下面 unverifiable 规则处理(核不到≠编造),不要判 major。"
-                      if truncated else "")
-        source_block = f"==== 论文原文 ====\n{text}"
-    # note_plan(撰写者写正文前列的坐标清单):有则让 Codex 照坐标定点核对、并查"无锚论断";
-    # 老总结没有 note_plan → 回退通读模式,这两段为空。
-    if note_plan:
-        plan_block = ("\n==== 撰写者的 note_plan(辅助坐标)====\n"
-                      "撰写者写这份总结前,把每条具体论断拆成了锚点(下面 JSON):point=写进总结的中文论断,"
-                      "quote_en=它依据的英文原话(**已被机械接地门验明确实在 PDF 里**),where=出处,strength=声称强度。\n"
-                      "把它当**核查辅助**:逐条核 point 是否忠实其 quote_en、出处对不对、strength 有没有夸。"
-                      "但**仍要完整读原文、不要只盯这些锚点**——正文里 note_plan 没覆盖的论断/数字一样要核(见上面'无锚论断')。\n"
-                      + json.dumps(note_plan, ensure_ascii=False)[:30000] + "\n")
-        anchor_task = ("\n- **无锚论断**:总结正文里出现具体数字/论断,但 note_plan 里找不到对应锚点的,单独标出"
-                       "(severity=minor,problem 注明\"note_plan 无对应锚点,疑未接地\")。")
-    else:
-        plan_block, anchor_task = "", ""
+    source_block = f"==== 论文原文 ====\n见 {pdf_ref}(按上面要求自行读取全篇)"
     return f"""你是独立的事实核查员(与撰写总结的模型不同,专查它的幻觉)。{intro}
 
-你的任务:核对总结中的**数字与关键论断**是否真有原文依据,且没被歪曲或张冠李戴。逐条检查:
+你的任务:核对总结中的**关键论断与方向**是否真有原文依据,且没被歪曲、说反或张冠李戴。逐条检查:
 - **语义忠实**:每条论断,原文是否真的这么说(注意"作者声称X"被写成"X成立"的偷换、observed 被夸成"全面/大幅超越"的过度声称)。
+- **方向反转(重点,逐条结果都对一下方向)**:结论的方向有没有被写反——谁比谁好写成谁比谁差、有效写成无效、稳定写成不稳定、正相关写成负相关、梯度/不等式方向写反。这类是 major,且最易被忽略。
 - **张冠李戴**:总结某条论断/数字所引的原文虽真,但它在原文里讲的是不是总结说的那个对象/那个设定——警惕**把基线或所引他人工作(背景/related work)的结果安到本篇头上**、**把某个设定(如 easy)的数字写成另一个设定(如 hard)**。判断要读那句原文的上下文,不能只看字面在不在。
-- **数字与图表**:具体数字(指标、样本量、提升幅度)在原文是否存在且未被歪曲;涉及公式/图/表的,渲染相关页面看,**注意图旁文字可能属于别的图或与本图无关,不要盲目把就近文字当本图内容**。
-- 是否有原文完全没有的内容被编进总结。{anchor_task}
+- **数字与图表**:总结里出现的具体数字在原文是否存在且未被歪曲;涉及公式/图/表的,渲染相关页面看,**注意图旁文字可能属于别的图或与本图无关,不要盲目把就近文字当本图内容**。
+- 是否有原文完全没有的内容被编进总结。
+- **注意这套总结的数字立场**:它**故意不堆精确数字、把精确值让位 PDF**。所以——总结**没给某精确数值、或只给量级/方向**,**不是问题,不要报**;只有数字**与原文矛盾、或被安到错误对象/设定(张冠李戴)**时才算错。
 不要评价总结的文笔/完整性/选材,只查"有没有依据 / 有没有用错地方"。{source_directive}
 
 **核不到≠编造**——务必分清两种情况:
@@ -90,11 +75,11 @@ def vprompt(title, summary, text=None, truncated=False, pdf_mode=False, note_pla
 
 例外(跳过不查):
 - 总结标题下方以 "> " 开头的元信息行(作者/年份/venue/引用数/DOI)来自我们的文献数据库,不是从论文里抄的;YAML 头(--- 包围)同理。
-- "局限与我的质疑"一节中**总结者自己的批判与评注**(对论文领域地位/历史影响的判断、与我们研究主题契合度的评价、对后续工作的展望、标注"(总结者注)"的内容)——这些本来就不是论文论断,不需要原文依据。但该节中**转述作者自述局限**的部分仍要核。{trunc_note}
-{plan_block}
+- "局限与我的质疑"一节中**总结者自己的批判与评注**(对论文领域地位/历史影响的判断、与我们研究主题契合度的评价、对后续工作的展望、标注"(总结者注)"的内容)——这些本来就不是论文论断,不需要原文依据。但该节中**转述作者自述局限**的部分仍要核。
+
 **只输出一个 JSON 对象**,不要解释、不要代码围栏,格式:
 {{"verdict":"pass|minor|major|unverifiable","issues":[{{"quote":"<总结中有问题的原句,截取关键部分>","problem":"<问题是什么,一句话中文>","severity":"minor|major|unverifiable"}}]}}
-- severity:major=编造/严重歪曲/张冠李戴;minor=小偏差(数字略出入/表述略强/无锚论断);unverifiable=这轮没核实的数字或存在性类。
+- severity:major=编造/方向写反/严重歪曲/张冠李戴/把 observed 夸成全面超越;minor=措辞略强、孤立论断无据;**孤立数字精度偏差(对象绑定对、只是数值不够精确)从宽,不报或至多 minor**;unverifiable=这轮没核实的数字或存在性类。
 - verdict 取全篇最严:有 major→major;否则有 minor→minor;否则只有 unverifiable→unverifiable;都没有→pass。
 - 没有问题就输出 {{"verdict":"pass","issues":[]}}。
 
@@ -163,36 +148,20 @@ def verify_batch(picked, concurrency):
         # 没 PDF 就不核,绝不另找来源去核一份本就从 PDF 写出来的总结)。
         if not (w["pdf_path"] and Path(w["pdf_path"]).exists()):
             return {"id": r["id"], "error": "no pdf on disk (anomaly: summarized paper lost its PDF)"}
-        # note_plan(撰写者的坐标清单)与总结同目录;有则让 Codex 定点核对+查无锚论断,
-        # 老总结没有就回退通读。读不动当没有,不让它挡住核查。
-        note_plan = None
-        np_path = spath.parent / "note_plan.json"
-        if np_path.exists():
-            try:
-                note_plan = json.loads(np_path.read_text(encoding="utf-8"))
-            except Exception:
-                note_plan = None
-        tmpd, sandbox, cwd = None, None, None
-        if USE_SELF_RENDER:
-            # B:纯把 PDF 扔给 Codex——隔离临时目录(拷入 paper.pdf)+ workspace-write,
-            # 让它自己读全篇(抽文本查数字 + 按需渲染页面看公式/图表),不预喂抽取文本。
-            tmpd = Path(tempfile.mkdtemp(prefix="vfy_cdx_"))
-            shutil.copy2(w["pdf_path"], tmpd / "paper.pdf")
-            sandbox, cwd = "workspace-write", str(tmpd)
-            prompt, timeout = vprompt(r["title"], summary, pdf_mode=True, note_plan=note_plan), 900
-        else:
-            # 调试/省钱:不开沙箱,把这份 PDF 的 pdftotext 文本喂进 prompt(同源,但看不到公式/图表)。
-            text = full_text(w)
-            if not text:
-                return {"id": r["id"], "error": "pdf on disk but text extraction failed"}
-            truncated = len(text) > MAX_CHARS
-            sent = text[:MAX_CHARS] + ("\n\n[原文已截断:超出长度上限,以上仅为前一部分]" if truncated else "")
-            prompt, timeout = vprompt(r["title"], summary, sent, truncated, pdf_mode=False, note_plan=note_plan), 600
+        tmpd = None
         try:
             if VERIFY_BACKEND == "claude":
-                out = run_claude(prompt, timeout=timeout)
+                # 应急后端:claude 用 Read 工具直读 PDF(整篇,看公式/图表),无沙箱、无文本兜底。
+                prompt = vprompt(r["title"], summary, w["pdf_path"], backend="claude")
+                out = run_claude(prompt, tools=["Read"], timeout=900)
             else:
-                out = run_codex(prompt, sandbox=sandbox, cwd=cwd, timeout=timeout)
+                # codex 自渲染:隔离临时目录(拷入 paper.pdf)+ workspace-write,让它自己读全篇
+                # (抽文本查数字 + 按需渲染页面看公式/图表),不预喂抽取文本;reasoning_effort=中等。
+                tmpd = Path(tempfile.mkdtemp(prefix="vfy_cdx_"))
+                shutil.copy2(w["pdf_path"], tmpd / "paper.pdf")
+                prompt = vprompt(r["title"], summary, "./paper.pdf", backend="codex")
+                out = run_codex(prompt, sandbox="workspace-write", cwd=str(tmpd), timeout=900,
+                                effort=REASONING_EFFORT)
         except Exception as e:
             if "usage limit" in str(e).lower():
                 tripped.append(True)
@@ -250,7 +219,7 @@ def write_report(topic_id, ok, failed, note=""):
     unver = [r for r in ok if r["verdict"] == "unverifiable"]
     if unver:
         lines.append(f"## ⚪ 未能核实 unverifiable ({len(unver)}) — 非错误,Codex 这轮没核到"
-                     f"(多为截断/图表不清/数字找不到);**不自动修正**,建议人工复看")
+                     f"(图表不清/某数字或存在性没核到);**不触发重做**,建议人工复看")
         for r in unver:
             lines.append(f"### {r['title'][:90]}")
             lines.append(f"`{r['id']}` v{r['version']}" + (f"  (quality: {r['tier']})" if r.get("tier") else ""))

@@ -31,8 +31,8 @@ pipeline/
 ├─ find/        🔍 找论文  ← discover, score_auto, commit
 ├─ fetch/       📥 取全文  ← fetch_oa, recover_oa, recover_agent, fetch_tierb
 ├─ summarize/   ✍️ 写总结  ← build_worklist, summarize_auto, register_summaries, render_topic
-├─ verify/      ✅ 核查    ← verify_summaries, correct_summaries, escalate_verify
-│   (上面 4 个段文件夹 = 主链 14 脚本,各有 __init__.py;只被 run.py 调用)
+├─ verify/      ✅ 核查    ← verify_summaries, escalate_verify
+│   (上面 4 个段文件夹 = 主链 13 脚本,各有 __init__.py;只被 run.py 调用)
 ├─ tools/    ← 旁路 11 脚本。手动跑，永远不在 run auto 链上
 └─ lib/      ← 共享工具箱。各段 + tools 都 import 它
 ```
@@ -55,8 +55,8 @@ pipeline/
 | | finalize | `summarize/register_summaries.py` + `summarize/render_topic.py` | 纯代码 |
 | **verify/** ✅核查修正 | verify | `verify/escalate_verify.py` → `summarize/render_topic.py` | Codex+claude |
 
-verify 段内部三件套：`escalate_verify.py`(升级阶梯驱动) → `verify_summaries.py`(Codex 核查) → `correct_summaries.py`(claude 修正出 vN+1)，三个互相 sibling import，同在 `verify/`。
-> ⚠️ **唯一的跨段 import**：`verify/verify_summaries.py` 用 `from summarize.summarize_auto import full_text`(复用总结段读全文的函数)。靠 path-shim 把 `pipeline/` 放进 `sys.path` + 各段有 `__init__.py` 才解析得到。改动这两个文件时留意。
+verify 段两件套(2026-06-18 起)：`escalate_verify.py`(升级阶梯驱动) → `verify_summaries.py`(Codex 核查,report-only)；major 触发的"重做"**不在 verify 段**——是回到 summarize 段调 `summarize_auto.resummarize`(从 PDF 整篇重新总结出 vN+1,非打补丁)。旧 `correct_summaries.py`(在旧版上打补丁)已删,根治"反向裁决核查员+伪造核对背书"的 bug。
+> ⚠️ **唯一的跨段 import**：`verify/escalate_verify.py` 用 `from summarize.summarize_auto import resummarize`(major 时回总结段整篇重做)。靠 path-shim 把 `pipeline/` 放进 `sys.path` + 各段有 `__init__.py` 才解析得到。改动这两个文件时留意。
 
 ## tools/ — 旁路(手动跑)
 

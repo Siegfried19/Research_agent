@@ -73,9 +73,9 @@ pipeline/
 ├─ run.sh / remote_view.sh
 ├─ find/        🔍找论文  discover, **score_auto**, commit
 ├─ fetch/       📥取全文  fetch_oa, recover_oa, **recover_agent**(hunt,agent联网猎免费源), **fetch_tierb**
-├─ summarize/   ✍️写总结  build_worklist, **summarize_auto**, register_summaries, render_topic
-├─ verify/      ✅核查    **verify_summaries**(Codex 核查幻觉), **correct_summaries**(修正出 vN+1), **escalate_verify**(verify阶段驱动)
-│    (上面 4 段 = 主链 14 脚本,各有 __init__.py,只被 run.py 调；每个文件顶部有 path shim 让 from lib 解析到 pipeline/lib)
+├─ summarize/   ✍️写总结  build_worklist, **summarize_auto**(含 `resummarize`:核查 major 后从 PDF 整篇重做出 vN+1), register_summaries, render_topic
+├─ verify/      ✅核查    **verify_summaries**(Codex 核查幻觉,report-only), **escalate_verify**(verify阶段驱动;major→回 summarize 段 resummarize 整篇重做,非打补丁)
+│    (上面 4 段 = 主链 13 脚本,各有 __init__.py,只被 run.py 调；每个文件顶部有 path shim 让 from lib 解析到 pipeline/lib)
 ├─ tools/    旁路 11 脚本(手动跑,不在 run auto 链上)
 │    init, migrate_slugs, notify, cross_topic, **audit_quality**, suggest_updates,
 │    prepare_update, **update_auto**, register_updates, **export_corpus**(出口③:导ARS YAML), bot(Telegram对话bot)
@@ -84,7 +84,7 @@ pipeline/
      **claude**(claude -p 调用器+并发池), **quality**(硬信号质量评估), **codex**(codex 调用器,跨模型第二引擎)
 ```
 > ⚠️ 加新脚本：进主链 → 放对应**段文件夹**(没有就新建 段/+空`__init__.py`)，复制 path shim 三行，在 run.py 的 `steps()`+`AUTO` 注册(路径写 `<段>/<脚本>.py`)；旁路放 `tools/`；公共/入口才放根目录。
-> ⚠️ 唯一跨段 import：`verify/verify_summaries.py` 用 `from summarize.summarize_auto import full_text`(段文件夹有 `__init__.py` 才解析得到)。
+> ⚠️ 唯一跨段 import：`verify/escalate_verify.py` 用 `from summarize.summarize_auto import resummarize`(major 时回总结段整篇重做;段文件夹有 `__init__.py` 才解析得到)。
 > `score_auto`/`summarize_auto`/`update_auto` 用 `claude -p` 取代了旧的 Workflow agent。
 > `fetch_tierb` = 方法④付费墙抓取（自启 Chrome→OpenAthens→人点验证→混合 B/A 抓 PDF）。
 > 日志:每个脚本写 `logs/run.log`(机器日志,一行一事件) + `logs/pipeline-<date>.log`(详细);tierb 另有 `logs/tierb-<date>.log`。
@@ -107,14 +107,15 @@ python3 pipeline/tools/audit_quality.py <id>   # 质量审计:回查已入库论
 - 名单来源：Beall's 衍生 stop-predatory-journals（1309刊+1161出版商，**2017年停更，新水刊靠 `local_blocklist.txt`/`doi_prefix_blocklist.txt` 手工补**，IJISRT=10.38124 已收录）。
 - 回溯审计：`audit_quality.py <id>` 拉 OpenAlex 最新撤稿/DOAJ → 出报告 `topics/<id>/quality_audit.md` + **verdict 回写 DB**（dry-run 也回写）；`--apply` 只删 block 级+重算 rank。2026-06-10 对 129 篇跑过：block=0 / suspect=0 / flag=34(全是真预印本) / trusted=36 / ok=59，标记已落库。
 
-## 跨模型评审团（Codex，2026-06-10 上线；同日升级为质量闭环）
+## 跨模型评审团（Codex，2026-06-10 上线；同日升级为质量闭环；2026-06-18 重构核查/重做层）
 Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex exec --output-last-message`,镜像 lib/claude.py）。**Codex 永远没有否决权,只提异议/出报告**：
 - **打分魔鬼代言人**（`quality.codex_panel`,**默认 false**）：score 阶段 Codex 专找"该拒"理由,异议进 `panel_objection`；commit 合议:边界分(<60)+异议=挡下。实测 3 篇试金石全对。**用户已拍板(2026-06-10):打分侧异议保持关,异议火力集中在总结侧。**
-- **质量闭环（总结侧,已集成进 run auto 的 `verify` 阶段）**——核心:写的人(claude)和查的人(Codex)不是同一个模型:
-  1. **核查** `verify_summaries.py <id> [pct] [并发] [--limit N]`:必核=suspect+修正过的(v≥2 未复核),其余按 pct 抽;Codex 对照原文(上限40万字符,截断时"核不到≠编造")核数字/论断;豁免元信息行+总结者评注("局限与我的质疑"里的判断)。**只出报告** → `summary_verification.md`;`topics/<id>/verified.json` 记"每篇核到哪个版本"。
-  2. **修正** `correct_summaries.py [并发]`(读 `store/correction_worklist.json`):claude -p 拿**全文+当前总结+问题清单**重写 → vN+1 注册入 summary_versions,版本史保留;幂等。
-  3. **升级阶梯** `escalate_verify.py <id> [--start-pct 10] [--threshold 10] [--max-rounds 6] [--max-attempts 2]`:抽样→fresh major率≥阈值→**自动修正 major+抽样翻倍**→循环至收敛/全量;修正过的下轮自动必复核;修 2 次仍 major 标"需人工分诊"。`--start-pct 100`=全量模式,即 run.py `verify` 阶段(新总结入库即全量核查)。
-- **实测(topic2,2026-06-10)**:真实幻觉率 **~25% major**(两轮 32 篇抽出 8 篇:梯度方向写反/消融结论说反/"全部任务大幅超越"夸大等);修正闭环有效——9 篇修正后复核全部脱离 major(TD3/DAPG/Multimodal 等 pass;AFU 修 2 次到 v3)。minor 级("表述略强")不自动修,留报告存档。
+- **质量闭环（总结侧,已集成进 run auto 的 `verify` 阶段；2026-06-18 大改,见 `docs/summary-design-principles.md`）**——核心:写的人(claude)和查的人(Codex)不是同一个模型。**设计原则:总结=方法/直觉的「分诊层」(判"值不值得深入"),不是权威数字库;精度让位 PDF。核查只守"会污染该判断的错"。**
+  1. **核查** `verify_summaries.py <id> [pct] [并发] [--limit N]`:必核=suspect+重做过的(v≥2 未复核),其余按 pct 抽;Codex **中等 reasoning_effort、self-render 读整篇 PDF**(无文本兜底、无截断——总结本就只从 PDF 写)做 **claim 级语义核查**(方向反转/张冠李戴/过度声称);豁免元信息行+总结者评注。**report-only,绝不改总结** → `summary_verification.md`;`verified.json` 记"每篇核到哪个版本"。
+     - severity 四态:**major**(编造/方向反转/张冠李戴/过度声称=会污染"值不值得"判断)→触发重做;**minor**(孤立数字精度/措辞略强)→只进报告;**unverifiable**(这轮没核到,非错误,默认 self-render 下只剩"图表没看清/某段没读到")→只进报告提示人工复看;**pass**。
+  2. **重做(取代旧"打补丁修正")** `summarize_auto.resummarize`:major 触发 → **从 PDF 整篇重新总结**出 vN+1(复用 build_prompt 全套:边读边写+7问自查),把核查问题当**避坑提示**喂进去——**无裁决权**:不许据清单反推原文、不许照搬旧版、不许写"已核对原文"背书,一切以亲读 PDF 为准。根治旧 `correct_summaries`(已删)那个"反向裁决核查员+伪造核对背书"的致命 bug。幂等;无 PDF 跳过。
+  3. **升级阶梯** `escalate_verify.py <id> [--start-pct 10] [--threshold 10] [--max-rounds 6] [--max-attempts 2]`:抽样→fresh major率≥阈值→**自动重做 major+抽样翻倍**→循环至收敛/全量;重做过的下轮自动必复核;**只有 major 触发重做**(minor/unverifiable 仅报告);重做 2 次仍 major 标"需人工分诊"。`--start-pct 100`=全量模式,即 run.py `verify` 阶段(新总结入库即全量核查)。
+- **历史实测(topic2,2026-06-10,旧"打补丁修正"年代)**:真实幻觉率 ~25% major;但 2026-06-17 逐篇对照发现旧修正环节会**反向推翻 codex 正确认定+伪造"已核对"背书**(GAE/Learning-to-Walk)——这正是本次改 report-only+整篇重做的缘由(`logs/SESSION-2026-06-17-summary-version-comparison.md`)。
 - Codex 偶发限流/超时:panel 失败自动跳过;verify/escalate 重跑即可(verified.json 按轮落盘,进度不丢)。换机器需重新 `npm i -g @openai/codex` + `codex login`。
 
 ## Telegram 通知 + 对话 bot
@@ -171,7 +172,7 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
 - ✅ **(2026-06-09 完成)** 4 篇全文+总结;`fetch_tierb` 固化;`score_auto`/`summarize_auto`(claude -p);`run auto` 一条龙;**整套迁移到 Python**;**修了 recover_oa**(arxiv/repository 优先 + 用 ext_ids.arxiv 不只靠标题)。
 1. **端到端实跑验证 `fetch_tierb.py`**：本主题已无待抓篇,脚本只测过"无事可做"+语法+各零件(手动验证过)。下个有付费墙的主题要盯一次完整 tierb 跑(尤其 findPdfUrl 跨出版商、challenge 检测、混合 B/A 抓取)。
 2. ✅ **(2026-06-09 完成,06-10 改"标记优先")文章评价/筛选体系——硬信号层**：`lib/quality.py` + `config/quality/` 名单 + discover/commit 双闸 + suspect 标记贯穿总结(质疑模式)/渲染(⚠️) + `audit_quality.py` 回溯审计（见上文"质量评价体系"节）。对 129 篇审计:block=0/suspect=0,标记已落库。
-   - ✅ **(2026-06-10 完成,06-15 升级)跨模型评审团**：`lib/codex.py` + score 魔鬼代言人(`quality.codex_panel`,**用户 06-10 拍板保持关**,异议火力集中总结侧) + 总结核查闭环(`verify_summaries`→`correct_summaries`→`escalate_verify`)。**06-15 升级**:verify/correct 统一以 PDF 为唯一原文来源 + Codex 自渲染 PDF 看公式图表，见上文"跨模型评审团"节。
+   - ✅ **(2026-06-10 完成,06-15/06-18 两次升级)跨模型评审团**：`lib/codex.py` + score 魔鬼代言人(`quality.codex_panel`,**用户 06-10 拍板保持关**,异议火力集中总结侧) + 总结核查闭环(`verify_summaries`→`escalate_verify`→`summarize_auto.resummarize`)。**06-18 大改**:核查 report-only + Codex 中等强度 self-render claim 级语义核查(去文本兜底/截断) + major 触发**整篇重新总结**(取代旧打补丁式 correct_summaries,根治反向裁决+伪造背书 bug)，见 `docs/summary-design-principles.md` + 上文"跨模型评审团"节。
 3. **继续放大主题规模**（两主题已各 129/100 篇；增量追加：topic.json 调 target → `python3 pipeline/run.py <id> auto`，commit 自动增量+重算 rank）。
 4. ✅ **跨主题比较前提已具备**（现有 2 主题）：`python3 pipeline/tools/cross_topic.py`（自带全库引用边重建）。还没实跑过一次跨主题分析——待跑。
 5. (小) claude -p 并发撞 Max 限流就调小 `sum`/`score` 的 concurrency 参数（默认 3/4）。
