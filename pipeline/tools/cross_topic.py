@@ -19,7 +19,7 @@ def main():
     all_papers = [{"id": r["id"], "ext_ids": json.loads(r["ext_ids"] or "{}"),
                    "ref_ext_ids": json.loads(r["ref_ext_ids"] or "[]")}
                   for r in conn.execute("SELECT id, ext_ids, ref_ext_ids FROM papers").fetchall()]
-    new_edges = build_citations(conn, all_papers)
+    build_citations(conn, all_papers)  # 副作用:重建全库引用边并落库
     conn.commit()
 
     topics_by_paper = {}
