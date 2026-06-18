@@ -3,7 +3,7 @@ claude reads the paper's PDF directly via the Read tool (sees formulas/figures/
 tables), captures the Chinese structured summary markdown from stdout, writes it
 to summary_path. Idempotent. Papers with no PDF on disk are skipped and recorded
 to topics/<id>/summarize_no_pdf.log (no plain-text fallback).
-Usage: python3 pipeline/stages/summarize_auto.py <topicId> [concurrency]
+Usage: python3 pipeline/summarize/summarize_auto.py <topicId> [concurrency]
 """
 import json
 import os

@@ -1,5 +1,5 @@
 """After relevance scoring: merge scores, select, write to DB (additive on incremental).
-Usage: python3 pipeline/stages/commit.py topics/<slug>
+Usage: python3 pipeline/find/commit.py topics/<slug>
 """
 import json
 import sys

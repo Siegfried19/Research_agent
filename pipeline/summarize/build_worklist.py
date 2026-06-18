@@ -1,5 +1,5 @@
 """Build a summarization worklist for a topic (papers with a PDF, not yet summarized).
-Usage: python3 pipeline/stages/build_worklist.py <topicId>
+Usage: python3 pipeline/summarize/build_worklist.py <topicId>
 """
 import json
 import sys

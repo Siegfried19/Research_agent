@@ -43,18 +43,18 @@ PDIR = ROOT / "pipeline"
 # stage -> list of (script, [args...]) run in order
 def steps(stage, tid):
     return {
-        "discover": [("stages/discover.py", [f"topics/{tid}/topic.json"])],
-        "score":    [("stages/score_auto.py", [tid])],
-        "commit":   [("stages/commit.py", [f"topics/{tid}"])],
-        "fetch":    [("stages/fetch_oa.py", [tid])],
-        "recover":  [("stages/recover_oa.py", [tid])],
-        "hunt":     [("stages/recover_agent.py", [tid])],
-        "tierb":    [("stages/fetch_tierb.py", [tid])],
-        "worklist": [("stages/build_worklist.py", [tid])],
-        "sum":      [("stages/summarize_auto.py", [tid])],
-        "finalize": [("stages/register_summaries.py", [tid]), ("stages/render_topic.py", [tid])],
-        "verify":   [("stages/escalate_verify.py", [tid, "--start-pct", "100"]),
-                     ("stages/render_topic.py", [tid])],
+        "discover": [("find/discover.py", [f"topics/{tid}/topic.json"])],
+        "score":    [("find/score_auto.py", [tid])],
+        "commit":   [("find/commit.py", [f"topics/{tid}"])],
+        "fetch":    [("fetch/fetch_oa.py", [tid])],
+        "recover":  [("fetch/recover_oa.py", [tid])],
+        "hunt":     [("fetch/recover_agent.py", [tid])],
+        "tierb":    [("fetch/fetch_tierb.py", [tid])],
+        "worklist": [("summarize/build_worklist.py", [tid])],
+        "sum":      [("summarize/summarize_auto.py", [tid])],
+        "finalize": [("summarize/register_summaries.py", [tid]), ("summarize/render_topic.py", [tid])],
+        "verify":   [("verify/escalate_verify.py", [tid, "--start-pct", "100"]),
+                     ("summarize/render_topic.py", [tid])],
     }.get(stage)
 
 
@@ -107,7 +107,7 @@ def run_auto_sum(tid, limit=None, concurrency=2):
     # worklist 放最前:队列模式会切主题,先重建该主题的 worklist 才自洽(便宜+幂等)。
     chain = [
         ("worklist", steps("worklist", tid)),
-        ("sum",      [("stages/summarize_auto.py", sum_args)]),
+        ("sum",      [("summarize/summarize_auto.py", sum_args)]),
         ("finalize", steps("finalize", tid)),
         ("verify",   steps("verify", tid)),
     ]

@@ -4,7 +4,7 @@ PAPER PDF directly (same as summarize_auto: sees formulas/figures/tables) plus
 the confirmed issues and produces a corrected version vN+1. No plain-text
 fallback — a paper with no PDF on disk is skipped + logged (mirrors sum).
 Input: store/correction_worklist.json  {"work":[{"paperId":..,"issues":[{quote,problem,severity}]}]}
-Usage: python3 pipeline/stages/correct_summaries.py [concurrency]
+Usage: python3 pipeline/verify/correct_summaries.py [concurrency]
 """
 import json
 import sys

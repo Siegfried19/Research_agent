@@ -1,5 +1,5 @@
 """Render a topic's view as Markdown: ranked hits + relevance + summary links + citations.
-Usage: python3 pipeline/stages/render_topic.py <topicId>
+Usage: python3 pipeline/summarize/render_topic.py <topicId>
 """
 import json
 import sys

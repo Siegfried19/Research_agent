@@ -5,7 +5,7 @@ format commit.py expects: [{id, relevance, reason, edge_insight, panel_objection
 Cross-model panel (config quality.codex_panel, default false): Codex reviews the
 same batch as a devil's advocate (reject reasons only, no veto); objections ride
 along in the batch files and are weighed at commit time.
-Usage: python3 pipeline/stages/score_auto.py <topicId> [batchSize] [concurrency]
+Usage: python3 pipeline/find/score_auto.py <topicId> [batchSize] [concurrency]
 """
 import json
 import random

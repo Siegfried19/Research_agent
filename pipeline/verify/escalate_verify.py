@@ -15,7 +15,7 @@ so new summaries enter the library already fact-checked.
 Per-paper correction attempts are capped (default 2 per run); a paper still
 major after that is flagged in the report for human triage, not looped forever.
 Verification is advisory: exit code is 0 even if issues remain (see report).
-Usage: python3 pipeline/stages/escalate_verify.py <topicId> [--start-pct P] [--threshold T]
+Usage: python3 pipeline/verify/escalate_verify.py <topicId> [--start-pct P] [--threshold T]
        [--concurrency N] [--max-rounds R] [--max-attempts A]
 """
 import random

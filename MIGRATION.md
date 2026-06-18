@@ -27,7 +27,7 @@
    - `claude` (Claude Code, Max 订阅) — `claude` 登录;
    - `npm i -g @openai/codex && codex login` (ChatGPT 订阅)。
 4. **Telegram**(可选,通知/对话 bot):`python3 pipeline/tools/notify.py settoken` + `chatid`(`config/telegram.json` 是密钥,不在 git)。
-5. **Tier B 浏览器**(可选,付费墙抓取):装 opencli + 浏览器扩展;Chrome 抓取 profile `~/.config/google-chrome-scrape` "Profile 2" 需重建并**登录一次 NYU OpenAthens**(随便开一个 `go.openathens.net/redirector/nyu.edu?url=<doi>` 过一次 Duo 即有会话)。
+5. **Tier B 浏览器**(可选,付费墙抓取):装 opencli + 浏览器扩展;Chrome 抓取 profile = **独立目录 `~/.config/google-chrome-scrape-nyu` "Profile 2"**(2026-06-17 起,与 Stock_agent 的 `google-chrome-scrape` 物理隔离,可同跑不互杀)。需重建并**登录一次 NYU**:在该 profile 里开 `https://library.nyu.edu` 用 NetID+Duo 登主图书馆(**别走 `go.openathens.net/redirector/nyu.edu` 默认入口——会跳医学院 Langone 独立 SSO,常规 NYU 账号登不了**;shibboleth 会话建好后 tierb 首次走 OpenAthens redirector 会自动复用)。还要在该 profile 登一下以启用 OpenCLI 扩展。`opencli doctor` 见 "Extension: connected" 即成。
 6. **重建全局发现机制**:`~/.claude/CLAUDE.md` ← 照本文附录 A 抄。
 7. **重建可重建物**:`python3 pipeline/ask.py --reindex`(FTS 索引);缺全文的话按主题重跑下载各阶段。
 8. **(出口③用到再做)** `git clone https://github.com/Imbad0202/academic-research-skills ref/academic-research-skills`(gitignored,CC BY-NC)。

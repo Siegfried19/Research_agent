@@ -1,6 +1,6 @@
 """Phase 1: multi-source discovery + dedup -> candidate pool (NO db write).
 Selection of the final top-N happens after relevance scoring (see score/commit).
-Usage: python3 pipeline/stages/discover.py topics/<slug>/topic.json
+Usage: python3 pipeline/find/discover.py topics/<slug>/topic.json
 """
 import json
 import sys

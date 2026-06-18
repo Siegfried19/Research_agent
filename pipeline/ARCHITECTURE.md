@@ -1,7 +1,9 @@
 # pipeline/ 架构地图
 
-> 2026-06-15 把扁平的 27 个脚本按职责分了文件夹。理解这一页 = 看懂整条流水线。
-> 想跑流水线只需记住 **`run.py` + 11 个阶段名**，其余都是被调用的零件。
+> 2026-06-18 把主链脚本从扁平的 `stages/` 改成**按流水线功能段分文件夹**(find/fetch/summarize/verify)。
+> 理解这一页 = 看懂整条流水线。想跑流水线只需记住 **`run.py` + 11 个阶段名**，其余都是被调用的零件。
+> ⚠️ **代码组织规范(2026-06-18 定,以后一律遵循)**:主链脚本**按功能段放进对应文件夹**,不再堆在一个目录。
+> 加新主链脚本 = 放进它所属的段文件夹(find/fetch/summarize/verify),没有就新建一个段文件夹+`__init__.py`。
 
 ## 流水线 = 4 大阶段（先记这个）
 
@@ -21,35 +23,40 @@
 
 ```
 pipeline/
-├─ run.py            ★唯一入口/总指挥。run auto = 按序调 stages/ 里 11 个阶段
+├─ run.py            ★唯一入口/总指挥。run auto = 按序调各段文件夹里 11 个阶段
 ├─ ask.py            ★出口①②公共 API(FTS5 检索)。全局 ~/.claude/CLAUDE.md 引它 → 路径不可动
 ├─ run.sh            run.py 的薄壳(bash 入口)
 ├─ remote_view.sh    tierb 远程看屏(已封存,默认关)
 │
-├─ stages/   ← 主链 14 脚本。只被 run.py 调用，不要手动 mv 出去
+├─ find/        🔍 找论文  ← discover, score_auto, commit
+├─ fetch/       📥 取全文  ← fetch_oa, recover_oa, recover_agent, fetch_tierb
+├─ summarize/   ✍️ 写总结  ← build_worklist, summarize_auto, register_summaries, render_topic
+├─ verify/      ✅ 核查    ← verify_summaries, correct_summaries, escalate_verify
+│   (上面 4 个段文件夹 = 主链 14 脚本,各有 __init__.py;只被 run.py 调用)
 ├─ tools/    ← 旁路 11 脚本。手动跑，永远不在 run auto 链上
-└─ lib/      ← 共享工具箱。stages/tools 都 import 它
+└─ lib/      ← 共享工具箱。各段 + tools 都 import 它
 ```
 
-## stages/ — 主链(run auto 的 11 阶段)
+## 主链段文件夹(run auto 的 11 阶段)
 
-按执行顺序，分 4 个职能段（`run.py` 的 `AUTO` 列表 + `steps()` 表是唯一事实源）：
+按执行顺序，分 4 个功能段文件夹（`run.py` 的 `AUTO` 列表 + `steps()` 表是唯一事实源）：
 
-| 段 | 阶段名(run.py) | 脚本 | 引擎 |
+| 文件夹 | 阶段名(run.py) | 脚本 | 引擎 |
 |---|---|---|---|
-| 🔍找论文 | discover | `discover.py` | 纯代码(多源API) |
-| | score | `score_auto.py` | claude -p 打分 |
-| | commit | `commit.py` | 纯代码(选篇写库) |
-| 📥取全文(四级) | fetch | `fetch_oa.py` | OA 直取 |
-| | recover | `recover_oa.py` | 规则兜底 |
-| | hunt | `recover_agent.py` | claude -p 联网猎 |
-| | tierb | `fetch_tierb.py` | 浏览器+人工验证 |
-| ✍️写总结 | worklist | `build_worklist.py` | 纯代码 |
-| | sum | `summarize_auto.py` | claude -p 总结 |
-| | finalize | `register_summaries.py` + `render_topic.py` | 纯代码 |
-| ✅核查修正 | verify | `escalate_verify.py` → `render_topic.py` | Codex+claude |
+| **find/** 🔍找论文 | discover | `find/discover.py` | 纯代码(多源API) |
+| | score | `find/score_auto.py` | claude -p 打分 |
+| | commit | `find/commit.py` | 纯代码(选篇写库) |
+| **fetch/** 📥取全文(四级) | fetch | `fetch/fetch_oa.py` | OA 直取 |
+| | recover | `fetch/recover_oa.py` | 规则兜底 |
+| | hunt | `fetch/recover_agent.py` | claude -p 联网猎 |
+| | tierb | `fetch/fetch_tierb.py` | 浏览器+人工验证 |
+| **summarize/** ✍️写总结 | worklist | `summarize/build_worklist.py` | 纯代码 |
+| | sum | `summarize/summarize_auto.py` | claude -p 总结 |
+| | finalize | `summarize/register_summaries.py` + `summarize/render_topic.py` | 纯代码 |
+| **verify/** ✅核查修正 | verify | `verify/escalate_verify.py` → `summarize/render_topic.py` | Codex+claude |
 
-verify 阶段内部三件套：`escalate_verify.py`(升级阶梯驱动) → `verify_summaries.py`(Codex 核查) → `correct_summaries.py`(claude 修正出 vN+1)。这三个 + `summarize_auto` 之间有 sibling import，所以**必须同在 stages/**。
+verify 段内部三件套：`escalate_verify.py`(升级阶梯驱动) → `verify_summaries.py`(Codex 核查) → `correct_summaries.py`(claude 修正出 vN+1)，三个互相 sibling import，同在 `verify/`。
+> ⚠️ **唯一的跨段 import**：`verify/verify_summaries.py` 用 `from summarize.summarize_auto import full_text`(复用总结段读全文的函数)。靠 path-shim 把 `pipeline/` 放进 `sys.path` + 各段有 `__init__.py` 才解析得到。改动这两个文件时留意。
 
 ## tools/ — 旁路(手动跑)
 
@@ -72,15 +79,17 @@ verify 阶段内部三件套：`escalate_verify.py`(升级阶梯驱动) → `ver
 ## import 机制(改文件前必读)
 
 - `run.py` / `ask.py` 在根目录：`sys.path[0]` 自动是 `pipeline/`，`from lib.xxx` 直接通。
-- `stages/` `tools/` 里的脚本：顶部有 **path shim 三行**，把 `pipeline/` 插进 `sys.path`，让 `from lib.xxx` 解析到 `pipeline/lib`：
+- 段文件夹(find/fetch/summarize/verify)/ `tools/` 里的脚本：顶部有 **path shim 三行**，把 `pipeline/` 插进 `sys.path`，让 `from lib.xxx` 解析到 `pipeline/lib`：
   ```python
   import os as _os, sys as _sys
   _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
   ```
-- sibling import(如 `from summarize_auto import full_text`)靠脚本自身目录在 `sys.path[0]` —— 所以互相 import 的脚本要放同一文件夹。
+- **同段 sibling import**(如 verify/ 内 `from verify_summaries import ...`)靠脚本自身目录在 `sys.path[0]` —— 同文件夹直接通。
+- **跨段 import**(如 verify/ 用 summarize/ 的函数)走包路径 `from summarize.summarize_auto import ...` —— 靠 path-shim 把 `pipeline/` 入 `sys.path` + 段文件夹有 `__init__.py`。
+- run.py 仍把每个阶段当**独立子进程** spawn(`subprocess.run([PY, "find/discover.py", ...], cwd=ROOT)`)，保留进程隔离 + cwd=仓库根(claude -p 按 cwd 读 CLAUDE.md)。
 
 ## 加新脚本怎么放
 
-1. **进主链** → 放 `stages/`，复制 path shim 三行，并在 `run.py` 的 `steps()` + `AUTO` 注册阶段名。
+1. **进主链** → 放进它所属的**段文件夹**(find/fetch/summarize/verify);新功能段就新建文件夹+空 `__init__.py`。复制 path shim 三行，并在 `run.py` 的 `steps()` + `AUTO` 注册阶段名(路径写 `<段>/<脚本>.py`)。
 2. **旁路工具** → 放 `tools/`，复制 path shim 三行。
 3. **公共 API / 入口** → 才放根目录(像 ask.py)。⚠️ 根目录脚本路径若被外部(全局 CLAUDE.md / 别的项目)引用，不可随意搬。

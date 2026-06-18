@@ -1,5 +1,5 @@
 """After summarization, register v1 summaries and mark papers summarized.
-Usage: python3 pipeline/stages/register_summaries.py <topicId|all>
+Usage: python3 pipeline/summarize/register_summaries.py <topicId|all>
 """
 import sys
 

@@ -2,7 +2,7 @@
 Per paper lacking a PDF, try (in order): arXiv by id, Unpaywall (repository/arXiv
 locations BEFORE publisher — publisher PDFs often 403), arXiv by title, then
 conference-run OA sites via DBLP title search (PMLR/ACL Anthology/OpenReview).
-Usage: python3 pipeline/stages/recover_oa.py <topicId|all>
+Usage: python3 pipeline/fetch/recover_oa.py <topicId|all>
 
 Fixes the old bug: it used to take Unpaywall's best_oa_location first (usually the
 publisher PDF -> 403) and only matched arXiv by exact title (fails on titles that

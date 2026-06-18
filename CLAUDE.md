@@ -63,17 +63,19 @@ python3 pipeline/run.py <id> verify      # escalate_verify.py --start-pct 100: C
 - `summary_versions` 总结版本历史（version/path/based_on/note）
 - `citations` 库内论文相互引用边
 
-## 脚本清单（pipeline/，全 Python — 2026-06-15 起按职责分文件夹，见 `pipeline/ARCHITECTURE.md`）
-**目录结构**（前门留根 / 主链进 stages / 旁路进 tools / 工具箱 lib）：
+## 脚本清单（pipeline/，全 Python — 2026-06-18 起主链**按流水线功能段分文件夹**，见 `pipeline/ARCHITECTURE.md`）
+> **代码组织规范(2026-06-18 定,以后一律遵循)**：主链脚本按功能段(find/fetch/summarize/verify)放进对应文件夹，不再堆一处。
+**目录结构**（入口留根 / 主链按段分文件夹 / 旁路进 tools / 工具箱 lib）：
 ```
 pipeline/
-├─ run.py            ★唯一入口/总指挥(run auto 按序调 stages/)
+├─ run.py            ★唯一入口/总指挥(run auto 按序调各段，subprocess spawn，cwd=仓库根)
 ├─ ask.py            ★出口①②公共API(全局 ~/.claude/CLAUDE.md 引它,路径不可动)
 ├─ run.sh / remote_view.sh
-├─ stages/   主链 14 脚本(只被 run.py 调；每个文件顶部有 path shim 让 from lib 解析到 pipeline/lib)
-│    discover, **score_auto**, commit, fetch_oa, recover_oa, **recover_agent**(hunt,agent联网猎免费源),
-│    **fetch_tierb**, build_worklist, **summarize_auto**, register_summaries, render_topic,
-│    **verify_summaries**(Codex 核查幻觉), **correct_summaries**(修正出 vN+1), **escalate_verify**(verify阶段驱动)
+├─ find/        🔍找论文  discover, **score_auto**, commit
+├─ fetch/       📥取全文  fetch_oa, recover_oa, **recover_agent**(hunt,agent联网猎免费源), **fetch_tierb**
+├─ summarize/   ✍️写总结  build_worklist, **summarize_auto**, register_summaries, render_topic
+├─ verify/      ✅核查    **verify_summaries**(Codex 核查幻觉), **correct_summaries**(修正出 vN+1), **escalate_verify**(verify阶段驱动)
+│    (上面 4 段 = 主链 14 脚本,各有 __init__.py,只被 run.py 调；每个文件顶部有 path shim 让 from lib 解析到 pipeline/lib)
 ├─ tools/    旁路 11 脚本(手动跑,不在 run auto 链上)
 │    init, migrate_slugs, notify, cross_topic, **audit_quality**, suggest_updates,
 │    prepare_update, **update_auto**, register_updates, **export_corpus**(出口③:导ARS YAML), bot(Telegram对话bot)
@@ -81,7 +83,8 @@ pipeline/
      db, **log**(一等公民日志), http, sources, merge, store, slug, notify,
      **claude**(claude -p 调用器+并发池), **quality**(硬信号质量评估), **codex**(codex 调用器,跨模型第二引擎)
 ```
-> ⚠️ 加新脚本：放 `stages/`(进主链,记得在 run.py 注册) 或 `tools/`(旁路)，从根目录复制 path shim 三行；公共/入口才放根目录。
+> ⚠️ 加新脚本：进主链 → 放对应**段文件夹**(没有就新建 段/+空`__init__.py`)，复制 path shim 三行，在 run.py 的 `steps()`+`AUTO` 注册(路径写 `<段>/<脚本>.py`)；旁路放 `tools/`；公共/入口才放根目录。
+> ⚠️ 唯一跨段 import：`verify/verify_summaries.py` 用 `from summarize.summarize_auto import full_text`(段文件夹有 `__init__.py` 才解析得到)。
 > `score_auto`/`summarize_auto`/`update_auto` 用 `claude -p` 取代了旧的 Workflow agent。
 > `fetch_tierb` = 方法④付费墙抓取（自启 Chrome→OpenAthens→人点验证→混合 B/A 抓 PDF）。
 > 日志:每个脚本写 `logs/run.log`(机器日志,一行一事件) + `logs/pipeline-<date>.log`(详细);tierb 另有 `logs/tierb-<date>.log`。
@@ -140,8 +143,9 @@ Codex CLI 已装并登录（ChatGPT 订阅,零 API 费;`lib/codex.py` = `codex e
 
 ## Tier B 取全文（方法④，已验证可用 2026-06-09）
 分工：**用户人在机器旁手点人工关卡（Cloudflare Turnstile / Duo）；其余全自动。** 远程桌面方案已放弃（太复杂）。每周跑约 1 次。
-- **自启 Chrome**（照 Stock_agent `ensure_chrome`）：`opencli doctor` 没含 "Extension: connected" 就 `DISPLAY=:1 setsid google-chrome --user-data-dir=~/.config/google-chrome-scrape --profile-directory="Profile 2" --no-restore-session &`，轮询 doctor ~60s（profile 别名 `8fnbkdfj`，~3s 连上；偶发断开重启即可）。
-- **Chrome 生命周期（2026-06-10 照 Stock_agent 补齐,根治"越开越多"）**：跑前 flock 独占（锁=`~/.config/google-chrome-scrape/scrape.lock`,共用该实例的任务同一把锁）→ 跑完 **finally 无条件 `pkill -f "user-data-dir=<UDD>"` 整关**（独立目录绝不误伤日常 Chrome;复用来的实例也关）。副产物:每次都是 fresh launch → PDF 下载 pref 必生效 → 方法 B 始终可用。⚠️ Stock_agent 的锁还是它项目本地的 `chrome.lock`,两项目极端撞车时 tierb 收尾会关掉它在用的实例（低概率,要根治就把 Stock_agent 的锁也迁到 UDD 里这把）。
+- **自启 Chrome**（照 Stock_agent `ensure_chrome`）：`opencli doctor` 没含 "Extension: connected" 就 `DISPLAY=:1 setsid google-chrome --user-data-dir=~/.config/google-chrome-scrape-nyu --profile-directory="Profile 2" --no-restore-session &`，轮询 doctor ~60s（~3s 连上；偶发断开重启即可）。**profile 别名按机器变,靠 `detect_alias()` 自动认,别写死**（本机=`6eugaehv`，旧机=`8fnbkdfj`）。
+  - ⚠️ **2026-06-17 起用独立 user-data-dir `~/.config/google-chrome-scrape-nyu`**（不再是和 Stock_agent 共用的 `google-chrome-scrape`）：共用同一目录会三重冲突——收尾互相 `pkill`、Chrome 单实例/目录限制、两边 flock 锁文件不同不互斥。改独立目录后两项目进程树/pkill 目标/锁全分开，**可随便一起跑**。NYU OpenAthens 会话只登在这个独立 profile 的 "Profile 2"（NetID 走主图书馆 shibboleth，**别用 OpenAthens redirector 默认那个会跳医学院 Langone 的独立 SSO**）。默认路径在 `fetch_tierb.py:UDD`，可用 env `CHROME_USER_DATA_DIR` 覆盖。
+- **Chrome 生命周期（2026-06-10 照 Stock_agent 补齐,根治"越开越多"）**：跑前 flock 独占（锁=`<UDD>/scrape.lock`,共用该实例的任务同一把锁）→ 跑完 **finally 无条件 `pkill -f "user-data-dir=<UDD>"` 整关**（独立目录绝不误伤日常 Chrome;复用来的实例也关）。副产物:每次都是 fresh launch → PDF 下载 pref 必生效 → 方法 B 始终可用。✅ **2026-06-17 起 Research 用 `google-chrome-scrape-nyu`、Stock_agent 用 `google-chrome-scrape`,目录分开 → pkill 目标/锁全不相干,原"两项目撞车互杀"的隐患已消除**（见上条）。
 - **NYU 访问路径**：⚠️ NYU 已弃 EZProxy 迁 **OpenAthens**，旧 `proxy.library.nyu.edu/login?url=` 废。新路径 = **`https://go.openathens.net/redirector/nyu.edu?url=<doi/landing>`**。profile 已有有效 NYU 会话（暂不弹 Duo；会话过期才弹）。
 - **取 PDF（混合 B 优先 + A 兜底）**：`fetch_tierb.py` 自启 Chrome 时写 profile 偏好 `always_open_pdf_externally=true` + 下载目录 `store/dl_tmp`，使 PDF **直接下载**(像人点下载)。
   - **方法 B(优先)**：open PDF 链 → 盯 `store/dl_tmp` 等新的、稳定的 `.pdf`(无 `.crdownload` 伴随)→ 搬到 `store/pdfs/`。

@@ -4,7 +4,7 @@ OpenAthens) or bot-protected OA (Cloudflare). Fully scripted; the ONLY human ste
 is clicking a Cloudflare/Duo challenge when one appears (we pause + ping Telegram,
 then resume). Idempotent: skips papers already pdf_downloaded.
 
-  python3 pipeline/stages/fetch_tierb.py <topicId>
+  python3 pipeline/fetch/fetch_tierb.py <topicId>
 
 Hybrid download (proven 2026-06-09):
   B (preferred) — Chrome auto-downloads the PDF (we set always_open_pdf_externally
@@ -41,7 +41,10 @@ TB = config.get("tier_b", {})
 PDF_DIR = ROOT / config["paths"]["pdfs"]
 DL_DIR = ROOT / "store" / "dl_tmp"
 DISPLAY = os.environ.get("DISPLAY_FOR_CHROME", ":1")
-UDD = os.environ.get("CHROME_USER_DATA_DIR", str(Path.home() / ".config" / "google-chrome-scrape"))
+# 2026-06-17: 独立 user-data-dir,与 Stock_agent 的 ~/.config/google-chrome-scrape 物理隔离
+# (共用同一目录会:互相 pkill 收尾、Chrome 单实例/目录限制、锁不互斥——见 CLAUDE.md Tier B 节)。
+# NYU OpenAthens 会话只登在这个独立 profile 的 "Profile 2" 里。可用 env 覆盖。
+UDD = os.environ.get("CHROME_USER_DATA_DIR", str(Path.home() / ".config" / "google-chrome-scrape-nyu"))
 PROFILE_DIR = os.environ.get("CHROME_PROFILE_DIR", "Profile 2")
 SESSION = "tierb"
 LOG_FILE = ROOT / "logs" / f"tierb-{datetime.now().strftime('%Y-%m-%d')}.log"

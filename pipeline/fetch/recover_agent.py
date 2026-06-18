@@ -4,7 +4,7 @@ free PDF url. The script (not the agent) downloads, validates %PDF, checks the
 title matches, and updates the DB. Whatever still fails goes on to Tier B — this
 stage exists to spend a cheap web-searching agent before the expensive
 browser+OpenAthens path.
-Usage: python3 pipeline/stages/recover_agent.py <topicId|all> [concurrency]
+Usage: python3 pipeline/fetch/recover_agent.py <topicId|all> [concurrency]
 """
 import json
 import subprocess

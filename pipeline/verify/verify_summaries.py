@@ -9,7 +9,7 @@ Verifies numbers/claims, reports issues. REPORT ONLY — never modifies summarie
 State: topics/<id>/verified.json maps paper_id -> last verified summary version,
 so re-runs sample fresh papers and corrected versions become eligible again.
 For auto-escalating rounds / full sweeps use escalate_verify.py.
-Usage: python3 pipeline/stages/verify_summaries.py <topicId> [samplePct] [concurrency] [--limit N]
+Usage: python3 pipeline/verify/verify_summaries.py <topicId> [samplePct] [concurrency] [--limit N]
 """
 import json
 import random
@@ -25,7 +25,7 @@ from lib.db import open_db, ROOT, now_iso, load_config
 from lib.codex import run_codex, pool
 from lib.claude import run_claude
 from lib.log import get_logger, run_log
-from summarize_auto import full_text
+from summarize.summarize_auto import full_text  # 跨段 import:verify 复用 summarize 段读全文的函数
 
 MAX_CHARS = 400000
 log = get_logger("verify")

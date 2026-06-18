@@ -1,5 +1,5 @@
 """Phase 2: download open-access PDFs for a topic's selected papers.
-Usage: python3 pipeline/stages/fetch_oa.py <topicId|all>
+Usage: python3 pipeline/fetch/fetch_oa.py <topicId|all>
 PDF 是唯一原文来源(总结/核查都直读 PDF);不再抽存 store/text 文本(2026-06-16 移除)。
 """
 import json
