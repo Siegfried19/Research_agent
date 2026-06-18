@@ -1,7 +1,8 @@
-# 总结/核查 prompt 重写方案（2026-06-18 定，待执行）
+# 总结/核查 prompt 重写方案（2026-06-18 定，✅ 已落地）
 
-> 状态：**方案已定，prompt 文字见下，尚未写进代码。** 执行方式走"先出样例对比再落代码"。
-> 上游决策与原则见 `docs/summary-design-principles.md`（§八定稿）。本文件只管"两个 prompt 具体怎么改"。
+> 状态：**✅ 已落地进代码（2026-06-18）。** 本文件是当时的"先出样例对比再落代码"方案稿，**内嵌的 prompt 文字是历史草稿、勿当现行版**。
+> **现行 prompt 原文以代码为准**（`summarize/summarize_auto.py`、`verify/verify_summaries.py`）；当前写法 + 演变史的导航见 **`docs/prompts.md`（prompt 总账）**。
+> 上游决策与原则见 `docs/summary-design-principles.md`（§八定稿）。本文件保留作"为什么这么改"的方案背景。
 > 配套已落地的**结构性重构**（核查 report-only / major→整篇重做 / codex 中等 self-render / 删 correct_summaries）见 CLAUDE.md「跨模型评审团」节 + design-principles §八。
 
 ## 关键决定（拍板记录）

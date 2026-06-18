@@ -85,5 +85,5 @@
 ## 相关文件
 
 - `pipeline/run.py` —— AUTO / AUTO_PULL / AUTO_SUM 三个链 + `run_chain(continue_on_error=)`。
-- `MIGRATION.md` —— 换机器总清单(记忆分布、telegram/codex 重建)。本文件是它在"夜间自动化"这一块的细化。
+- `change-device/MIGRATION.md` —— 换机器总清单(记忆分布、telegram/codex 重建);换机器流程见 `change-device/README.md`。本文件是它们在"夜间自动化"这一块的细化。
 - `CLAUDE.md` —— 项目总上下文。
