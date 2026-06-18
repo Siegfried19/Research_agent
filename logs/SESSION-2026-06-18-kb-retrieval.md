@@ -52,3 +52,24 @@
 - retrieve/search.py — 混合召回(FTS5+向量+RRF)
 - retrieve/rerank.py — RCS 精挑(claude -p)
 - retrieve/__init__.py、retrieve/models/(模型缓存)
+
+## 续(2026-06-18 第二段):质量收口 + 与 summary-verify 对齐
+> 已提交 `8b6c0de`(第一步全部)。本段修两类问题:嵌入质量妥协 + 多版本/核查态对齐。
+
+### 嵌入质量(用户要"保证质量")
+- **embed.py 改质量优先**(原为迁就 6GB 显存的妥协):fp16→**fp32 满精度**;max_seq 2048→**16384(实质不截断**,最长嵌入体~13k字符<1万token,<模型原生32768);GPU_batch 8→**1**;OOM 兜底升级=batch=1 仍爆就**整批退 CPU**(满精度必完成)。
+- 实测全量重嵌 221 篇:**28.6s / 显存峰值 2790MiB**(6144 总量,富余一半)。反直觉更快=多数论文只标题+摘要序列短,batch=1 省了大批量 padding。已 `index --force` 全量重建。
+
+### 对齐修复(发现 answer.py 漏对齐:故意 vs 忘记 → 判定为忘记)
+- **answer.py 取总结路径改读 DB** `summary_versions ORDER BY version DESC`(与 index/search/rerank 统一);删原 `sorted(glob("v*.md"))[-1]`——会在 v10+ 字符串排序误取 v9,且可能与 DB 不一致。
+
+### A 组(与 summary-verify 多版本对齐,本段重点)
+- **A1 检索层认 verify 核查态**:`verify_summaries.write_report` 多落结构化 `verify_status.json`(`{id:{verdict,version}}`,跨轮合并保留旧篇);`answer.py` 读全库聚合(`load_verify_status`,同篇多 topic 取最高版)+ `resolve_verify`(无记录=`unverified` / 记录版本<当前=`stale` / 否则=verdict)→ 透传进 `--json`(`verify_status`+`summary_version`)+ 答案对 **major/stale 加 ⚠️**(其余 pass/minor/unverifiable/unverified 不打扰回答)。**只标注不过滤**,合"标记进库、出口认标记"哲学。
+- **A2 index 自动刷新**:`run.py` 加 `refresh_index()`(best-effort,无 torch 时吞错不打断主链)+ 独立 `reindex` 阶段;挂到 `auto`/`auto-sum`/`auto-sum-next` 收尾 + 单跑 `sum`/`finalize`/`verify` 后。消除"resummarize 出新版、检索还用旧版"窗口(vec 不像 fts 那样查询时自增量,必须显式重建)。
+- 单测全过:resolve_verify 5态、load 跨topic取高版、write_report 落盘+合并、reindex 入口增量跳过。
+- ⚠️ **旧 topic 的 verify_status.json 待下次 verify 生成**——没从旧 .md 回填(.md 只覆盖最后一轮、pass 仅按标题、易错标);在那之前老篇一律显示 `unverified`(诚实未知,不误标)。
+
+### 仍待办(B/C/D 组,见对话清单)
+- B: 真 gold 集 / Self-RAG 逐句自检(ISSUP) / rerank max_chars=12000 截断(最长11119已逼近)。
+- C: 合成知识层 / 引用图扩展 / 两段式。
+- D: 39篇总结待重做后重跑 index;cron/PATH 切环境(envguard 已能自动 re-exec,未在 cron 实跑验证)。

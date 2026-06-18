@@ -104,6 +104,14 @@ def _seen_path(topic_id):
     return ROOT / "topics" / topic_id / name
 
 
+def _status_path(topic_id):
+    """结构化核查态(给检索层出口认):{paper_id: {verdict, version}}。
+    verified.json 只存'核到哪版',这份多存 verdict(pass/minor/major/unverifiable),
+    让 ask.py 能像 quality_tier 那样透传核查结论。"""
+    name = "verify_status.json" if VERIFY_BACKEND == "codex" else f"verify_status_{VERIFY_BACKEND}.json"
+    return ROOT / "topics" / topic_id / name
+
+
 def load_candidates(topic_id):
     """Latest-version summarized papers of the topic + verified-versions map."""
     conn = open_db()
@@ -239,6 +247,13 @@ def write_report(topic_id, ok, failed, note=""):
     report = ROOT / "topics" / topic_id / report_name
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
     log.info(f"  -> {report.relative_to(ROOT)}")
+
+    # 结构化核查态(出口认):合并进既有文件(每轮只核一部分,保留其余篇的旧态)。
+    sp = _status_path(topic_id)
+    status = json.loads(sp.read_text(encoding="utf-8")) if sp.exists() else {}
+    for r in ok:
+        status[r["id"]] = {"verdict": r["verdict"], "version": r["version"]}
+    sp.write_text(json.dumps(status, ensure_ascii=False, indent=1), encoding="utf-8")
     return n_pass, n_minor, n_major
 
 

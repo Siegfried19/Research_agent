@@ -188,6 +188,20 @@ def queue_report():
     return "\n".join(lines)
 
 
+def refresh_index(tid="-"):
+    """重建向量坐标索引(db/vec.sqlite),让新写/重做的总结进得了语义检索(A2,2026-06-18)。
+    增量(靠 body md5,没变就跳),所以每次 summarize/verify 后跑都便宜。**best-effort**:
+    无 torch/GPU(如 base 环境)时 index.py 会失败,这里吞掉不打断主链——向量本可重建、FTS
+    那路每次查询自增量,缺了只是暂少语义召回那一路。"""
+    run_log(tid, "reindex start")
+    rc = subprocess.run([PY, str(PDIR / "retrieve" / "index.py")], cwd=str(ROOT)).returncode
+    run_log(tid, f"reindex end(rc={rc})")
+    if rc != 0:
+        print(f"[reindex] 向量索引刷新失败(rc={rc}) — 不影响主链,可手动补: "
+              f"python pipeline/retrieve/index.py", file=sys.stderr)
+    return rc
+
+
 def run_stage(stage, tid):
     st = steps(stage, tid)
     if st is None:
@@ -207,14 +221,18 @@ def run_stage(stage, tid):
 def main():
     if len(sys.argv) < 3:
         print("usage: run.py <topicId> <stage>\n"
-              "stages: discover|score|commit|fetch|recover|hunt|tierb|worklist|sum|finalize|verify\n"
+              "stages: discover|score|commit|fetch|recover|hunt|tierb|worklist|sum|finalize|verify|reindex\n"
               "        auto (all) | auto-pull (attended half) | auto-sum [N] (nightly, single topic)\n"
               "        auto-sum-next [N] (nightly queue: picks top-priority topic with work;\n"
               "                           <topicId> ignored — reads topics table)", file=sys.stderr)
         sys.exit(1)
     tid, stage = sys.argv[1], sys.argv[2]
+    if stage == "reindex":  # 手动重建向量索引(topic 无关,读全库)
+        sys.exit(refresh_index(tid))
     if stage == "auto":
-        sys.exit(run_chain(AUTO, tid))
+        rc = run_chain(AUTO, tid)
+        refresh_index(tid)  # 收尾刷新语义索引(A2)
+        sys.exit(rc)
     if stage == "auto-pull":
         sys.exit(run_chain(AUTO_PULL, tid))
     if stage == "auto-sum":
@@ -226,6 +244,7 @@ def main():
         limit = int(sys.argv[3]) if len(sys.argv) > 3 else None
         notify(f"🌙 auto-sum start: {tid}" + (f" (≤{limit})" if limit else ""))
         rc = run_auto_sum(tid, limit=limit)
+        refresh_index(tid)  # 新总结/重做版进语义索引(A2)
         notify(burn_down_msg(tid, rc, limit))  # 单主题燃尽报告(2026-06-17)
         sys.exit(rc)
     if stage == "auto-sum-next":
@@ -239,13 +258,17 @@ def main():
         done_before, _, _ = topic_progress(target)
         notify(f"🌙 auto-sum start: {target} (≤{limit}) [队列选中]")
         rc = run_auto_sum(target, limit=limit)
+        refresh_index(target)  # 新总结/重做版进语义索引(A2)
         done_after, doable_after, _ = topic_progress(target)
         msg = burn_down_msg(target, rc, limit)
         if done_after == done_before and doable_after > 0:
             msg += "\n⚠️ 本轮 0 进展(可能卡坏PDF),队列未推进——需人工看"
         notify(msg + "\n" + queue_report())
         sys.exit(rc)
-    sys.exit(run_stage(stage, tid))
+    rc = run_stage(stage, tid)
+    if stage in ("sum", "finalize", "verify") and rc == 0:
+        refresh_index(tid)  # 单跑这些阶段也刷新语义索引(A2)
+    sys.exit(rc)
 
 
 if __name__ == "__main__":

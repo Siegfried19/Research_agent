@@ -3,12 +3,16 @@
 - 会说不知道:没有相关证据 → 直接出"库里没有"哨兵(空候选时不调 LLM,确定性短路)。
 - 自检(可选):再过一遍,逐句核证据是否支撑,撑不住的删/标。
 - quality_tier 透传:suspect 来源标 ⚠️,答案里显式说明来源可疑。
+- verify 核查态透传(2026-06-18):像 quality_tier 一样**只标注不过滤**——major(核查发现
+  重大问题)/stale(总结已更新但新版未核查)在答案里 ⚠️ 标出;完整态进 --json 供 agent 自决。
 
 产出同时服务 --answer(给人看的带引用中文回答) 和 --json(给外部 agent 的机器可读)。
 """
 # --- path shim ---
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+import json
 
 from lib.db import open_db, ROOT
 from lib.claude import run_claude
@@ -18,10 +22,15 @@ log = get_logger("answer")
 CANNOT = "库里没有相关内容。"
 
 TIER_NOTE = {"suspect": " ⚠️低可信来源(掠夺刊嫌疑,引用需核实)", "flag": " (预印本,未同行评审)"}
+# 核查态里只有这两类会污染"该版本可不可信",答案中显式 ⚠️;其余(pass/minor/unverifiable/
+# unverified)不污染判断,只进 --json 不打扰回答。
+VERIFY_NOTE = {"major": " ⚠️核查发现重大问题(疑方向反转/张冠李戴/过度声称,引用须核实)",
+               "stale": " ⚠️总结已更新,新版尚未核查"}
 
 ANSWER_PROMPT = """你是论文库问答助手。**只用下面提供的证据**回答问题,引用时在句末标来源编号 [n]。
 - 只能引下面列出的编号,**绝不**编造其它来源或 DOI。
 - 标了 ⚠️低可信来源 的材料,引用时必须显式说明来源可疑。
+- 标了 ⚠️核查发现重大问题 或 ⚠️总结已更新…未核查 的材料,引用时必须提示该结论尚待核实。
 - 证据撑不起答案就回:"{cannot}" —— 不要用证据外的知识硬答。
 - 中文,简洁,有据。
 
@@ -34,25 +43,54 @@ ANSWER_PROMPT = """你是论文库问答助手。**只用下面提供的证据**
 ## 回答"""
 
 
-def _latest_summary_path(main, paper_id):
-    """从 DB summary_versions 取最高版本的总结路径(权威源,与 index/search/rerank 一致;
-    不再扫磁盘 glob——那会在 v10+ 因字符串排序误取 v9,且可能和 DB 不一致)。"""
-    r = main.execute("SELECT path FROM summary_versions WHERE paper_id=? ORDER BY version DESC LIMIT 1",
-                     (paper_id,)).fetchone()
-    if not r:
+def _latest_version(main, paper_id):
+    """DB 里该论文最高总结版本号 (version, path);无总结返回 (None, None)。权威源,
+    与 index/search/rerank 一致;不扫磁盘 glob(会在 v10+ 因字符串排序误取 v9)。"""
+    r = main.execute("SELECT version, path FROM summary_versions WHERE paper_id=? "
+                     "ORDER BY version DESC LIMIT 1", (paper_id,)).fetchone()
+    return (r["version"], r["path"]) if r else (None, None)
+
+
+def load_verify_status():
+    """汇总全库各 topic 的 verify_status.json → {paper_id: {verdict, version}},
+    同篇多 topic 取最高 version(最近一次核查)。verify 阶段(write_report)落的结构化态。"""
+    agg = {}
+    for sp in (ROOT / "topics").glob("*/verify_status.json"):
+        try:
+            for pid, st in json.loads(sp.read_text(encoding="utf-8")).items():
+                cur = agg.get(pid)
+                if not cur or (st.get("version") or 0) > (cur.get("version") or 0):
+                    agg[pid] = st
+        except Exception:
+            continue
+    return agg
+
+
+def resolve_verify(status_map, paper_id, cur_version):
+    """把"核查记录 vs 当前最高版"解析成出口用的态:
+    无记录→unverified;记录版本<当前→stale(新版没核);否则=记录的 verdict。"""
+    if cur_version is None:
         return None
-    fp = ROOT / r["path"]
-    return str(fp) if fp.exists() else None
+    st = status_map.get(paper_id)
+    if not st:
+        return "unverified"
+    if (st.get("version") or 0) < cur_version:
+        return "stale"
+    return st.get("verdict")
 
 
-def _source_row(main, r):
+def _source_row(main, status_map, r):
     """ranked 里一条 → 结构化来源 dict(给 --json + 引用映射)。"""
     p = r["paper"]
+    ver, path = _latest_version(main, p["id"])
+    fp = ROOT / path if path else None
     return {
         "doi": p["doi"], "title": p["title"], "year": p["year"], "venue": p["venue"],
         "quality_tier": p["quality_tier"],
+        "verify_status": resolve_verify(status_map, p["id"], ver),
+        "summary_version": ver,
         "rcs_score": r.get("rcs", {}).get("score"),
-        "summary_path": _latest_summary_path(main, p["id"]),
+        "summary_path": str(fp) if fp and fp.exists() else None,
         "pdf_path": str(ROOT / p["pdf_path"]) if p["pdf_path"] else None,
     }
 
@@ -63,13 +101,15 @@ def build(question, ranked):
         return {"answerable": False, "text": CANNOT, "sources": []}
 
     main = open_db()
+    status_map = load_verify_status()
     blocks, sources = [], []
     for i, r in enumerate(ranked, 1):
         p = r["paper"]
-        note = TIER_NOTE.get(p["quality_tier"] or "", "")
+        src = _source_row(main, status_map, r)
+        note = TIER_NOTE.get(p["quality_tier"] or "", "") + VERIFY_NOTE.get(src["verify_status"] or "", "")
         ev = r.get("rcs", {}).get("evidence") or ""
         blocks.append(f"[{i}] {p['title']} ({p['year']}, {p['venue'] or '?'}){note}\n{ev}")
-        sources.append({"n": i, **_source_row(main, r)})
+        sources.append({"n": i, **src})
     main.close()
 
     text = run_claude(
