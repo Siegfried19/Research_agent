@@ -108,3 +108,35 @@
 - 第2步 P2:`rerank.py:52 max_chars=12000` 截断只留头,新长总结尾部(适用边界/批判)会被砍——重做总结后必咬。修法:抬上限/掐头留尾。
 - 第3步 P1:`--no-rerank`+`--answer` 没evidence必瞎答(`answer.py:70`)——禁该组合或no-rerank时用总结摘录当证据。
 - 路线图 ④引用图 / ⑤两段式 / 合成知识层 / 问答记忆 / Self-RAG自检。
+
+## 续(2026-06-18 第四段):方案A 已实现 + 实测 + 遗留成本问题
+> 接第三段。方案A(claude 问题理解层)落地、测过、commit。
+
+### 改了什么
+- **新 `pipeline/retrieve/understand.py`** `understand_query(q)`:claude -p(opus)→ JSON `{en_terms, zh_terms, hyde}`。
+  prompt 见文件内 `PROMPT`(展开缩写/中英双语/同义词/HyDE 2-4句论文口吻/没把握别硬编)。
+  claude 失败或解析不出 → 返回 None,调用方回退 parse_query(不阻断检索)。
+- **`search.py`**:`terms_to_fts(terms)` 把 claude 的干净词切成 (MATCH≥3字短语, instr<3字兜底),
+  **关键:不再把词回炉 parse_query**(否则"通用"又被劈)——这是绕开 P-A/P-B 的核心。
+  `fts_rank(fts,q,understanding=None)` / `vec_rank(query,k,embed_text=None)` / `hybrid(...,understanding=None)`
+  全加形参:有理解层就用干净词喂 FTS + 嵌 **HyDE 文本**(而非光问题);没有就回退原始查询。
+- **`ask.py`**:默认对所有查询先 `understand_query`(用户 2026-06-18 拍板"默认全开,先不担心成本");
+  加 `--no-understand` 逃生口;`--json` 输出多带 `understanding` 字段(外部 agent 调试用)。
+  parse_query 的 P-A/P-B 没去补——它只当 claude 失败时的兜底,正常路径不走它。
+
+### 实测(research-agent 环境,GPU)
+- **隔离 FTS 那路 A/B**(`fts_rank` 带/不带 understanding,看命中数):
+  `RL` 0→194、`AI ML 的应用` 0→179、`通用工具箱` 22→182 —— P-A/P-B 坐实治好。
+- **端到端** `ask.py "RL 在数字人交互里的应用" -n 5`:5 命中全是 rl-digital-human-interaction 主题、relevance 48–96,排序合理。
+- **`--no-understand`**:不调 claude(无"理解:"日志),老路 + 向量仍出结果 —— 逃生口/回退健全。
+- 理解层产出示例:`RL` → en 含 reinforcement learning / policy gradient / MDP…,zh 含 强化学习/策略梯度/马尔可夫决策过程…,hyde ~100字论文口吻假想答案。
+
+### ⚠️ 遗留成本问题(用户明确"先不担心、但要记下来",待日后用量大再说)
+- **每次 deep 查询多 1 次 claude 调用**(几秒 + token)。你自己用无所谓;**外部 agent 出口②若卡住时高频轮询本库,每次都点一炮 claude,会偏重**。
+- **当前决定**:默认全开、不加节流/缓存(YAGNI,先观察真实用量)。
+- **日后若需优化**(按性价比):① 缓存 understanding(同问题不重算,LRU/落盘);② 给 `--json` agent 路径单独节流/配额;③ 让"明显简单"的查询跳过理解层。**别现在做。**
+- 这条也是为何之前(2026-06-16)撤回了全局 `~/.claude/CLAUDE.md` 的出口②指针——ask.py 还在改;理解层是让它够格重新对外开放的前提,但对外开放前要先想清楚这个成本敞口。
+
+### 仍未做(顺位不变)
+- 第2步 P2(rerank max_chars=12000 截断长总结尾部)、第3步 P1(`--no-rerank`+`--answer` 必瞎答)。
+- 路线图 ④引用图 / ⑤两段式 / 合成层 / 问答记忆 / Self-RAG。

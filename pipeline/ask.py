@@ -11,6 +11,10 @@
   --json     机器可读(给外部 agent):{answerable, answer, sources:[{doi,summary_path,pdf_path,quality_tier}]}
   --reindex  重建索引(fts + vec)
   --no-rerank  --answer/--json 时跳过 RCS 精挑(快,但不精排)
+  --no-understand  跳过 claude 问题理解层,直接用机械分词(快,但治不了缩写/中文复合词)
+
+默认对所有查询都先过 claude 问题理解层(展开缩写 + 中英双语词 + HyDE),根治机械分词的
+P-A(2字母缩写被丢)/P-B(中文复合词被劈)。claude 失败自动回退机械分词,不阻断检索。
 """
 # --- path shim: 让 `from lib...`/`from retrieve...` 解析到 pipeline/ ---
 import os as _os, sys as _sys
@@ -23,7 +27,7 @@ import argparse
 import json
 
 from lib.log import get_logger
-from retrieve import search
+from retrieve import search, understand
 
 log = get_logger("ask")
 
@@ -74,6 +78,7 @@ def main():
     ap.add_argument("--answer", action="store_true", help="claude -p 综合给带引用回答")
     ap.add_argument("--reindex", action="store_true", help="重建 fts + vec 索引")
     ap.add_argument("--no-rerank", action="store_true", help="跳过 RCS 精挑(快)")
+    ap.add_argument("--no-understand", action="store_true", help="跳过 claude 问题理解层(快,但不治缩写/中文复合词)")
     a = ap.parse_args()
 
     reindex(force=a.reindex)
@@ -82,11 +87,13 @@ def main():
             ap.print_help()
         return
 
+    understanding = None if a.no_understand else understand.understand_query(a.question)
     deep = a.answer or a.json
-    hits = search.hybrid(a.question, topn=max(a.n, 20) if deep else a.n)
+    hits = search.hybrid(a.question, topn=max(a.n, 20) if deep else a.n, understanding=understanding)
     if not hits:
         if a.json:
-            print(json.dumps({"query": a.question, "answerable": False, "answer": "", "sources": []},
+            print(json.dumps({"query": a.question, "understanding": understanding,
+                              "answerable": False, "answer": "", "sources": []},
                              ensure_ascii=False))
         else:
             print("库里没有命中。换关键词试试。")
@@ -100,7 +107,8 @@ def main():
             ranked = rerank.rcs_rerank(a.question, hits, keep=a.n)
         res = answer.build(a.question, ranked)
         if a.json:
-            print(json.dumps({"query": a.question, "answerable": res["answerable"],
+            print(json.dumps({"query": a.question, "understanding": understanding,
+                              "answerable": res["answerable"],
                               "answer": res["text"], "sources": res["sources"]},
                              ensure_ascii=False, indent=1))
         else:

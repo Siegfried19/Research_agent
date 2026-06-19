@@ -92,28 +92,47 @@ def parse_query(q):
     return en, list(dict.fromkeys(cjk3)), [s for s in segs if len(s) == 2]
 
 
-def fts_rank(fts, q):
-    """FTS 那路:返回 [slug] 按相关性降序(bm25 + 2字词 instr 兜底)。"""
-    en, cjk3, cjk2 = parse_query(q)
+def terms_to_fts(terms):
+    """claude 理解层给的干净词 -> (MATCH 短语≥3字, instr 兜底词≤2字)。
+    每个词当**原子短语**,不再回炉 parse_query —— 避开 P-A(2字母缩写被丢)/P-B(中文复合词被劈)。
+    trigram 索引不到 <3 字的串(英文 "RL"/中文 "应用"),归 instr 全扫兜底(同 cjk2 那路)。"""
+    match, instr = [], []
+    for t in terms:
+        t = t.strip().replace('"', " ")  # 去掉会破坏 FTS 短语语法的引号
+        if not t:
+            continue
+        (match if len(t) >= 3 else instr).append(t)
+    return list(dict.fromkeys(match)), list(dict.fromkeys(instr))
+
+
+def fts_rank(fts, q, understanding=None):
+    """FTS 那路:返回 [slug] 按相关性降序(bm25 + <3字词 instr 兜底)。
+    understanding 给了就用 claude 的干净词(治 P-A/P-B);否则回退老的 parse_query。"""
+    if understanding:
+        match_terms, instr_terms = terms_to_fts(understanding["en_terms"] + understanding["zh_terms"])
+    else:
+        en, cjk3, cjk2 = parse_query(q)
+        match_terms, instr_terms = list(dict.fromkeys(en + cjk3)), cjk2
     scores = {}
-    m = " OR ".join(f'"{t}"' for t in dict.fromkeys(en + cjk3))
+    m = " OR ".join(f'"{t}"' for t in match_terms)
     if m:
         for slug, bm in fts.execute(
                 "SELECT slug, bm25(fts_sum) FROM fts_sum WHERE fts_sum MATCH ?", (m,)):
             scores[slug] = scores.get(slug, 0) + (-bm)
-    for t in cjk2:  # trigram 索引不到 2 字词 → 全扫兜底(FTS5 上 LIKE 静默返0,必须 instr)
+    for t in instr_terms:  # trigram 索引不到 <3 字词 → 全扫兜底(FTS5 上 LIKE 静默返0,必须 instr)
         for (slug,) in fts.execute("SELECT slug FROM fts_sum WHERE instr(body,?)>0", (t,)):
             scores[slug] = scores.get(slug, 0) + 1.0
     return [s for s, _ in sorted(scores.items(), key=lambda kv: -kv[1])]
 
 
 # ---------------- 向量那路(对意思) ----------------
-def vec_rank(query, k=50):
-    """向量那路:返回 [paper_id] 按相似度降序。需 research-agent 环境。"""
+def vec_rank(query, k=50, embed_text=None):
+    """向量那路:返回 [paper_id] 按相似度降序。需 research-agent 环境。
+    embed_text 给了就嵌它(理解层的 HyDE 假想答案,比光问题召回更准);否则嵌原始 query。"""
     from lib import embed
     from retrieve import index
     db = index.connect()
-    qv = embed.embed_query(query)
+    qv = embed.embed_query(embed_text or query)
     return [pid for pid, _dist in index.knn(db, qv, k)]
 
 
@@ -127,17 +146,19 @@ def rrf_fuse(rankings, K=60):
     return sorted(score.items(), key=lambda kv: -kv[1])
 
 
-def hybrid(query, topn=20, k=50, use_vec=True):
-    """混合召回。返回 topn 个 paper 行(dict),按 RRF 融合分降序。"""
+def hybrid(query, topn=20, k=50, use_vec=True, understanding=None):
+    """混合召回。返回 topn 个 paper 行(dict),按 RRF 融合分降序。
+    understanding(理解层产物)给了就用它的干净词喂 FTS + 用 HyDE 嵌入向量;否则回退原始查询。"""
     main = open_db()
     slug2pid = {r["slug"]: r["id"] for r in main.execute("SELECT id, slug FROM papers WHERE slug IS NOT NULL")}
 
     fts = ensure_fts()
-    fts_ids = [slug2pid[s] for s in fts_rank(fts, query) if s in slug2pid]
+    fts_ids = [slug2pid[s] for s in fts_rank(fts, query, understanding) if s in slug2pid]
     rankings = [fts_ids]
     if use_vec:
         try:
-            rankings.append(vec_rank(query, k))
+            hyde = understanding.get("hyde") if understanding else None
+            rankings.append(vec_rank(query, k, embed_text=hyde or None))
         except Exception as e:
             log.info(f"向量那路不可用(回退纯FTS): {type(e).__name__}: {str(e)[:60]}")
 

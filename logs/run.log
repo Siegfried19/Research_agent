@@ -238,3 +238,17 @@
 2026-06-18T22:26:10Z	-	KB-RETRIEVAL A组(2026-06-18,未提交): A1 检索层认 verify 核查态——verify_summaries.write_report 多落结构化 verify_status.json({id:{verdict,version}},跨轮合并); answer.py 读全库聚合(取最高版)+resolve_verify(无记录=unverified/版本旧=stale/否则=verdict)+透传 --json(verify_status,summary_version)+答案对 major/stale 加⚠️(只标注不过滤,合quality_tier哲学)。A2 index自动刷新——run.py 加 refresh_index(best-effort,非致命)+reindex 阶段,挂到 auto/auto-sum/auto-sum-next 收尾及单跑 sum/finalize/verify 后。三处全单测通过(resolve_verify 5态/load聚合取高版/write_report落盘+合并/reindex入口)。旧 topic 的 verify_status.json 待下次 verify 生成(不从旧.md回填,避免错标)。
 2026-06-18T23:16:05Z	-	KB-RETRIEVAL 第0步索引优化(未提交): embed MAX_SEQ 16384→24576(实测fp32/batch1单篇峰值8k=2.3G/16k=3.4G/24k=4.5G,留~1.2G余量)+ expandable_segments防碎片 + CPU兜底=三层保险(生产221篇实测峰值仅2671MiB,真实总结~7k token够不着天花板;问答零影响,现有坐标不变)。索引增量改'两段钥匙'(新模块 retrieve/freshness.py,fts+vec共用):便宜钥匙=md5(title+abstract+path+mtime)不读文件→没变秒跳(治P3每次读全部总结)、fts/vec判据统一(治A:abstract改动fts现也抓得到)、每查询reindex近免费(治B);vec钥匙变了再读全文算body_hash精确确认,只mtime被碰→只更钥匙不重嵌(零问答风险)。+busy_timeout(C)+孤儿回收(D)+旧meta schema自动迁移。全验证:force重建/增量秒跳/touch→1更钥匙0重嵌/孤儿回收/端到端召回 全过。
 2026-06-18T23:31:51Z	-	KB问答pipeline逐段审查(交接,详见 SESSION-2026-06-18-kb-retrieval.md '第三段'): 第0步已优化提交(35bfb2c)。第1步混合召回审查=结构对/无截断/不调claude(向量用Qwen嵌入),但实测坐实2真bug在parse_query分词:P-A 2字母英文缩写(RL/AI/ML)被丢、P-B 单字停用词(用/做/是)把中文复合词(通用/应用)劈碎→'AI ML 的应用'FTS全空。用户拍板:上方案A=检索前加 claude 问题理解层(展开缩写+中英双语词+HyDE假想答案),根治P-A/P-B,Qwen/FTS保留当工具;agentic方案B(claude自驱多跳=路线图④⑤)留后面(A是B的零件不浪费)。下会话照'方案A待实现设计'写:新 retrieve/understand.py(claude->JSON{en_terms,zh_terms,hyde})+接进hybrid(干净词当原子短语绕开易错正则、向量嵌HyDE)+ask.py仅deep走、回退parse_query并小修P-A/P-B兜底。另:第2步P2 rerank max_chars=12000截尾、第3步P1 no-rerank+answer没证据 待修。
+2026-06-18T23:34:44Z	rl-general-toolbox	stage:worklist start
+2026-06-18T23:34:44Z	rl-general-toolbox	stage:worklist end(rc=0)
+2026-06-18T23:34:44Z	rl-general-toolbox	stage:sum start
+2026-06-18T23:36:47Z	rl-general-toolbox	summarize_auto: 2 ok, 0 failed/skipped
+2026-06-18T23:36:47Z	rl-general-toolbox	stage:sum end(rc=0)
+2026-06-18T23:36:47Z	rl-general-toolbox	stage:finalize start
+2026-06-18T23:36:48Z	rl-general-toolbox	stage:finalize end(rc=0)
+2026-06-18T23:36:48Z	rl-general-toolbox	stage:verify start
+2026-06-18T23:47:01Z	-	RETRIEVE-UNDERSTAND(方案A): 新增 pipeline/retrieve/understand.py(claude -p 问题理解层:展开缩写+中英双语词+HyDE),接进 search.hybrid(干净词喂FTS+HyDE嵌向量)与 ask.py(默认全开,加 --no-understand 逃生口,--json 带 understanding)。治 P-A(2字母缩写被丢)/P-B(中文复合词被劈)。实测 FTS A/B: RL 0->194 / AI ML的应用 0->179 / 通用工具箱 22->182;端到端命中高相关篇;回退/逃生口正常。遗留:每次 deep 多1次 claude,外部 agent 高频轮询偏重,默认不节流(YAGNI),详见 SESSION-2026-06-18-kb-retrieval 第四段。
+2026-06-18T23:53:08Z	rl-general-toolbox	resummarize: 5/5 redone
+2026-06-18T23:53:21Z	rl-general-toolbox	escalate_verify: verified=26 pass=18 minor=3 major=5 redone=5 stubborn=0 errors=33
+2026-06-18T23:53:21Z	rl-general-toolbox	stage:verify end(rc=0)
+2026-06-18T23:53:21Z	rl-general-toolbox	reindex start
+2026-06-18T23:53:31Z	rl-general-toolbox	reindex end(rc=0)
