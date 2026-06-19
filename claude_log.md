@@ -4,6 +4,20 @@
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `logs/SESSION-*.md`；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
 
+## 2026-06-18 22:49 EDT — 理解层:claude 失败改"直接报错"(关掉静默回退)+ --no-understand 标 debug 专用
+- 改 19:45 那条的行为(用户拍板)：`understand_query` 不再 claude 失败/解析失败就返回 None 让调用方静默回退老分词——**老路有 P-A/P-B bug,悄悄退回去=给坏结果还不吭声**。现在 claude 失败让异常抛上去、解析不出抛 RuntimeError，**查询响亮地失败**。
+- `--no-understand` 留着但**标成 `[debug专用]`**(help + docstring + ask.py 头注)，明说正常跑别用——它是绕过理解层的唯一明路。
+- 实测：`CLAUDE_BIN=__nope__` 模拟 claude 挂 → 默认路径直接报错 exit 1(不回退)；`--no-understand` 仍跳过 claude 走老路 exit 0。
+- 文件：`pipeline/retrieve/understand.py`、`pipeline/ask.py`。**未提交**(等用户确认后随下次一起 commit)。
+
+## 2026-06-18 22:43 EDT — 新 summarize/verify 流程小批试跑(2篇)+ 旧总结全量备份
+- **背景**：summarize/verify 层 06-18 大改后(d5b58a7：边读边写去 note_plan、核查 report-only、major→整篇重做)，首次拿真实库端到端试跑。用户定：全库 221 篇都用新流程重做，但先小批试 2-3 篇验证。
+- **备份(回滚锚点)** → `logs/summaries-baseline-20260618/`：`store/summaries` 全量(77 md)+ `db/papers.sqlite` 快照 + 两主题 verify/worklist 产物。
+- **试跑** `run rl-general-toolbox auto-sum 2`：2 篇净新论文写出新流程 v1(Augmented PPO / Safe RL w/ Probabilistic CBF)，质量符合设计(原子句+内联 strength、讲直觉、数字让位 PDF、新增"适用边界"段、不脑补附录)。
+- **意外**：auto-sum 的 verify = `escalate_verify --start-pct 100` **核查全主题、非只新篇**——扫了 40 篇旧总结，揪出 5 篇 MAJOR(GAE 数字+张冠李戴、Penalized PPO 残留"伪造核对背书"、End-to-End Safe RL 定理条件写窄、What-Matters V-trace 设定写错、Tiered Reward 过度声称)，**已就地整篇重做成 v4/v2**。原件在备份里可对比。新核查抓得准、且根治了旧 correct_summaries 伪造背书 bug。
+- **已知坑**：verify round2(剩 19 篇)codex 全失败(限流/用量到顶)，脚本干净中止、进度按轮落盘。r1 的 26 篇核查有效。
+- DB：gt summarized 39→41，summary_versions 77→84。待用户看过产出后再清理那 40 篇旧总结、全库铺开(夜间 cron 用户自挂)。
+
 ## 2026-06-18 19:45 EDT — 实现方案A：claude 问题理解层（治 P-A/P-B 分词 bug）
 - 新文件 `pipeline/retrieve/understand.py` → `understand_query(q)`：claude -p 把问题 → `{en_terms, zh_terms, hyde}`（展开缩写 + 中英双语词 + 2-4句 HyDE 假想答案）。失败/解析不出返回 None，调用方自动回退老的 parse_query。
 - `search.py`：新增 `terms_to_fts()`（claude 的干净词当原子短语，≥3字进 MATCH、<3字进 instr 兜底，**不再回炉 parse_query**）；`fts_rank`/`vec_rank`/`hybrid` 各加 `understanding` 形参——FTS 那路用干净词、向量那路嵌 **HyDE 文本**（而非光问题）。

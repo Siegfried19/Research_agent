@@ -11,7 +11,9 @@
       → 交给 search.fts_rank(经 terms_to_fts,每词当原子短语,不再回炉 parse_query)。
     - hyde:论文总结口吻的假想答案 → 嵌入它(而非光问题)去跟库里真实中文总结比对,召回更准。
 
-  claude 用不了 / 解析失败 → 返回 None,调用方(search.hybrid)自动回退老的 parse_query。
+  claude 用不了 / 解析失败 → **直接抛错**(用户 2026-06-18 定:不静默回退老分词——老路有
+  P-A/P-B bug,悄悄退回去=给坏结果还不吭声;宁可让查询响亮地失败)。绕过理解层只有一条
+  明路:ask.py --no-understand(debug 专用,正常跑别用)。
   整条问答流水线本就全靠 claude(打分/总结/核查),所以这层默认对所有查询都开。
 """
 # --- path shim ---
@@ -66,15 +68,14 @@ def _parse(out):
 
 
 def understand_query(question, timeout=90):
-    """问题 -> {en_terms, zh_terms, hyde}。claude 失败/解析失败返回 None(调用方回退 parse_query)。"""
-    try:
-        out = run_claude(PROMPT.format(question=question), timeout=timeout)
-    except Exception as e:  # noqa: BLE001  理解层绝不阻断检索,失败就回退老路
-        log.info(f"理解层不可用(回退原始查询): {type(e).__name__}: {str(e)[:80]}")
-        return None
+    """问题 -> {en_terms, zh_terms, hyde}。
+
+    claude 失败或解析不出 → **直接抛错**(用户 2026-06-18 定:不静默回退老分词——老路有
+    P-A/P-B bug,悄悄退回去=给坏结果还不吭声)。让查询响亮地失败,别假装搜到了。
+    想绕过理解层只有 ask.py --no-understand(debug 专用)。"""
+    out = run_claude(PROMPT.format(question=question), timeout=timeout)  # claude 失败就让它抛上去
     u = _parse(out)
     if u is None:
-        log.info("理解层输出解析失败,回退原始查询")
-        return None
+        raise RuntimeError(f"问题理解层输出无法解析(claude 没给出可用检索词): {out[:200]}")
     log.info(f"理解: en={len(u['en_terms'])} zh={len(u['zh_terms'])} hyde={len(u['hyde'])}字")
     return u

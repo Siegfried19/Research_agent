@@ -11,10 +11,11 @@
   --json     机器可读(给外部 agent):{answerable, answer, sources:[{doi,summary_path,pdf_path,quality_tier}]}
   --reindex  重建索引(fts + vec)
   --no-rerank  --answer/--json 时跳过 RCS 精挑(快,但不精排)
-  --no-understand  跳过 claude 问题理解层,直接用机械分词(快,但治不了缩写/中文复合词)
+  --no-understand  [debug专用] 跳过 claude 问题理解层走老机械分词;正常跑别用
 
 默认对所有查询都先过 claude 问题理解层(展开缩写 + 中英双语词 + HyDE),根治机械分词的
-P-A(2字母缩写被丢)/P-B(中文复合词被劈)。claude 失败自动回退机械分词,不阻断检索。
+P-A(2字母缩写被丢)/P-B(中文复合词被劈)。**claude 失败直接报错**(不静默回退老分词——
+老路有 P-A/P-B bug,悄悄退回去=给坏结果还不吭声);只有 --no-understand(debug)能主动绕过。
 """
 # --- path shim: 让 `from lib...`/`from retrieve...` 解析到 pipeline/ ---
 import os as _os, sys as _sys
@@ -78,7 +79,8 @@ def main():
     ap.add_argument("--answer", action="store_true", help="claude -p 综合给带引用回答")
     ap.add_argument("--reindex", action="store_true", help="重建 fts + vec 索引")
     ap.add_argument("--no-rerank", action="store_true", help="跳过 RCS 精挑(快)")
-    ap.add_argument("--no-understand", action="store_true", help="跳过 claude 问题理解层(快,但不治缩写/中文复合词)")
+    ap.add_argument("--no-understand", action="store_true",
+                    help="[debug专用] 跳过 claude 问题理解层走老机械分词;正常跑别用(治不了缩写/中文复合词)")
     a = ap.parse_args()
 
     reindex(force=a.reindex)
