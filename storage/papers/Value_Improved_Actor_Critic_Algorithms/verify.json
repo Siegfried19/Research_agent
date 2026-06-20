@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.48550/arxiv.2406.01423",
+  "slug": "Value_Improved_Actor_Critic_Algorithms",
+  "title": "Value Improved Actor Critic Algorithms",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "实用算法 VI-TD3/VI-SAC(及 VI-TD7),显式(BoN/重复梯度步)与隐式(expectile τ)两种实现,几乎零额外成本。",
+          "problem": "“几乎零额外成本”只适用于作者主推的隐式 expectile/主实验设定；原文明确说重复梯度步的显式方式计算很昂贵，BoN(N=64)也不是零成本，因此这里把成本结论过度扩展到显式实现。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}

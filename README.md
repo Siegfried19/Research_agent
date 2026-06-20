@@ -5,10 +5,10 @@
 
 ## 快速看产出（建议从这里开始审）
 
-- **样张总结**：`store/summaries/PADL_Language-Directed.../v1.md` 等 —— 中文，三段置顶 + 「局限与我的质疑」批判段
-- **版本化更新示例**：`store/summaries/Synthesizing_Diverse_Human_Motions_in_3D_Indoor_Scenes/`（v1 + v2 共存，v2 结合相关论文更新）
+- **样张总结**：`storage/papers/PADL_Language-Directed.../v1.md` 等 —— 中文，三段置顶 + 「局限与我的质疑」批判段
+- **版本化更新示例**：`storage/papers/Synthesizing_Diverse_Human_Motions_in_3D_Indoor_Scenes/`（v1 + v2 共存，v2 结合相关论文更新）
 - **主题视图**：`topics/rl-digital-human-interaction/topic.md` —— 按相关性排序的命中清单 + 相关性理由 + 库内引用关系
-- **数据库**：`db/papers.sqlite`
+- **数据库**：`data-base/papers.sqlite`
 
 ## 数据库（5 张表）
 

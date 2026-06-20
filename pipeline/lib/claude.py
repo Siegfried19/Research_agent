@@ -40,12 +40,17 @@ def run_claude(prompt, model=None, timeout=300, tools=None):
     if USAGE_LOG:
         cmd += ["--output-format", "json"]
     t0 = time.time()
-    proc = subprocess.run(
-        cmd,
-        input=prompt, capture_output=True, text=True, encoding="utf-8", timeout=timeout,
-    )
+    try:
+        proc = subprocess.run(
+            cmd,
+            input=prompt, capture_output=True, text=True, encoding="utf-8", timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        # 超时归一成可分类的错(同 codex:不让裸 TimeoutExpired 漏出,否则失败分类层认不出)。
+        raise RuntimeError(f"claude -p timed out after {timeout}s (no response)")
     if proc.returncode != 0:
-        raise RuntimeError(f"claude -p exit {proc.returncode}: {(proc.stderr or '').strip()[:300]}")
+        # 保留 stderr 尾部 2000 字(原 300 太短,Max 限流横幅可能被切掉 → 分类器看不到证据)。
+        raise RuntimeError(f"claude -p exit {proc.returncode}: {(proc.stderr or '').strip()[-2000:]}")
     out = (proc.stdout or "").strip()
     if USAGE_LOG:
         try:

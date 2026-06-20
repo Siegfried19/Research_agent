@@ -1,0 +1,46 @@
+{
+  "paper_id": "title:4767e85b9c83c66b",
+  "slug": "Lazy_Agents_A_New_Perspective_on_Solving_Sparse_Reward_Problem_in_Multi_agent",
+  "title": "Lazy Agents: A New Perspective on Solving Sparse Reward Problem in Multi-agent Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "相对开了稠密奖励的 QMIX-DR,LAIES 在 4 个场景(MMM、3s_vs_3z、5m_vs_6m、8m_vs_9m)仍逊于 QMIX-DR",
+          "problem": "方向写反；原文 §5.2 明确说 QMIX-DR 在这四个场景仍差于 LAIES，图4也显示 LAIES 在这些场景相对 QMIX-DR 表现更好或优势更大。",
+          "severity": "major"
+        },
+        {
+          "quote": "当任务实力对称/差距小(如 MMM、对称对战)时,LAIES 相对稠密奖励 QMIX-DR 优势缩小甚至被反超",
+          "problem": "方向写反；原文说这四个敌我差距小的场景中 LAIES 对 QMIX-DR 有优势，并解释优势随初始实力差距减小而增加。",
+          "severity": "major"
+        },
+        {
+          "quote": "3m {100,0.2}、2m_vs_1z {200,0.3}、5m_vs_6m {20,0.02}、MMM {600,0.3}",
+          "problem": "超参数数值张冠李戴；附录 A.1 写的是 2m_vs_1z 为 {600,0.3}，5m_vs_6m 为 {200,0.3}，MMM 为 {20,0.02}。",
+          "severity": "minor"
+        },
+        {
+          "quote": "在 3m、2m_vs_1z 上 LAIES(IPPO) 优于所有对比",
+          "problem": "与图9方向不符；图9(a)中 2m_vs_1z 的 IPPO-DR 曲线明显高于 LAIES(IPPO)，图9(b)中 3m 至少也不是清楚优于 IPPO-DR。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.827Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "规模:实验最多约 8–9 个智能体",
+          "problem": "原文表1的SMAC任务包含MMM/MMM2，己方单位为1 Medivac+2 Marauders+7 Marines，即10个智能体；“最多约8–9个”低估了实验规模。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T18:10:54.374Z",
+      "backend": "codex"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.1561/2200000086",
+  "slug": "Model_based_Reinforcement_Learning_A_Survey",
+  "title": "Model-based Reinforcement Learning: A Survey",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "MuZero 用 value-equivalent 学到的模型进一步超过 AlphaZero",
+          "problem": "原文在§7.3明确说 MuZero further outperforms 的对象是 AlphaGo Zero 的结果，不是 AlphaZero；方向相近但对象绑定不精确。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.828Z",
+      "backend": "codex"
+    }
+  }
+}

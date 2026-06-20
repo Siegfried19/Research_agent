@@ -1,0 +1,31 @@
+{
+  "paper_id": "10.48550/arxiv.2510.01830",
+  "slug": "What_Matters_in_RL_Based_Methods_for_Object_Goal_Navigation_An_Empirical_Study_and_A",
+  "title": "What Matters in RL-Based Methods for Object-Goal Navigation? An Empirical Study and A Unified Framework",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "三种测试时增强都有效,且在标准(长路径)评测下更显著",
+          "problem": "原文只明确说解困助手和重映射掩码在标准评测下更明显；动态目标选择在表3中动态指标增益不小于标准指标，不能概括为三种策略都在标准评测下更显著。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.826Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "本份 PDF 提取到正文+参考文献(至第 12 页),未读到附录正文,相关具体超参以原文附录为准",
+          "problem": "当前 PDF 实际有 20 页，且第 13-20 页包含 Appendix A.1-A.8；说“未读到附录正文/至第12页”与原文文件事实不符。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T13:31:40.302Z",
+      "backend": "codex"
+    }
+  }
+}

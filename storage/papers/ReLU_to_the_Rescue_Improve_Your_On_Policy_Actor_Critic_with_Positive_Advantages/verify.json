@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.48550/arxiv.2306.01460",
+  "slug": "ReLU_to_the_Rescue_Improve_Your_On_Policy_Actor_Critic_with_Positive_Advantages",
+  "title": "ReLU to the Rescue: Improve Your On-Policy Actor-Critic with Positive Advantages",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "每个算法用贝叶斯优化（Snoek 2012）各跑 100 步搜超参，调参用 2 个种子、测试用另外 20 个（或 MuJoCo 10）随机种子",
+          "problem": "这里把不同实验块的调参/种子设定混写成统一设定；原文中Gymnax/Brax/MinAtar/Classic为2个调参种子和20个测试种子，Gymnasium-MuJoCo为10个测试种子，ProcGen结果为5个随机种子且未给出同样的2/20设定。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.826Z",
+      "backend": "codex"
+    }
+  }
+}

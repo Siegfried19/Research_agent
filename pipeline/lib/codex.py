@@ -48,10 +48,19 @@ def run_codex(prompt, model=None, timeout=300, images=None, sandbox=None, cwd=No
     cmd.append("-")  # read prompt from stdin
     t0 = time.time()
     try:
-        proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True,
-                              encoding="utf-8", timeout=timeout)
+        try:
+            proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True,
+                                  encoding="utf-8", timeout=timeout)
+        except subprocess.TimeoutExpired:
+            # 超时归一成一条干净、可被分类器认出的错(不再让裸 TimeoutExpired 漏出去——它
+            # 文本里既无配额词也只是碰巧含 'codex',分类层认不出 → 旧版会掉进 daemon 的坏PDF误判)。
+            raise RuntimeError(f"codex exec timed out after {timeout}s (no response)")
         if proc.returncode != 0:
-            raise RuntimeError(f"codex exec exit {proc.returncode}: {(proc.stderr or '').strip()[:300]}")
+            # 配额/限流横幅("You've hit your usage limit...")常出在 stdout 而非 stderr——
+            # 必须把 stdout 尾部也带进异常(2026-06-17 Bug A 根因)。**保留尾部 2000 字**(原 400 太短,
+            # 会把横幅切掉 → 分类器看不到关键证据;失败分类靠 LLM 读全文,见 lib/error_classify)。
+            tail = ((proc.stderr or "").strip() + "  " + (proc.stdout or "").strip()).strip()
+            raise RuntimeError(f"codex exec exit {proc.returncode}: {tail[-2000:]}")
         if out_file.exists():
             return out_file.read_text(encoding="utf-8").strip()
         return (proc.stdout or "").strip()  # fallback: old codex without the flag

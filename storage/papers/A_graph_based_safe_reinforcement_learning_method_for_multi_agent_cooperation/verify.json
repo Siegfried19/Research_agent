@@ -1,0 +1,24 @@
+{
+  "paper_id": "10.1016/j.neunet.2026.108693",
+  "slug": "A_graph_based_safe_reinforcement_learning_method_for_multi_agent_cooperation",
+  "title": "A graph-based safe reinforcement learning method for multi-agent cooperation",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "n=9 时只有 GS-MARL 拿到正 reward，其它算法 reward 为负",
+          "problem": "Table 5 中 n=9 时 GS-MARL(NPS)=1471.68、InforMARL=3160.61 也都是正 reward；总结把表中方向/数值关系写错。",
+          "severity": "major"
+        },
+        {
+          "quote": "GA——X=Σ softmax(f(h_i))·f(h_i) 把全图所有节点聚合成一个与智能体数无关的定长向量",
+          "problem": "原文公式说明 GA 是对 agent vertices 的集合 V_agent 聚合，不是直接聚合全图所有节点；虽 agent embedding 已经经消息传递包含邻域信息，但对象表述不准确。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}

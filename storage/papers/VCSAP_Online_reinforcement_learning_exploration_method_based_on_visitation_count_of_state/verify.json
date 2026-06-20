@@ -1,0 +1,24 @@
+{
+  "paper_id": "10.1016/j.neunet.2024.107052",
+  "slug": "VCSAP_Online_reinforcement_learning_exploration_method_based_on_visitation_count_of_state",
+  "title": "VCSAP: Online reinforcement learning exploration method based on visitation count of state-action pairs",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "四种情形的设计逻辑(§4.2 Condition I–IV): ... 状态-动作对新但状态旧→次高(II) ... 状态新但动作不新→较低(III)",
+          "problem": "原文 §4.2 中 Condition II 是“状态新、状态-动作对旧”，Condition III 才是“状态旧、状态-动作对新”；总结把 II/III 的对象和奖励方向关系写反了。",
+          "severity": "major"
+        },
+        {
+          "quote": "相对 RND 有小幅但较一致的提升 ... 单环境最小仅 2%~4%",
+          "problem": "表 3/4 显示 VCSAP 并非在所有单环境都高于 RND：TRPO Hopper-v2 为 0.97、Walker2d-v1 为 0.62，PPO Hopper-v1 也略低于 RND；总结把存在下降/不提升的方向写成一致正提升。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}

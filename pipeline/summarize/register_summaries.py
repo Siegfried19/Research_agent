@@ -8,6 +8,7 @@ import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT, now_iso
 from lib.slug import file_id
+from lib.store import summary_file
 
 
 def main():
@@ -22,7 +23,7 @@ def main():
 
     registered, missing = 0, 0
     for r in rows:
-        vpath = ROOT / "store" / "summaries" / (r["slug"] or file_id(r["id"])) / "v1.md"
+        vpath = summary_file(r["slug"] or file_id(r["id"]), 1)
         if not vpath.exists() or vpath.stat().st_size < 100:
             missing += 1
             continue

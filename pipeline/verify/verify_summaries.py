@@ -19,6 +19,8 @@ import random
 import shutil
 import tempfile
 import sys
+import threading
+from datetime import datetime, timedelta
 from pathlib import Path
 
 # --- path shim: 让 `from lib...` 解析到 pipeline/lib，无论本文件在哪个子目录 ---
@@ -28,6 +30,8 @@ from lib.db import open_db, ROOT, now_iso, load_config
 from lib.codex import run_codex, pool
 from lib.claude import run_claude
 from lib.log import get_logger, run_log
+from lib.notify import notify
+from lib.store import verify_file
 
 log = get_logger("verify")
 
@@ -40,6 +44,76 @@ VERIFY_BACKEND = _os.environ.get("VERIFY_BACKEND", "codex").lower()
 # codex 自渲染(隔离临时目录+paper.pdf+workspace-write,自己抽文本查数字+渲染页面看图表)、
 # claude 应急后端用 Read 工具直读 PDF。reasoning_effort 走中等(claim 级语义核查,不用最贵档逐字渲染)。
 REASONING_EFFORT = (load_config().get("verify") or {}).get("reasoning_effort", "medium")
+
+
+QUOTA_STATE = ROOT / "logs" / "codex_quota.json"
+CIRCUIT_TRIP = 4   # 一批里引擎调用(codex/claude)失败累计到这么多就熔断、跳过本批剩余(不白敲),余下次轮重试
+
+# 失败类别(lib/error_classify 的 LLM 判,不再靠关键词) → verify_daemon 怎么办。写进信号文件
+# logs/codex_quota.json 给 daemon 读:
+#   quota_exhausted    睡到 until(额度窗口小时级)
+#   transient/unknown  daemon 递增短退避重试(15→30→60 分)
+#   real_error         报警 + 跳过该主题(要人修,睡也没用)
+#   bad_input/malformed_output  逐篇问题→不写信号,record_skip 把那几篇钉版跳过(免每轮白核成配额黑洞)
+_STOP_CATS = ("quota_exhausted", "transient", "unknown", "real_error")
+_SKIP_CATS = ("bad_input", "malformed_output")
+
+
+def write_signal(category, until_iso=None, retry_minutes=None):
+    """把"这批撞了 codex 侧问题"写成信号给 verify_daemon(取代旧 note_quota/mark_codex_backoff——
+    不再靠关键词,类别由 lib/error_classify 的 LLM 判)。category 决定 daemon 睡多久。"""
+    try:
+        QUOTA_STATE.write_text(json.dumps(
+            {"hit": True, "category": category, "until": until_iso,
+             "retry_minutes": retry_minutes, "ts": now_iso()},
+            ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _skip_path(topic_id):
+    name = "verify_skip.json" if VERIFY_BACKEND == "codex" else f"verify_skip_{VERIFY_BACKEND}.json"
+    return ROOT / "topics" / topic_id / name
+
+
+def load_skip(topic_id):
+    sp = _skip_path(topic_id)
+    return json.loads(sp.read_text(encoding="utf-8")) if sp.exists() else {}
+
+
+def record_skip(topic_id, papers, reason):
+    """把"这一版核不了"的篇钉进 verify_skip.json(version 钉版:总结重做出新版→自动重新合格)。
+    papers: [{"id":.., "version":..}]。用于 bad_input(PDF读不了)/malformed,免得每轮白核成配额黑洞。"""
+    papers = [p for p in papers if p.get("id")]
+    if not papers:
+        return
+    sp = _skip_path(topic_id)
+    skip = load_skip(topic_id)
+    for p in papers:
+        skip[p["id"]] = {"version": p.get("version"), "reason": reason, "ts": now_iso()}
+    sp.write_text(json.dumps(skip, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def classify_and_signal(topic_id, failed):
+    """一批失败 → LLM 分类 → 决定停轮/逐篇跳过 + 写 daemon 信号。返回:
+    {stop, category, until, skip_papers, per}。
+    - 批级类 ∈ _STOP_CATS → stop=True、写信号(quota 带 until 让 daemon 长睡;transient/unknown 让其递增退避;
+      real_error 报警跳主题)。
+    - 失败里 bad_input/malformed 的篇 → skip_papers(调用方 record_skip 钉版跳过,不算 stop)。"""
+    from lib.error_classify import classify_batch
+    cls = classify_batch(failed)
+    cat, mins, cats = cls["category"], cls["retry_minutes"], cls["categories"]
+    skip_papers = [{"id": r.get("id"), "version": r.get("version")}
+                   for r, c in zip(failed, cats)
+                   if c in _SKIP_CATS and isinstance(r, dict) and r.get("id")]
+    until = None
+    if cat in _STOP_CATS:
+        if cat == "quota_exhausted":
+            mm = mins if isinstance(mins, (int, float)) and mins > 0 else 120
+            until = (datetime.now() + timedelta(minutes=mm)).isoformat()
+        write_signal(cat, until_iso=until, retry_minutes=mins)
+    return {"stop": cat in _STOP_CATS, "category": cat, "until": until,
+            "skip_papers": skip_papers, "per": cls["per_error"]}
 
 
 def vprompt(title, summary, pdf_ref, backend="codex"):
@@ -116,7 +190,8 @@ def load_candidates(topic_id):
     """Latest-version summarized papers of the topic + verified-versions map."""
     conn = open_db()
     rows = [dict(r) for r in conn.execute(
-        """SELECT p.*, sv.path AS summary_path, sv.version AS summary_version FROM papers p
+        """SELECT p.*, sv.path AS summary_path, sv.version AS summary_version,
+                  sv.created_at AS summary_created FROM papers p
             JOIN paper_topic pt ON pt.paper_id=p.id
             JOIN summary_versions sv ON sv.paper_id=p.id
            WHERE pt.topic_id=? AND p.status='summarized'
@@ -125,63 +200,77 @@ def load_candidates(topic_id):
     conn.close()
     sp = _seen_path(topic_id)
     seen = json.loads(sp.read_text(encoding="utf-8")) if sp.exists() else {}
-    return rows, seen
+    return rows, seen, load_skip(topic_id)
 
 
-def split_must(rows, seen):
+def split_must(rows, seen, skip=None):
     """must = suspects + corrected/updated (v>=2) not verified at current version;
-    rest = the other not-yet-verified papers (sampling pool)."""
+    rest = the other not-yet-verified papers (sampling pool)。
+    已记入 verify_skip 的篇(同版核不了的:坏PDF/反复 malformed)排除掉——总结重做出新版会自动重新合格。"""
+    skip = skip or {}
+
     def is_must(r):
         return r.get("quality_tier") == "suspect" or r["summary_version"] > 1
-    unseen = [r for r in rows if seen.get(r["id"]) != r["summary_version"]]
+
+    def skipped(r):
+        return skip.get(r["id"], {}).get("version") == r["summary_version"]
+
+    unseen = [r for r in rows
+              if seen.get(r["id"]) != r["summary_version"] and not skipped(r)]
     return [r for r in unseen if is_must(r)], [r for r in unseen if not is_must(r)]
 
 
 def verify_batch(picked, concurrency):
-    """Codex-check each picked paper. Returns (ok_results, failed).
-    Circuit breaker: once a codex usage-limit error is seen, remaining papers
-    are skipped immediately instead of burning one failed call each."""
+    """Codex(或 claude 应急)逐篇核查。返回 (ok, failed);**failed 每条都带 id/version/error**
+    (供 classify_and_signal 逐篇分类/跳过)。
+    熔断:本批引擎调用失败累计到 CIRCUIT_TRIP 就跳过剩余篇(不白敲);失败是哪类(配额/瞬时/坏PDF)
+    不在这里靠关键词猜,事后由 lib/error_classify 的 LLM 统一判。"""
     tripped = []
+    fails = []
+    lock = threading.Lock()
 
     def worker(r, _i):
+        base = {"id": r["id"], "version": r["summary_version"], "title": r.get("title"),
+                "slug": r.get("slug")}
         if tripped:
-            return {"id": r["id"], "error": "skipped (codex usage limit hit earlier in batch)"}
+            return {**base, "error": "skipped (circuit breaker: too many engine failures earlier in batch)"}
         spath = ROOT / r["summary_path"]
         if not spath.exists():
-            return {"id": r["id"], "error": "summary file missing"}
-        w = {"id": r["id"], "pdf_path": str(ROOT / r["pdf_path"]) if r.get("pdf_path") else None}
+            return {**base, "error": "summary file missing"}
+        pdf_path = str(ROOT / r["pdf_path"]) if r.get("pdf_path") else None
+        # summarized 的篇必然曾有 PDF;这里没 PDF=异常(被删/移动)→ 归 bad_input,逐篇跳过
+        # (PDF 是唯一原文来源,没 PDF 就不核,绝不另找来源去核一份本就从 PDF 写出来的总结)。
+        if not (pdf_path and Path(pdf_path).exists()):
+            return {**base, "error": "no pdf on disk (anomaly: summarized paper lost its PDF)"}
         summary = spath.read_text(encoding="utf-8")
-        # summarized 的篇必然曾有 PDF(sum 阶段无 PDF 直接跳过、不产出总结)。这里没 PDF =
-        # 异常(被删/移动)→ 记错误跳过、进报告"未能核查"让人看(PDF 是唯一原文来源,
-        # 没 PDF 就不核,绝不另找来源去核一份本就从 PDF 写出来的总结)。
-        if not (w["pdf_path"] and Path(w["pdf_path"]).exists()):
-            return {"id": r["id"], "error": "no pdf on disk (anomaly: summarized paper lost its PDF)"}
         tmpd = None
         try:
             if VERIFY_BACKEND == "claude":
                 # 应急后端:claude 用 Read 工具直读 PDF(整篇,看公式/图表),无沙箱、无文本兜底。
-                prompt = vprompt(r["title"], summary, w["pdf_path"], backend="claude")
+                prompt = vprompt(r["title"], summary, pdf_path, backend="claude")
                 out = run_claude(prompt, tools=["Read"], timeout=900)
             else:
                 # codex 自渲染:隔离临时目录(拷入 paper.pdf)+ workspace-write,让它自己读全篇
                 # (抽文本查数字 + 按需渲染页面看公式/图表),不预喂抽取文本;reasoning_effort=中等。
                 tmpd = Path(tempfile.mkdtemp(prefix="vfy_cdx_"))
-                shutil.copy2(w["pdf_path"], tmpd / "paper.pdf")
+                shutil.copy2(pdf_path, tmpd / "paper.pdf")
                 prompt = vprompt(r["title"], summary, "./paper.pdf", backend="codex")
                 out = run_codex(prompt, sandbox="workspace-write", cwd=str(tmpd), timeout=900,
                                 effort=REASONING_EFFORT)
+            v = parse_obj(out)   # 放进 try:输出畸形(非JSON)也算失败、计入熔断、事后判 malformed_output
         except Exception as e:
-            if "usage limit" in str(e).lower():
-                tripped.append(True)
-            raise
+            # 不再靠关键词判配额;失败原样收集(带 id),熔断只看次数,类别事后 LLM 判。
+            with lock:
+                fails.append(1)
+                if len(fails) >= CIRCUIT_TRIP:
+                    tripped.append(True)
+            return {**base, "error": str(e)}
         finally:
             if tmpd:
                 shutil.rmtree(tmpd, ignore_errors=True)
-        v = parse_obj(out)
-        res = {"id": r["id"], "title": r["title"], "tier": r.get("quality_tier"),
-               "version": r["summary_version"],
+        res = {**base, "tier": r.get("quality_tier"),
                "verdict": v.get("verdict", "?"), "issues": v.get("issues") or []}
-        log.info(f"  {res['verdict'].upper():5s} ({len(res['issues'])} issues) {r['title'][:60]}")
+        log.info(f"  {res['verdict'].upper():5s} ({len(res['issues'])} issues) {(r.get('title') or '')[:60]}")
         return res
 
     results = pool(picked, worker, concurrency)
@@ -196,6 +285,32 @@ def record_verified(topic_id, ok):
     for r in ok:
         seen[r["id"]] = r["version"]
     sp.write_text(json.dumps(seen, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def record_verify_detail(ok):
+    """把每篇核查【详情】按版本累积写进 storage/papers/<slug>/verify.json,永不覆盖旧版——
+    留全程问题历史(哪个版本、codex 挑出哪些 issues)。与 topics/<id>/ 下的【状态】文件
+    (verified.json/verify_status.json,喂 daemon/续核)无关、不重叠,daemon 不读这份。
+    跨主题天然单一:键是论文 slug,一篇就一份,不按 topic 分。"""
+    for r in ok:
+        slug, verdict = r.get("slug"), r.get("verdict")
+        if not slug or not verdict:
+            continue
+        vf = verify_file(slug)
+        data = json.loads(vf.read_text(encoding="utf-8")) if vf.exists() else {}
+        data.setdefault("paper_id", r["id"])
+        data["slug"] = slug
+        if r.get("title"):
+            data["title"] = r["title"]
+        versions = data.setdefault("versions", {})
+        versions[str(r["version"])] = {           # 同版本重核 = 覆盖该版的最新结论;别的版本不动
+            "verdict": verdict,
+            "issues": r.get("issues") or [],
+            "checked_at": now_iso(),
+            "backend": VERIFY_BACKEND,
+        }
+        vf.parent.mkdir(parents=True, exist_ok=True)
+        vf.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def write_report(topic_id, ok, failed, note=""):
@@ -270,8 +385,8 @@ def main():
     pct = float(args[1]) if len(args) > 1 else 100.0  # 默认全审(每次就 ~10 篇,不抽样)
     concurrency = int(args[2]) if len(args) > 2 else 2
 
-    rows, seen = load_candidates(topic_id)
-    must, rest = split_must(rows, seen)
+    rows, seen, skip = load_candidates(topic_id)
+    must, rest = split_must(rows, seen, skip)
     n_sample = max(1, round(len(rest) * pct / 100)) if rest else 0
     picked = must + random.sample(rest, min(n_sample, len(rest)))
     if limit:
@@ -281,10 +396,24 @@ def main():
              f"{f', capped to {limit}' if limit else ''})")
 
     ok, failed = verify_batch(picked, concurrency)
-    n_pass, n_minor, n_major = write_report(topic_id, ok, failed)
     record_verified(topic_id, ok)
+    record_verify_detail(ok)   # 详情按版本留痕进 storage/papers/<slug>/verify.json(不动状态/daemon)
+    stopped, cat = False, None
+    if failed:
+        d = classify_and_signal(topic_id, failed)
+        cat, stopped = d["category"], d["stop"]
+        if d["skip_papers"]:
+            record_skip(topic_id, d["skip_papers"], f"verify 判为 {cat}（{VERIFY_BACKEND}）")
+            log.info(f"verify_summaries: {len(d['skip_papers'])} 篇判 {cat} -> 钉版跳过(record_skip)")
+        if stopped:
+            log.info(f"verify_summaries: 失败类别={cat} -> 写信号 + 中止本批"
+                     + (f"(约 {d['until']} 重试)" if d['until'] else ""))
+            notify(f"⚠️ verify 中止（{cat}，topic {topic_id}）。本批已核 {len(ok)}、未核 {len(failed)}。"
+                   + (f"约 {d['until'][11:16]} 后重试。" if d['until'] else "")
+                   + "重跑即从断点续核（verified.json 已落盘）。")
+    n_pass, n_minor, n_major = write_report(topic_id, ok, failed)
     run_log(topic_id, f"verify_summaries: checked={len(ok)} pass={n_pass} minor={n_minor} "
-                      f"major={n_major} errors={len(failed)}")
+                      f"major={n_major} errors={len(failed)}{f' [中止:{cat}]' if stopped else ''}")
 
 
 if __name__ == "__main__":

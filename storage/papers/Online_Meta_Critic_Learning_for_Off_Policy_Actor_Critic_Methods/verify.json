@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.48550/arxiv.2003.05334",
+  "slug": "Online_Meta_Critic_Learning_for_Off_Policy_Actor_Critic_Methods",
+  "title": "Online Meta-Critic Learning for Off-Policy Actor-Critic Methods",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "最后一层用 softplus 保证附加损失非负——借 TD3“取两 critic 最小值防高估”的直觉，非负附加损失可缓解 actor 损失被高估。",
+          "problem": "原文说的是 vanilla critic/Q-value 可能 over-estimate，非负附加 actor loss 可缓解这种 critic 过估计；总结把对象写成“actor 损失被高估”，对象绑定不准。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.828Z",
+      "backend": "codex"
+    }
+  }
+}

@@ -22,9 +22,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CFG_DIR="$ROOT/config"
 PASS_FILE="$CFG_DIR/x11vnc.pass"      # VNC auth blob (gitignored)
 PLAIN_FILE="$CFG_DIR/x11vnc.plain"    # plaintext, only to build the URL (gitignored)
-# Prefer the vendored modern noVNC (pinch-zoom on phones); fall back to the
-# distro's old 1.0.0 (no gestures) if the vendored copy isn't present.
-NOVNC_WEB="$ROOT/vendor/novnc"
+# Prefer the bundled modern noVNC (pinch-zoom on phones), kept under the repo's
+# big-deps folder dependencies/; fall back to the distro's old 1.0.0 (no gestures)
+# if that copy isn't present.
+NOVNC_WEB="$ROOT/dependencies/novnc"
 [ -f "$NOVNC_WEB/vnc.html" ] || NOVNC_WEB="/usr/share/novnc"
 mkdir -p "$CFG_DIR" "$ROOT/logs"
 

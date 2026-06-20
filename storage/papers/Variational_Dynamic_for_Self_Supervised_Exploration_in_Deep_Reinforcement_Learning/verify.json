@@ -1,0 +1,36 @@
+{
+  "paper_id": "10.1109/tnnls.2021.3129160",
+  "slug": "Variational_Dynamic_for_Self_Supervised_Exploration_in_Deep_Reinforcement_Learning",
+  "title": "Variational Dynamic for Self-Supervised Exploration in Deep Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "作者明说它\"may not be good at modeling long-term\"(对比 probabilistic-ensemble 面向 MPC 长程规划)",
+          "problem": "原文说的是 probabilistic-ensemble 可能不擅长单步随机转移建模但能捕捉 long-term uncertainty；并未明说 VDM 不擅长 long-term，只说将 VDM 用于 long-term model-based planning 是未来方向，存在张冠李戴。",
+          "severity": "major"
+        },
+        {
+          "quote": "故 D_KL(q‖VDM先验) ≤ D_KL(q‖N(0,1))(Eq 20),推得 log p(s′|s,a) ≥ L_VDM ≥ L_CVAE(Eq 22)——VDM 是更紧的动态对数似然下界(已证明)",
+          "problem": "原文 Eq.20 前有 Usually，且该 CVAE 比较段是理论性论证而非正式证明；总结把带限定的论证写成“已证明”略强。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.829Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "内在奖励与优势都做了 batch 归一化(均值0方差1)以稳定训练",
+          "problem": "原文只明确说优势在 batch 内归一化到均值0、标准差1；内在奖励是用折扣奖励和的运行标准差做平滑/缩放，不是同样的 batch 均值0方差1归一化。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T18:10:54.374Z",
+      "backend": "codex"
+    }
+  }
+}

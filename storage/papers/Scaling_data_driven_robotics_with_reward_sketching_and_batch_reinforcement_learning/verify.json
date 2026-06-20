@@ -1,0 +1,31 @@
+{
+  "paper_id": "arxiv:1909.12200",
+  "slug": "Scaling_data_driven_robotics_with_reward_sketching_and_batch_reinforcement_learning",
+  "title": "Scaling data-driven robotics with reward sketching and batch reinforcement learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "作者自承当前方法“不能解决所有感兴趣的操作任务”(原文 \"does not however cover many manipulation tasks of interest as shown here\")",
+          "problem": "原文对应句子是“does however cover many manipulation tasks of interest as shown here”，总结把肯定说法加了 not 并当作作者自承局限，方向反转；虽原文另有“not universal”的局限表述，但这个引文和归因是错的。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.827Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "消融三:分布式值函数是必需的。换成非分布式 RL 后大幅变差",
+          "problem": "原文说的是 distributional value functions / non-distributional RL（价值分布建模）而不是 distributed/非分布式并行 RL；结果方向正确，但术语容易把消融对象说错。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T18:10:54.373Z",
+      "backend": "codex"
+    }
+  }
+}

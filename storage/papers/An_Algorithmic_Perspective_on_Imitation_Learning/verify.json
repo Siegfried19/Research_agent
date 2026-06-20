@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.1561/2300000053",
+  "slug": "An_Algorithmic_Perspective_on_Imitation_Learning",
+  "title": "An Algorithmic Perspective on Imitation Learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "Guided Cost Learning(Finn 2016,式 4.28–4.29,算法 18–19):神经网络代价 + 基于采样的最大熵,model-free、需黑盒模拟器但不需显式动力学。",
+          "problem": "原文把 Finn et al. 2016b / Guided Cost Learning 明确归在 model-based IRL（表2.2、表2.4、§4.4.6），并说明它需要黑盒模拟器但不需显式动力学模型；总结将其标为 model-free 与原文分类相反。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.829Z",
+      "backend": "codex"
+    }
+  }
+}

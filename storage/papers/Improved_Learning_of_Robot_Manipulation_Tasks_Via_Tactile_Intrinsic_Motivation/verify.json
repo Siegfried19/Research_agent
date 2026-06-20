@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.1109/lra.2021.3061308",
+  "slug": "Improved_Learning_of_Robot_Manipulation_Tasks_Via_Tactile_Intrinsic_Motivation",
+  "title": "Improved Learning of Robot Manipulation Tasks Via Tactile Intrinsic Motivation",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-20T13:18:41.828Z",
+      "backend": "codex"
+    }
+  }
+}

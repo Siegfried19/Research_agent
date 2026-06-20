@@ -15,7 +15,7 @@
     "codex_panel": false
   },
   "verify": {
-    "_comment": "Codex 跨模型核查(2026-06-18 定稿)。永远 self-render:给 Codex(gpt-5.5)隔离临时目录+PDF+workspace-write 沙箱,它自己读全篇、涉及公式/图表自渲染相关页面再看(整篇 PDF 给它,无文本兜底、无截断——总结本就只从 PDF 写,核查同源)。reasoning_effort=medium:中等强度做 claim 级语义核查(方向反转/张冠李戴/过度声称),不用最贵档逐字渲染(省 ChatGPT 配额)。核查 report-only,major 触发整篇重新总结(非打补丁),见 docs/summary-design-principles.md。",
+    "_comment": "Codex 跨模型核查(2026-06-18 定稿)。永远 self-render:给 Codex(gpt-5.5)隔离临时目录+PDF+workspace-write 沙箱,它自己读全篇、涉及公式/图表自渲染相关页面再看(整篇 PDF 给它,无文本兜底、无截断——总结本就只从 PDF 写,核查同源)。reasoning_effort=medium:中等强度做 claim 级语义核查(方向反转/张冠李戴/过度声称),不用最贵档逐字渲染(省 ChatGPT 配额)。核查 report-only,major 触发整篇重新总结(非打补丁),见 claude-memory/Prompt-structure-design/summary-design-principles.md。",
     "reasoning_effort": "medium"
   },
   "ranking": {
@@ -32,8 +32,8 @@
     "user_agent": "ResearchAgent/0.1 (mailto:a0904251001@gmail.com)"
   },
   "paths": {
-    "pdfs": "store/pdfs",
-    "summaries": "store/summaries",
+    "_comment": "2026-06-20 布局改版:一篇一个家 storage/papers/<slug>/(paper.pdf + v*.md + verify.json)。路径由 lib/store.py 的 paper_dir/pdf_file/summary_file/verify_file 统一构造,代码不再读本节;此处仅作文档。",
+    "papers": "storage/papers",
     "topics": "topics"
   },
   "tier_b": {

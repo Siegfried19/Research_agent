@@ -30,6 +30,7 @@ _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)
 from lib.db import open_db, ROOT, load_config, now_iso
 from lib.log import run_log
 from lib.slug import file_id
+from lib.store import pdf_file
 try:
     from lib.notify import notify
 except Exception:  # noqa: BLE001
@@ -38,8 +39,7 @@ except Exception:  # noqa: BLE001
 
 config = load_config()
 TB = config.get("tier_b", {})
-PDF_DIR = ROOT / config["paths"]["pdfs"]
-DL_DIR = ROOT / "store" / "dl_tmp"
+DL_DIR = ROOT / "storage" / "dl_tmp"
 DISPLAY = os.environ.get("DISPLAY_FOR_CHROME", ":1")
 # 2026-06-17: 独立 user-data-dir,与 Stock_agent 的 ~/.config/google-chrome-scrape 物理隔离
 # (共用同一目录会:互相 pkill 收尾、Chrome 单实例/目录限制、锁不互斥——见 CLAUDE.md Tier B 节)。
@@ -47,7 +47,7 @@ DISPLAY = os.environ.get("DISPLAY_FOR_CHROME", ":1")
 UDD = os.environ.get("CHROME_USER_DATA_DIR", str(Path.home() / ".config" / "google-chrome-scrape-nyu"))
 PROFILE_DIR = os.environ.get("CHROME_PROFILE_DIR", "Profile 2")
 SESSION = "tierb"
-LOG_FILE = ROOT / "logs" / f"tierb-{datetime.now().strftime('%Y-%m-%d')}.log"
+LOG_FILE = ROOT / "logs" / "temporary-log" / f"tierb-{datetime.now().strftime('%Y-%m-%d')}.log"
 ALIAS = None
 
 
@@ -328,7 +328,8 @@ def verify_pdf(p):
 
 def fetch_one(conn, r):
     slug = r["slug"] or file_id(r["id"])
-    pdf_path = PDF_DIR / (slug + ".pdf")
+    pdf_path = pdf_file(slug)
+    pdf_path.parent.mkdir(parents=True, exist_ok=True)
     tlog(f"\n>>> {(r['title'] or '')[:55]}  [{r['id']}]")
 
     br("open", redirector(r["id"]), timeout=60)
@@ -375,7 +376,6 @@ def main():
         print("usage: fetch_tierb.py <topicId>", file=sys.stderr)
         sys.exit(1)
     topic_id = sys.argv[1]
-    PDF_DIR.mkdir(parents=True, exist_ok=True)
     conn = open_db()
     rows = conn.execute(
         """SELECT p.id, p.title, p.slug, p.status, p.landing_url

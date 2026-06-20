@@ -59,6 +59,6 @@ def run(gold_path, k):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("gold", nargs="?", default="store/eval_gold.json")
+    ap.add_argument("gold", nargs="?", default="storage/eval_gold.json")
     ap.add_argument("-k", type=int, default=10)
     run(ap.parse_args().gold, ap.parse_args().k)

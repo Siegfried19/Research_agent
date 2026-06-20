@@ -11,8 +11,8 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 ROOT = Path(__file__).resolve().parents[2]
-# RESEARCH_DB lets tests point at a throwaway DB without touching db/papers.sqlite.
-DB_PATH = Path(os.environ["RESEARCH_DB"]) if os.environ.get("RESEARCH_DB") else ROOT / "db" / "papers.sqlite"
+# RESEARCH_DB lets tests point at a throwaway DB without touching data-base/papers.sqlite.
+DB_PATH = Path(os.environ["RESEARCH_DB"]) if os.environ.get("RESEARCH_DB") else ROOT / "data-base" / "papers.sqlite"
 PIPELINE_DIR = ROOT / "pipeline"
 CONFIG_PATH = PIPELINE_DIR / "config.json"
 

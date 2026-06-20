@@ -4,12 +4,34 @@ Callers are responsible for conn.commit() after a batch of writes.
 """
 import json
 
-from .db import now_iso
+from .db import now_iso, ROOT
 from .slug import unique_slug
 
 
 def _j(x):
     return json.dumps(x, ensure_ascii=False)
+
+
+# --- 论文存储布局:一篇一个家 storage/papers/<base>/ ---------------------------
+# base = papers.slug;无 slug 时调用方退化为 file_id(id)(沿用全局口径)。
+# 一篇论文的 PDF、各版本总结、核查详情全在这个文件夹里。**所有构造这些路径的地方
+# 都应走这里**,别再各处写死 "store/pdfs"/"store/summaries"(那是旧两处分离布局)。
+def paper_dir(base):
+    return ROOT / "storage" / "papers" / base
+
+
+def pdf_file(base):
+    return paper_dir(base) / "paper.pdf"
+
+
+def summary_file(base, version):
+    return paper_dir(base) / f"v{version}.md"
+
+
+def verify_file(base):
+    """核查详情(按版本累积留痕):{"versions": {"1": {verdict, issues, ...}, ...}}。
+    与 verify 的【状态】文件(topics/<id>/verified.json 等,喂 daemon)无关、不重叠。"""
+    return paper_dir(base) / "verify.json"
 
 
 def upsert_paper(conn, p):

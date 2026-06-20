@@ -21,9 +21,9 @@ from lib.http import download_pdf
 from lib.merge import title_matches
 from lib.log import get_logger, run_log
 from lib.slug import file_id
+from lib.store import pdf_file
 
 config = load_config()
-PDF_DIR = ROOT / config["paths"]["pdfs"]
 log = get_logger("recover_agent")
 
 PROMPT = """你是论文全文猎手。任务：为下面这篇论文找一个**合法的免费全文 PDF 直链**。
@@ -73,7 +73,6 @@ def pdf_text(pdf_path):
 def main():
     topic_id = sys.argv[1] if len(sys.argv) > 1 else "all"
     concurrency = int(sys.argv[2]) if len(sys.argv) > 2 else 2
-    PDF_DIR.mkdir(parents=True, exist_ok=True)
     conn = open_db()
     if topic_id == "all":
         rows = conn.execute(
@@ -111,7 +110,8 @@ def main():
             log.info(f"  --   agent found nothing: {title}")
             continue
         base = r["slug"] or file_id(r["id"])
-        pdf_path = PDF_DIR / (base + ".pdf")
+        pdf_path = pdf_file(base)
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             bytes_ = download_pdf(v["url"], pdf_path, config["download"]["user_agent"], timeout)
         except Exception as e:  # noqa: BLE001

@@ -5,7 +5,7 @@
 意思相近的两段文字,坐标也相近 → "找意思像的"变成"找坐标近的"。
 
 - 模型: Qwen/Qwen3-Embedding-0.6B(多语言,中英都强,1024维,体格小)。
-- 模型文件落在 pipeline/retrieve/models/(gitignored,可重下),不污染家目录。
+- 模型文件落在 dependencies/models/(仓库根的大依赖统一目录,gitignored,可重下),不污染家目录。
 - 首次调用按需加载(首跑会下模型~1.2GB),之后进程内单例复用;GPU 可用就吃 GPU。
 - 查询侧带 Qwen 的 instruct 前缀(召回更准),文档侧不带 —— 这是 Qwen3-Embedding 的推荐用法。
 
@@ -14,8 +14,8 @@
 import os
 from pathlib import Path
 
-# 模型缓存钉在检索模块内(必须在 import huggingface/sentence_transformers 之前设 HF_HOME)
-_MODELS_DIR = Path(__file__).resolve().parent.parent / "retrieve" / "models"
+# 模型缓存钉在仓库根的大依赖目录 dependencies/models(必须在 import huggingface/sentence_transformers 之前设 HF_HOME)
+_MODELS_DIR = Path(__file__).resolve().parents[2] / "dependencies" / "models"
 _MODELS_DIR.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("HF_HOME", str(_MODELS_DIR))
 # 防显存碎片:6GB 卡上一次 reindex 在同进程连续嵌很多篇,碎片会攒成"假性 OOM"(实测连续测

@@ -9,6 +9,7 @@ import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT
 from lib.slug import file_id
+from lib.store import paper_dir
 
 
 def main():
@@ -27,7 +28,7 @@ def main():
     work = []
     for r in rows:
         base = r["slug"] or file_id(r["id"])
-        sdir = ROOT / "store" / "summaries" / base
+        sdir = paper_dir(base)
         work.append({
             "id": r["id"], "title": r["title"], "authors": json.loads(r["authors"] or "[]"),
             "year": r["year"], "venue": r["venue"], "citation_count": r["citation_count"],

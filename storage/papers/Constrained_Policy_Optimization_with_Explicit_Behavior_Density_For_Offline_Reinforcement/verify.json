@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.52202/075280-0245",
+  "slug": "Constrained_Policy_Optimization_with_Explicit_Behavior_Density_For_Offline_Reinforcement",
+  "title": "Constrained Policy Optimization with Explicit Behavior Density For Offline Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-20T13:18:41.826Z",
+      "backend": "codex"
+    }
+  }
+}

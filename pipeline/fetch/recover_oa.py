@@ -21,9 +21,9 @@ from lib.http import get_json, get_text, download_pdf, sleep
 from lib.merge import norm_title
 from lib.log import get_logger, run_log
 from lib.slug import file_id
+from lib.store import pdf_file
 
 config = load_config()
-PDF_DIR = ROOT / config["paths"]["pdfs"]
 MAIL = "a0904251001@gmail.com"
 log = get_logger("recover_oa")
 
@@ -143,7 +143,6 @@ def candidate_urls(r):
 
 def main():
     topic_id = sys.argv[1] if len(sys.argv) > 1 else "all"
-    PDF_DIR.mkdir(parents=True, exist_ok=True)
     conn = open_db()
     if topic_id == "all":
         rows = conn.execute(
@@ -159,7 +158,8 @@ def main():
     recovered = 0
     for r in rows:
         base = r["slug"] or file_id(r["id"])
-        pdf_path = PDF_DIR / (base + ".pdf")
+        pdf_path = pdf_file(base)
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
         cands = candidate_urls(r)
         if not cands:
             log.info(f"  --   no free source: {(r['title'] or '')[:50]}")

@@ -13,18 +13,21 @@ Stages:
   worklist  build summarize worklist
   sum       summaries (claude -p) -> v1.md
   finalize  register summaries + render topic.md
-  verify    cross-model fact-check ALL unverified summaries (Codex), auto-correct
-            majors (claude -p, vN+1) + re-check, then re-render topic.md
+  verify    cross-model fact-check unverified summaries (Codex, ≤VERIFY_MAX_PER_RUN
+            per run, newest first), redo majors whole (claude -p, vN+1) + re-check,
+            report papers still pending, then re-render topic.md
   auto      run all of the above, in order
 
   auto-pull  daytime/attended half: discover..hunt + tierb + worklist.
              Gets every PDF ready (incl. paywalled — you click tierb challenges).
              Token cost = score + hunt only (small).
-  auto-sum   nightly/unattended half: sum + finalize + verify.
-             The token-heavy summarize/verify, meant to run via cron while you
-             sleep so it doesn't compete with your daytime Max usage. No human,
-             no paywall. Idempotent — already-summarized papers are skipped, so
-             a partial run just gets finished on the next night.
+  auto-sum   nightly/unattended half: sum + finalize (verify split out → daemon).
+             The token-heavy summarize, meant to run via cron while you sleep so
+             it doesn't compete with your daytime Max usage. No human, no paywall.
+             Idempotent — already-summarized papers are skipped, so a partial run
+             just gets finished on the next night. Fact-checking (verify) is no
+             longer in this chain: it runs all-day via tools/verify_daemon.py so
+             the two don't fight over the same codex quota window.
 
 Only `tierb` ever needs you (to click a Cloudflare/Duo challenge) — and it lives
 in `auto-pull`, the attended half. `auto-sum` is fully unattended.
@@ -32,6 +35,7 @@ in `auto-pull`, the attended half. `auto-sum` is fully unattended.
 from lib.envguard import ensure_env
 ensure_env()  # 不在 research-agent 环境就自动切过去(主链子进程经 sys.executable 全继承)
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -42,6 +46,11 @@ from lib.notify import notify
 
 PY = sys.executable
 PDIR = ROOT / "pipeline"
+
+# 每次 verify 最多核多少篇(含 major 复核):主动停在 codex 配额窗口内(此订阅 ~20 次/窗口,
+# 见 logs/SESSION-2026-06-17-codex-quota.md;留 margin 给复核 → 15)。积压靠多跑几次安全排空。
+# 想调就改这里(或夜间把 sum 批量降到 ~10-12 让 verify 跟得上当晚总结)。
+VERIFY_MAX_PER_RUN = 15
 
 # stage -> list of (script, [args...]) run in order
 def steps(stage, tid):
@@ -56,16 +65,20 @@ def steps(stage, tid):
         "worklist": [("summarize/build_worklist.py", [tid])],
         "sum":      [("summarize/summarize_auto.py", [tid])],
         "finalize": [("summarize/register_summaries.py", [tid]), ("summarize/render_topic.py", [tid])],
-        "verify":   [("verify/escalate_verify.py", [tid, "--start-pct", "100"]),
+        "verify":   [("verify/escalate_verify.py",
+                      [tid, "--max-papers", str(VERIFY_MAX_PER_RUN)]),  # capped 模式:不抽样,上限定量
                      ("summarize/render_topic.py", [tid])],
     }.get(stage)
 
 
 AUTO = ["discover", "score", "commit", "fetch", "recover", "hunt", "tierb", "worklist", "sum", "finalize", "verify"]
 # Token-aware split (2026-06-16): pull half is attended (tierb) + small token cost;
-# sum half is the token-heavy summarize/verify, meant for an unattended nightly cron.
+# sum half is the token-heavy summarize, meant for an unattended nightly cron
+# (verify split out 2026-06-19 → all-day verify_daemon, so they don't share the codex window).
 AUTO_PULL = ["discover", "score", "commit", "fetch", "recover", "hunt", "tierb", "worklist"]
-AUTO_SUM = ["sum", "finalize", "verify"]
+# 2026-06-19: verify 从夜间链摘出,交给全天候 verify_daemon(tools/verify_daemon.py)单跑,
+# 避免 cron 与 daemon 抢同一个 codex 配额窗口。夜间只 sum+finalize;verify 阶段保留给 daemon/手动。
+AUTO_SUM = ["sum", "finalize"]
 
 
 def run_chain(stages, tid, continue_on_error=False):
@@ -99,11 +112,12 @@ def run_steps(name, tid, step_list):
 
 
 def run_auto_sum(tid, limit=None, concurrency=2):
-    """Nightly unattended half: sum -> finalize -> verify. continue-on-error
-    (idempotent stages; partial progress finished next night). When limit is
-    set, only that many papers are summarized this run — the verify stage still
-    sweeps whatever's unverified but is bounded over time by the per-run cap and
-    its own codex usage-limit circuit breaker."""
+    """Nightly unattended half: sum -> finalize. continue-on-error (idempotent
+    stages; partial progress finished next night). When limit is set, only that
+    many papers are summarized this run. Fact-checking (verify) is NOT in this
+    chain anymore (2026-06-19): the all-day verify_daemon owns it, so cron and
+    daemon don't share the codex quota window. The burn-down report still shows
+    📋待核N so you can see how much the daemon has left to check."""
     sum_args = [tid, str(concurrency)]
     if limit:
         sum_args += ["--limit", str(limit)]
@@ -112,7 +126,8 @@ def run_auto_sum(tid, limit=None, concurrency=2):
         ("worklist", steps("worklist", tid)),
         ("sum",      [("summarize/summarize_auto.py", sum_args)]),
         ("finalize", steps("finalize", tid)),
-        ("verify",   steps("verify", tid)),
+        # verify 不在夜间链(2026-06-19):交给 verify_daemon 全天候啃,免与本 cron 抢 codex 配额。
+        # 燃尽报告里的 📋待核N 会提示 daemon 还有多少要核。
     ]
     final_rc = 0
     for name, step_list in chain:
@@ -147,18 +162,44 @@ def topic_progress(tid):
     return summarized, doable, stuck
 
 
+def unverified_count(tid):
+    """该主题已总结但还没核到当前版本的篇数(verify 燃尽用,治"积压看不见")。"""
+    conn = open_db()
+    rows = conn.execute(
+        """SELECT p.id AS id, MAX(sv.version) AS v FROM papers p
+             JOIN paper_topic pt ON pt.paper_id=p.id
+             JOIN summary_versions sv ON sv.paper_id=p.id
+            WHERE pt.topic_id=? AND p.status='summarized'
+            GROUP BY p.id""", (tid,)).fetchall()
+    conn.close()
+
+    def _load(name):
+        p = ROOT / "topics" / tid / name
+        try:
+            return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+        except Exception:
+            return {}
+    seen, skip = _load("verified.json"), _load("verify_skip.json")  # 钉版跳过的(坏PDF等)不算待核
+    return sum(1 for r in rows
+               if seen.get(r["id"]) != r["v"] and skip.get(r["id"], {}).get("version") != r["v"])
+
+
 def burn_down_msg(tid, rc, limit):
-    """单主题做完后的一句燃尽报告(🎉做完 / ⚠️即将耗尽 / ✅有余量)。"""
+    """单主题做完后的一句燃尽报告(🎉做完 / ⚠️即将耗尽 / ✅有余量) + 待核查篇数。"""
     done, doable, stuck = topic_progress(tid)
     stuck_note = f"  (另有 {stuck} 篇无PDF做不了)" if stuck else ""
+    unv = unverified_count(tid)
+    verify_note = f"  📋 待核查 {unv} 篇" if unv else "  ✅ 总结全部已核"
     night = limit * 2 if limit else None  # 一晚两批 -> 一晚的量
     if doable == 0:
-        return f"🎉 auto-sum done: {tid} (rc={rc}) — 该主题 {done} 篇全部已总结,无剩余{stuck_note}"
+        return (f"🎉 auto-sum done: {tid} (rc={rc}) — 该主题 {done} 篇全部已总结,无剩余"
+                f"{stuck_note}{verify_note}")
     if night and doable <= night:
         return (f"⚠️ auto-sum done: {tid} (rc={rc}) — 仅剩 {doable} 篇,不足下一晚({night}),"
-                f"即将耗尽,需补论文/换主题{stuck_note}")
+                f"即将耗尽,需补论文/换主题{stuck_note}{verify_note}")
     flag = "✅" if rc == 0 else "⚠️"
-    return f"{flag} auto-sum done: {tid} (rc={rc}) — 已总结 {done} 篇,剩余 {doable} 篇待做{stuck_note}"
+    return (f"{flag} auto-sum done: {tid} (rc={rc}) — 已总结 {done} 篇,剩余 {doable} 篇待做"
+            f"{stuck_note}{verify_note}")
 
 
 def all_topics_ordered():
@@ -184,12 +225,14 @@ def queue_report():
     for tid in all_topics_ordered():
         done, doable, stuck = topic_progress(tid)
         sn = f" +{stuck}无PDF" if stuck else ""
-        lines.append(f"   • {tid}: 剩 {doable} 篇 (已做 {done}){sn}")
+        unv = unverified_count(tid)
+        un = f" 待核{unv}" if unv else ""
+        lines.append(f"   • {tid}: 剩 {doable} 篇 (已做 {done}){sn}{un}")
     return "\n".join(lines)
 
 
 def refresh_index(tid="-"):
-    """重建向量坐标索引(db/vec.sqlite),让新写/重做的总结进得了语义检索(A2,2026-06-18)。
+    """重建向量坐标索引(data-base/vec.sqlite),让新写/重做的总结进得了语义检索(A2,2026-06-18)。
     增量(靠 body md5,没变就跳),所以每次 summarize/verify 后跑都便宜。**best-effort**:
     无 torch/GPU(如 base 环境)时 index.py 会失败,这里吞掉不打断主链——向量本可重建、FTS
     那路每次查询自增量,缺了只是暂少语义召回那一路。"""
@@ -236,7 +279,8 @@ def main():
     if stage == "auto-pull":
         sys.exit(run_chain(AUTO_PULL, tid))
     if stage == "auto-sum":
-        # unattended nightly cron: sum -> finalize -> verify, continue-on-error.
+        # unattended nightly cron: sum -> finalize, continue-on-error (verify is
+        # the all-day verify_daemon's job now, 2026-06-19 — not in this chain).
         # Optional batch size: `auto-sum <N>` caps this run to N new summaries
         # (e.g. 10) so it fits one token window; run it twice a night ~4.5h apart
         # via two cron lines to land each batch in a fresh quota window.

@@ -1,0 +1,24 @@
+{
+  "paper_id": "arxiv:1905.06893",
+  "slug": "Leveraging_exploration_in_off_policy_algorithms_via_normalizing_flows",
+  "title": "Leveraging exploration in off-policy algorithms via normalizing flows",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "流家族对比(Roboschool，Table 2/图4)：radial 流在三个机器人环境上表现最稳、且参数最少...Table 4 显示 radial 用约 15–19% 于高斯基线的参数即取得最好成绩",
+          "problem": "Roboschool 结果被过度概括：Table 2 中 Humanoid Flagrun 的最高回报是 IAF 而非 radial，Table 4 中 HumanoidPyBulletEnv-v0 的参数最少是 planar 而非 radial；把 radial 写成三环境都参数最少/取得最好成绩与表格方向不符。",
+          "severity": "major"
+        },
+        {
+          "quote": "4-goals 导航 toy 任务...奖励为到最近目标的(负)欧氏距离",
+          "problem": "原文只写 reward 对应到最近目标的 Euclidean distance，没有明确写“负”欧氏距离；该符号是总结额外加入的解释。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}

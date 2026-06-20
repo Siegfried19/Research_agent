@@ -1,6 +1,6 @@
-"""坐标索引:把每篇论文(标题+摘要+最新中文总结)量成向量,存进 db/vec.sqlite。
+"""坐标索引:把每篇论文(标题+摘要+最新中文总结)量成向量,存进 data-base/vec.sqlite。
 
-- 可重建副本,**不碰**生产 db/papers.sqlite。
+- 可重建副本,**不碰**生产 data-base/papers.sqlite。
 - 增量式:body 内容哈希没变就跳过,不重嵌(对齐 ask.py 的 fts 增量思路)。
 - 没总结的论文也嵌(用 标题+摘要),所以"找相似/揪重复"对全库 221 篇都生效,不只已总结的。
 - 需在 research-agent conda 环境跑(依赖 torch/sentence-transformers/sqlite-vec)。
@@ -21,7 +21,7 @@ from lib.db import open_db, ROOT
 from lib.log import get_logger
 from lib import embed
 
-VEC_PATH = ROOT / "db" / "vec.sqlite"
+VEC_PATH = ROOT / "data-base" / "vec.sqlite"
 DIM = 1024
 log = get_logger("vec_index")
 

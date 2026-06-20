@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.1109/cec55065.2022.9870209",
+  "slug": "Combining_Soft_Actor_Critic_with_Cross_Entropy_Method_for_Policy_Search_in_Continuous",
+  "title": "Combining Soft-Actor Critic with Cross-Entropy Method for Policy Search in Continuous Control",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}

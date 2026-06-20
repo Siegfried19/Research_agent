@@ -3,8 +3,9 @@
 Two layers, both append-only:
   - logs/run.log         machine log: one tab-separated line per stage/event
                          (continuous with the old run.sh history; same format)
-  - logs/pipeline-<date>.log   detailed per-day log (everything a script prints
-                         through its logger also lands here)
+  - logs/temporary-log/pipeline-<date>.log   detailed per-day log (everything a
+                         script prints through its logger also lands here;
+                         临时/可重建,整个 temporary-log/ 子目录可随时删)
 
 Usage:
   from lib.log import get_logger, run_log, stage
@@ -23,6 +24,9 @@ from .db import ROOT
 
 LOG_DIR = ROOT / "logs"
 RUN_LOG = LOG_DIR / "run.log"
+# 临时/可重建日志(详细日志、试跑等)统一进这个子目录,方便整体删除;
+# run.log 留在 logs/ 根(机器总账)。注:logs/ 现已整体 gitignore,run.log 也不入库。
+TEMP_LOG_DIR = LOG_DIR / "temporary-log"
 
 
 def _now():
@@ -44,10 +48,10 @@ def get_logger(name):
     logger = logging.getLogger(name)
     if name in _configured:
         return logger
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    TEMP_LOG_DIR.mkdir(parents=True, exist_ok=True)
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter("%(asctime)s %(name)s %(levelname)s %(message)s")
-    daily = LOG_DIR / f"pipeline-{datetime.now().strftime('%Y-%m-%d')}.log"
+    daily = TEMP_LOG_DIR / f"pipeline-{datetime.now().strftime('%Y-%m-%d')}.log"
     fh = logging.FileHandler(daily, encoding="utf-8")
     fh.setFormatter(fmt)
     ch = logging.StreamHandler(sys.stderr)

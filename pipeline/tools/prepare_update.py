@@ -11,6 +11,7 @@ import sys
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT
+from lib.store import summary_file
 
 
 def latest_version(conn, pid):
@@ -68,15 +69,15 @@ def main():
             if sv:
                 related.append({"id": r, "title": rp["title"] if rp else None, "path": str(ROOT / sv["path"])})
         next_version = cur["version"] + 1
-        out_path = ROOT / "store" / "summaries" / p["slug"] / f"v{next_version}.md"
+        out_path = summary_file(p["slug"], next_version)
         work.append({"paperId": pid, "title": p["title"], "currentVersion": cur["version"],
                      "currentPath": str(ROOT / cur["path"]), "nextVersion": next_version,
                      "outPath": str(out_path), "related": related})
     conn.close()
 
-    out = ROOT / "store" / "update_worklist.json"
+    out = ROOT / "storage" / "update_worklist.json"
     out.write_text(json.dumps({"total": len(work), "work": work}, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"update worklist: {len(work)} papers -> store/update_worklist.json")
+    print(f"update worklist: {len(work)} papers -> storage/update_worklist.json")
     for w in work:
         print(f"  v{w['currentVersion']}->v{w['nextVersion']}  {len(w['related'])} related  {(w['title'] or '')[:45]}")
 

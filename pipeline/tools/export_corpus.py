@@ -1,6 +1,6 @@
 """Export a topic (or the whole library) as an ARS Material-Passport
 `literature_corpus[]` YAML — the bridge from our library to the idea->paper
-pipeline (总蓝图出口③). Schema: ref/academic-research-skills/shared/contracts/
+pipeline (总蓝图出口③). Schema: reference/academic-research-skills/shared/contracts/
 passport/literature_corpus_entry.schema.json (v3.6.4 required fields + extras).
 
   python3 pipeline/tools/export_corpus.py <topicId|all> [--min-relevance N] [-o FILE]
@@ -25,6 +25,7 @@ import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 from lib.db import open_db, ROOT
 from lib.log import get_logger, run_log
+from lib.store import paper_dir
 
 log = get_logger("export_corpus")
 ADAPTER = ("research-agent-sqlite", "1.0")
@@ -68,7 +69,7 @@ def source_pointer(p):
         return f"file://{ROOT / p['pdf_path']}"
     if p["doi"]:
         return f"https://doi.org/{p['doi']}"
-    return f"file://{ROOT / 'store' / 'summaries' / p['slug']}"
+    return f"file://{paper_dir(p['slug'])}"
 
 
 def arxiv_id(p):
@@ -128,7 +129,7 @@ def main():
                  FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
                 WHERE pt.relevance >= ? GROUP BY p.id ORDER BY relevance DESC""",
             (a.min_relevance,)).fetchall()
-        out = ROOT / "store" / "literature_corpus_all.yaml"
+        out = ROOT / "storage" / "literature_corpus_all.yaml"
     else:
         rows = conn.execute(
             """SELECT p.*, pt.topic_id topic_ids, pt.relevance relevance
@@ -155,7 +156,7 @@ def main():
             notes.append("⚠️ 可疑来源(掠夺刊名单命中),引用前人工核实")
         elif tier == "flag":
             notes.append("预印本/未检出正式收录,未经同行评审确认")
-        sdir = ROOT / "store" / "summaries" / (p["slug"] or "")
+        sdir = paper_dir(p["slug"] or "")
         vs = sorted(sdir.glob("v*.md")) if sdir.exists() else []
         if vs:
             notes.append(f"中文总结: {vs[-1]}")

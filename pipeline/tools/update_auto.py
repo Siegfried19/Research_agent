@@ -38,7 +38,7 @@ def prompt(w, current_md, related_blocks):
 
 def main():
     concurrency = int(sys.argv[1]) if len(sys.argv) > 1 else 2
-    wl = ROOT / "store" / "update_worklist.json"
+    wl = ROOT / "storage" / "update_worklist.json"
     if not wl.exists():
         print("no update_worklist.json (run prepare_update.py first)", file=sys.stderr)
         sys.exit(1)

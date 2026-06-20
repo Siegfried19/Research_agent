@@ -12,7 +12,7 @@ from lib.db import open_db, ROOT, now_iso
 
 
 def main():
-    wl = ROOT / "store" / "update_worklist.json"
+    wl = ROOT / "storage" / "update_worklist.json"
     if not wl.exists():
         print("no update_worklist.json", file=sys.stderr)
         sys.exit(1)

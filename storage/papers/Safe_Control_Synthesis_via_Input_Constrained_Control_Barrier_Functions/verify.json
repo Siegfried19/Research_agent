@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.1109/cdc45484.2021.9682938",
+  "slug": "Safe_Control_Synthesis_via_Input_Constrained_Control_Barrier_Functions",
+  "title": "Safe Control Synthesis via Input Constrained Control Barrier Functions",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-20T13:18:41.828Z",
+      "backend": "codex"
+    }
+  }
+}

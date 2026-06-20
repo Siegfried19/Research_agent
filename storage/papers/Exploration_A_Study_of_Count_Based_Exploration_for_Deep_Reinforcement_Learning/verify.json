@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.48550/arxiv.1611.04717",
+  "slug": "Exploration_A_Study_of_Count_Based_Exploration_for_Deep_Reinforcement_Learning",
+  "title": "#Exploration: A Study of Count-Based Exploration for Deep Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}

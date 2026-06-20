@@ -17,6 +17,7 @@ _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)
 from lib.db import ROOT, open_db, now_iso
 from lib.claude import run_claude, pool
 from lib.log import get_logger, run_log
+from lib.store import paper_dir
 
 log = get_logger("summarize")
 
@@ -175,7 +176,7 @@ def resummarize(work, concurrency=2, topic_id=None):
             log.info(f"skip (no summary): {wk['paperId']}")
             continue
         nv = cur["version"] + 1
-        sdir = ROOT / "store" / "summaries" / p["slug"]
+        sdir = paper_dir(p["slug"])
         out = sdir / f"v{nv}.md"
         if out.exists():
             log.info(f"skip (v{nv} exists): {(p['title'] or '')[:50]}")

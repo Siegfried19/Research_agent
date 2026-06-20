@@ -1,4 +1,4 @@
-"""找相似 / 揪重复(旁路工具,手动跑)。直接读 db/vec.sqlite 里的坐标做 numpy 余弦,**不调 GPU**。
+"""找相似 / 揪重复(旁路工具,手动跑)。直接读 data-base/vec.sqlite 里的坐标做 numpy 余弦,**不调 GPU**。
 
   python3 pipeline/tools/similar.py dup [--threshold 0.93]      # 揪全库疑似重复对
   python3 pipeline/tools/similar.py like "<doi或标题关键词>" [-k 5]  # 找跟某篇最像的

@@ -1,0 +1,24 @@
+{
+  "paper_id": "10.1109/tnnls.2025.3554082",
+  "slug": "Broad_Critic_Deep_Actor_Reinforcement_Learning_for_Continuous_Control",
+  "title": "Broad Critic Deep Actor Reinforcement Learning for Continuous Control",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "每实验 5 个随机种子、跑 100,000 步，每 5000 步评估",
+          "problem": "原文写每 500 timesteps 评估一次，不是 5000；5 次随机试验和 100,000 步正确。",
+          "severity": "minor"
+        },
+        {
+          "quote": "否则 `y_t = r_t + γ_t·max Q(s_{t+1}, a_{t+1})`（式1、2）",
+          "problem": "原文式(2)对非终止态写的是 `γ_t max Q(...)`，没有 `r_t +`；虽然紧邻的 MSBE 式(1)包含 `r_t`，但总结把式(2)的 target 写成了标准 Bellman target，和论文显式公式不一致。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.827Z",
+      "backend": "codex"
+    }
+  }
+}

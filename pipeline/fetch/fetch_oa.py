@@ -13,9 +13,9 @@ from lib.db import open_db, ROOT, load_config, now_iso
 from lib.http import download_pdf, sleep, HttpError
 from lib.log import get_logger, run_log
 from lib.slug import file_id
+from lib.store import pdf_file
 
 config = load_config()
-PDF_DIR = ROOT / config["paths"]["pdfs"]
 log = get_logger("fetch_oa")
 
 
@@ -42,7 +42,6 @@ def main():
         print("usage: fetch_oa.py <topicId|all>", file=sys.stderr)
         sys.exit(1)
     topic_id = sys.argv[1]
-    PDF_DIR.mkdir(parents=True, exist_ok=True)
     conn = open_db()
     if topic_id == "all":
         rows = conn.execute(
@@ -59,7 +58,8 @@ def main():
     ok = fail = 0
     for r in rows:
         base = r["slug"] or file_id(r["id"])
-        pdf_path = PDF_DIR / (base + ".pdf")
+        pdf_path = pdf_file(base)
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
         bytes_, last_err = None, None
         for u in urls_for(r):
             try:

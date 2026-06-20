@@ -1,0 +1,24 @@
+{
+  "paper_id": "10.1109/tpami.2026.3674995",
+  "slug": "Mirror_Descent_Safe_Policy_Optimization_for_Reinforcement_Learning_Agents",
+  "title": "Mirror Descent Safe Policy Optimization for Reinforcement Learning Agents.",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "把 PPO 的裁剪(clipping)搬进损失函数的一阶方法(FOCOPS/CUP/P3O)在实现中偏离了自己的理论保证",
+          "problem": "原文只把实践中嵌入 PPO clipping、理论分析未覆盖的问题明确归于 CUP 和 P3O；FOCOPS 在原文中是“未做性能理论分析”，不是被说成使用 PPO clipping 或偏离自身理论保证，属张冠李戴。",
+          "severity": "major"
+        },
+        {
+          "quote": "MDSPO 平均回报比基线高 12% 以上……原文 Abstract:\"improves the average return by more than 12%\"",
+          "problem": "原文摘要写的是“about 12%”，不是“more than 12%/12%以上”；该处把近似值表述成超过值。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}

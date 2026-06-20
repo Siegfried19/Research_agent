@@ -1,0 +1,25 @@
+{
+  "paper_id": "10.1109/tnnls.2025.3586603",
+  "slug": "Game_Theoretic_Constrained_Policy_Optimization_for_Safe_Reinforcement_Learning",
+  "title": "Game-Theoretic Constrained Policy Optimization for Safe Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "DoggoGoal1(高维 Doggo):**只有 GCPPO 满足约束**",
+          "problem": "原文 Table I 显示 DoggoGoal1 中 CPO-lm 的约束满足也是 Yes；原文限定的是“只有 GCPPO 在满足约束的同时成功学到任务策略”，总结漏掉该限定后把约束满足结果说错。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.827Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-20T13:31:40.301Z",
+      "backend": "codex"
+    }
+  }
+}

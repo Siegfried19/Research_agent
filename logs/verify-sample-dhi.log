@@ -1,5 +1,0 @@
-verify_summaries: 129 summarized, 0 already verified, checking 3 (must[suspect/v2+]=3, sample 5%=6, capped to 3)
-  PASS  (0 issues) The Role of Domain Randomization in Training Diffusion Polic
-  MAJOR (5 issues) Synthesizing Diverse Human Motions in 3D Indoor Scenes
-  PASS  (0 issues) Learning Complex Dexterous Manipulation with Deep Reinforcem
-  -> topics/rl-digital-human-interaction/summary_verification.md

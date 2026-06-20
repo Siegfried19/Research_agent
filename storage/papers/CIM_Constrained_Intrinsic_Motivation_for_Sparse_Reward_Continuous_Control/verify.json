@@ -1,0 +1,36 @@
+{
+  "paper_id": "10.48550/arxiv.2211.15205",
+  "slug": "CIM_Constrained_Intrinsic_Motivation_for_Sparse_Reward_Continuous_Control",
+  "title": "CIM: Constrained Intrinsic Motivation for Sparse-Reward Continuous Control",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "λ 用梯度上升更新 `λ_{l+1}=λ_l−η_l(f_e(d_π)−R̂_l)`",
+          "problem": "原文明确写的是 λ 用 gradient descent 更新；总结把更新方向说成“梯度上升”，属于优化方向表述反了，尽管后面的公式本身与原文一致。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-20T13:18:41.826Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "其中 λ̃_l=max(λ_l,1)；外在目标 f_e 增大时 λ̃ 逐渐降到零",
+          "problem": "方向/变量写错：Eq.26 定义 λ̃=max(λ,1)，不可能降到 0；图 8/10 和后文显示下降到 0 的是内在奖励权重 λ̃^{-1}。",
+          "severity": "major"
+        },
+        {
+          "quote": "MADE、RE3、APT 被列为 SOTA",
+          "problem": "张冠李戴：Table 1 caption 只说 MADE 和 APT 是 SOTA methods，没有把 RE3 列为 SOTA。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T13:31:40.301Z",
+      "backend": "codex"
+    }
+  }
+}

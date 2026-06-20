@@ -1,56 +1,51 @@
 # 大体积 / 版权全文 —— 绝不入库或推送
-store/pdfs/
-store/text/
-store/dl_tmp/
+# 新布局(2026-06-20):一篇一个家 storage/papers/<slug>/,版权 PDF 必须忽略;同目录 .md/verify.json 可入库
+storage/papers/*/paper.pdf
+storage/text/
+storage/dl_tmp/
 
 # sqlite 旁路文件（主 .sqlite 入库）
-db/*.sqlite-wal
-db/*.sqlite-shm
+data-base/*.sqlite-wal
+data-base/*.sqlite-shm
 
 # 可重建的运行中间产物
 topics/*/candidates.json
 topics/*/scores/
 topics/*/summarize_worklist.json
 topics/*/selected.json
-store/update_worklist.json
-store/cross_topic.json
+storage/update_worklist.json
+storage/cross_topic.json
 
 # 密钥（绝不入库）
 config/telegram.json
 config/x11vnc.pass
 config/x11vnc.plain
 
-# 详细/可重建日志（run.log 入库，详细日志不入库）
-logs/pipeline-*.log
-logs/tierb-*.log
-# bot 运行时文件（pid/inbox/会话/日志）
-logs/bot*
-logs/x11vnc.log
-logs/websockify.log
+# logs/ 整个忽略：全是运行时/详细日志/临时快照/机器总账(run.log)，都可重建、与重建无关，
+# 不入库；换机器整目录拷会带。
+logs/
 
-# 第三方参考库（体积大，不入库）
-ref/
+# 第三方参考库（体积大，不入库；2026-06-20 用户改名 ref/ → reference/）
+reference/
 
-# 远程看屏用的 noVNC 静态文件（第三方,可重新下载,不入库）
-vendor/
+# 大依赖统一目录（2026-06-20）：noVNC 远程看屏前端 + Qwen 嵌入模型缓存（~1.2GB）。
+# 第三方/可重下，不入库；只留 README 说明里面该有啥、怎么重建。
+dependencies/*
+!dependencies/README.md
+
+# 人工复审工作区(本地,含版权 PDF;原 review/,2026-06-20 用户改名 for-human-review/)
+for-human-review/
 
 # 杂项
 node_modules/
 __pycache__/
 *.pyc
 .DS_Store
-db/fts.sqlite
+data-base/fts.sqlite
 
-# 知识库检索升级(2026-06-18):嵌入模型缓存(~1.2GB,可重下,在检索模块内) + 坐标索引(可重建)
-# README 保留以说明用途,模型本体不入库
-pipeline/retrieve/models/*
-!pipeline/retrieve/models/README.txt
-db/vec.sqlite
+# 知识库检索升级(2026-06-18):坐标索引(可重建)。嵌入模型缓存已移至 dependencies/(见上)
+data-base/vec.sqlite
 topics/*/literature_corpus.yaml
-store/literature_corpus_all.yaml
+storage/literature_corpus_all.yaml
 
-# 本地备份/临时(2026-06-17):重做前的安全快照 + cron 运行日志,不入库
-logs/redo-*/
-logs/wipe-*/
-logs/cron-*.log
-logs/cron-smoke.sh
+# （logs/ 下的备份快照 / cron 日志已由上面的 logs/* 统一忽略，无需单列）

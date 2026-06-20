@@ -1,0 +1,342 @@
+{
+ "title:887fdc52a50a14c1": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "title:7f327668611a45e6": {
+  "verdict": "minor",
+  "version": 3
+ },
+ "arxiv:1801.01290": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "10.48550/arxiv.2006.05990": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "arxiv:2502.04692": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2301.10886": {
+  "verdict": "minor",
+  "version": 3
+ },
+ "10.1609/aaai.v33i01.33013387": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1609/aaai.v32i1.11694": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.1903.09885": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.1708.04133": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.1506.02438": {
+  "verdict": "major",
+  "version": 3
+ },
+ "10.24963/ijcai.2022/520": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1609/aaai.v32i1.11797": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.15607/rss.2019.xv.073": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1109/lra.2022.3216996": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1109/tpami.2022.3223407": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1146/annurev-control-042920-020211": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.15607/rss.2019.xv.011": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1002/rnc.5132": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "arxiv:2602.06643": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "arxiv:2212.00618": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "arxiv:2103.14295": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "arxiv:2511.11218": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "arxiv:2208.10733": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "10.5445/ir/1000118270": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "10.48550/arxiv.2210.07573": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "arxiv:2507.02910": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2404.16159": {
+  "verdict": "minor",
+  "version": 4
+ },
+ "arxiv:2411.01349": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.15607/rss.2018.xiv.010": {
+  "verdict": "major",
+  "version": 1
+ },
+ "10.1109/tnnls.2026.3688045": {
+  "verdict": "major",
+  "version": 4
+ },
+ "10.15607/rss.2018.xiv.049": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.2201.11927": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.3389/fnbot.2013.00025": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1609/aaai.v36i7.20732": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1609/aaai.v39i18.34162": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.3389/fnbot.2023.1089270": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1109/mosicom63082.2024.10881478": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1109/tnnls.2021.3084685": {
+  "verdict": "minor",
+  "version": 3
+ },
+ "title:5168790a4c97d4f6": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "title:9cc1357c09c7e8e7": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "arxiv:2212.03733": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "arxiv:2604.09452": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "arxiv:2501.17842": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "10.65109/kqto7314": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "arxiv:2410.01458": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "arxiv:2109.11767": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.2509.24892": {
+  "verdict": "major",
+  "version": 1
+ },
+ "title:ef3200782950c96e": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "arxiv:1912.05109": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2507.15287": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "arxiv:2602.12375": {
+  "verdict": "major",
+  "version": 1
+ },
+ "10.3389/fnbot.2025.1697518": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1609/aaai.v36i6.20594": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1109/tnnls.2023.3331304": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.1704.03012": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1109/tsg.2019.2962625": {
+  "verdict": "major",
+  "version": 1
+ },
+ "10.1109/tnnls.2023.3250269": {
+  "verdict": "major",
+  "version": 1
+ },
+ "10.1109/itsc45102.2020.9294262": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2409.04971": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1109/tpami.2026.3674995": {
+  "verdict": "major",
+  "version": 1
+ },
+ "10.1109/indin58382.2024.10774473": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1016/j.neunet.2024.107052": {
+  "verdict": "major",
+  "version": 1
+ },
+ "10.1109/cec55065.2022.9870209": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1016/j.neunet.2026.108693": {
+  "verdict": "major",
+  "version": 1
+ },
+ "10.1088/1748-3190/ae4930": {
+  "verdict": "major",
+  "version": 1
+ },
+ "arxiv:1905.06893": {
+  "verdict": "major",
+  "version": 1
+ },
+ "10.48550/arxiv.2310.03718": {
+  "verdict": "major",
+  "version": 1
+ },
+ "10.48550/arxiv.2406.01423": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.1611.04717": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.52202/075280-0245": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2306.01460": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.2211.15205": {
+  "verdict": "major",
+  "version": 2
+ },
+ "10.48550/arxiv.2510.01830": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "arxiv:1909.12200": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "title:4767e85b9c83c66b": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "arxiv:1712.00006": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1109/tnnls.2025.3554082": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1109/tnnls.2025.3586603": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "10.1561/2200000086": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.2003.05334": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1109/lra.2021.3061308": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1109/cdc45484.2021.9682938": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1109/tnnls.2021.3129160": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "10.1561/2300000053": {
+  "verdict": "major",
+  "version": 1
+ }
+}

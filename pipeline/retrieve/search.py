@@ -17,7 +17,7 @@ import sqlite3
 from lib.db import open_db, ROOT
 from lib.log import get_logger
 
-FTS_PATH = ROOT / "db" / "fts.sqlite"
+FTS_PATH = ROOT / "data-base" / "fts.sqlite"
 log = get_logger("search")
 
 # 查询切分用的中文功能词(长词在前,先切长的) —— 与旧 ask.py 一致
@@ -30,7 +30,7 @@ EN_STOP = set("the a an and or of for in on to with how what why when is are doe
 
 # ---------------- FTS5 那路(对字) ----------------
 def ensure_fts(force=False):
-    """(增量)建 db/fts.sqlite:trigram 索引 标题+摘要+最新中文总结,按 slug 键。
+    """(增量)建 data-base/fts.sqlite:trigram 索引 标题+摘要+最新中文总结,按 slug 键。
     增量靠 stale_key(便宜指纹,不读文件);指纹变才重索引(FTS 重索引文本便宜,不必再确认内容)。"""
     from retrieve.freshness import latest_summary_map, stale_key
     main = open_db()

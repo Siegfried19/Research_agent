@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.1109/indin58382.2024.10774473",
+  "slug": "Deep_Reinforcement_Learning_Based_End_to_End_Navigation_of_Mobile_Robots_with_Reward",
+  "title": "Deep Reinforcement Learning-Based End-to-End Navigation of Mobile Robots with Reward Shaping",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}

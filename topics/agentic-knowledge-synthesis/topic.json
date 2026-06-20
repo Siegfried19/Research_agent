@@ -1,0 +1,24 @@
+{
+  "id": "agentic-knowledge-synthesis",
+  "title": "Agent 消费知识库与跨论文综合（长上下文时代）",
+  "idea": "在长上下文(Opus)时代，一个由 AI 管理、供 agent 与人共同消费的研究论文库，应如何被正在干活、撞到问题的 agent 查询——让它去查文献而非闷头自想——并能跨多篇论文做综合、发现论文间关联(矛盾/共识/谁建立在谁之上/独立结论拼出的新洞见)。重点侧面：(1) 跨论文综合与多文档推理/综述自动生成；(2) 跨论文关联发现，以及『如何构建跨论文关系结构』的方法学——引用图之外更好的结构(知识图谱构建、论断/关系抽取、矛盾与共识检测、literature-based discovery 假设生成)；(3) agent 主动求知：检索增强/工具增强 agent、何时该检索、如何把检索结果接回任务；(4) 长上下文 vs 检索(强模型档，只取与综合相关的)；(5) 库上科学问答(agent+人 双消费、可追溯/可解释)。前提：长上下文为给定条件、消费方 agent 为主人为次、已有库内引用图资产。偏好方法可落地、有跨文档实验或评测的论文，而非泛 RAG 工程/向量库调优/纯单篇问答。",
+  "queries": [
+    "multi-document scientific summarization large language models",
+    "cross-document reasoning large language models",
+    "automatic literature review generation language model",
+    "literature-based discovery hypothesis generation",
+    "scientific contradiction and consensus detection across papers",
+    "knowledge graph construction from scientific papers",
+    "claim and relation extraction scientific literature argument mining",
+    "retrieval-augmented generation autonomous agents",
+    "tool-augmented language model reasoning retrieval",
+    "agentic retrieval deep research agent",
+    "adaptive retrieval when to retrieve language model",
+    "long-context language model versus retrieval augmented generation",
+    "long context multi-document synthesis language model",
+    "scientific question answering over paper corpus",
+    "hierarchical retrieval and summarization for long documents"
+  ],
+  "window_years": 3,
+  "target": 35
+}

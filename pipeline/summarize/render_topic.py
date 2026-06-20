@@ -37,7 +37,7 @@ def main():
 
     def latest_summary(r):
         base = r["slug"] or file_id(r["id"])
-        sv = f"store/summaries/{base}/v1.md"
+        sv = f"storage/papers/{base}/v1.md"
         return sv if (ROOT / sv).exists() else None
 
     n_sum = sum(1 for r in rows if r["status"] == "summarized")

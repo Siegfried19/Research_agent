@@ -48,8 +48,8 @@ def main():
     conn.close()
 
     out = {"generated_topics": len(topics), "shared_papers": shared, "citation_bridges": bridges}
-    (ROOT / "store").mkdir(parents=True, exist_ok=True)
-    (ROOT / "store" / "cross_topic.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    (ROOT / "storage").mkdir(parents=True, exist_ok=True)
+    (ROOT / "storage" / "cross_topic.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"# Cross-topic analysis ({len(topics)} topics)")
     print(f"  shared papers (in >=2 topics): {len(shared)}")
     print(f"  cross-topic citation bridges: {len(bridges)}")

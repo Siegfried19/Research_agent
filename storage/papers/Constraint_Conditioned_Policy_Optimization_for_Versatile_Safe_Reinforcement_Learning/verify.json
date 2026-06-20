@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.48550/arxiv.2310.03718",
+  "slug": "Constraint_Conditioned_Policy_Optimization_for_Versatile_Safe_Reinforcement_Learning",
+  "title": "Constraint-Conditioned Policy Optimization for Versatile Safe Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "在 Drone/Ant 这类高维观测-动作空间任务上，所有基线都做不到安全适应（成本违反高）",
+          "problem": "原文正文确有类似概括，但表1数值不支持“所有基线成本违反高”：例如 Ant-Run 中 C-TRPO-Lag 的 Avg CV/Avg CV-G 低于 CCPO，Drone-Circle 中 C-PPO-Lag 的 Avg CV-G 也很低；总结把作者概括当成全称数值结论，方向过强。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}

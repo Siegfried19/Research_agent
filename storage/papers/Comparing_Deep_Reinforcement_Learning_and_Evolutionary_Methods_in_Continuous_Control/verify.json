@@ -1,0 +1,13 @@
+{
+  "paper_id": "arxiv:1712.00006",
+  "slug": "Comparing_Deep_Reinforcement_Learning_and_Evolutionary_Methods_in_Continuous_Control",
+  "title": "Comparing Deep Reinforcement Learning and Evolutionary Methods in Continuous Control",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-20T13:18:41.827Z",
+      "backend": "codex"
+    }
+  }
+}

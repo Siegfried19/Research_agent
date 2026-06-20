@@ -1,0 +1,24 @@
+{
+  "paper_id": "10.1088/1748-3190/ae4930",
+  "slug": "Deep_dive_into_model_free_reinforcement_learning_for_underwater_locomotion_theory_and",
+  "title": "Deep dive into model-free reinforcement learning for underwater locomotion: theory and practice.",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "终止条件要精心设计（区分时限终止 vs 成功终止——前者用 bootstrap、后者用 truncation）",
+          "problem": "原文说 time-limit 等 regular termination 和 successful termination 都应使用 value-function bootstrapping，failure termination 才用 truncation；总结把 successful termination 误写成 truncation，设定方向写反。",
+          "severity": "major"
+        },
+        {
+          "quote": "用似然比技巧得 ∇θ J(θ)=E[Σ_t Σ_{t'≥t} ...]（式2.6）",
+          "problem": "原文式2.6 的内层求和是所有 t'，随后才用附录A证明 t'<t 项期望为0并化到式2.7；总结把化简后的范围误标为式2.6。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-20T08:25:00.834Z",
+      "backend": "codex"
+    }
+  }
+}
