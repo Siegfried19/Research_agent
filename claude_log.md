@@ -4,6 +4,42 @@
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `claude_memory/modules-modification/<x>/STATE.md`（各模块层积日志，取代旧 logs/SESSION-*.md）；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
 
+## 2026-06-21 14:32 EDT — tierb 抓完最后 8 篇付费墙(Python e2e 首验通过)→ 该主题 98/98 全有全文
+- 用户回来后走 tierb 抓那 8 篇没免费源的。**8 抓到 / 0 失败**:Oxford/IEEE/Elsevier/MDPI 跨出版商 find_pdf_url 全中,NYU OpenAthens(Profile 2 已登)直过;FoodAtlas 撞 Elsevier Cloudflare → wait_human 停下、用户点掉、自动续成功。
+- **意义**:fetch_tierb Python 版自 2026-06-09 迁移起就挂着"未 e2e 验证"(前两主题无付费墙待抓篇),本次首次完整跑通——find_pdf_url 跨商、challenge 检测、混合 B 下载+%PDF 校验、Chrome 生命周期(0 残留)全验证。详见 fetch STATE(14:32 条)。
+- **最终**:agentic-knowledge-synthesis **98 source 全部 source_ready(86 论文 + 12 web),100% 全文覆盖**,0 失败/0 待取。worklist 重建为 86 篇待总结。**下一步只剩 summarize/verify**(大 token,用户定/cron)。
+
+## 2026-06-21 06:12 EDT — agentic-knowledge-synthesis 扩到 ~100 source(夜间无人值守)
+- **任务**:用户睡前定"把最新 topic 扩到 100 个 source(论文+web 合计,数量交给 agent 判,质量优先),你先跑"。
+- **web 线**(新代码首次真跑,全过):`discover_web`(去上限,Claude 自判)收 10 篇优质博客/技术报告 → `fetch_web`(完整工具箱:WebFetch+真Chrome,agent 自选)8/8 落盘 0 失败。web 共 12 source_ready,文件全在盘。状态档(web_candidates.json+topic_state[web])留痕正确。
+- **论文线**:`drive.py`(orchestrator)**跑满 50min 超时**——它前期干了大量活(扩 topic.json 检索词+播 GraphRAG/PaperQA2/MAST 等 seed、池 77→587、打分 3/5 facet),但**没来得及 commit**(prompt 说只有 commit 才算数)。**判断不再赌第二次**,改确定性收尾:`score_auto` 补全 5 facet 打分(567 scored) → `commit --plan` 看分布 → 我作为接手 agent 定 `--keep cross-paper-structure=16,corpus-qa=18,longctx-vs-retrieval=14` 按相关性顶部各取 → 新增 **48 篇**(质量闸滤掉 23 篇低分预印本)。补的正是之前偏薄的 3 个 facet(cross-doc/agentic 已饱和没动),覆盖更平衡。
+- **结果**:该主题现 **98 source**(86 论文 discovered + 12 web source_ready),≈100 达标。新论文 39 篇 OA。
+- **取全文链已跑完**(夜间):fetch_oa(下 46 OA)→ recover(+10 免费)→ hunt(+2 agent)→ worklist。**最终该主题 98 source、90 篇有全文**(78 论文 source_ready + 12 web),worklist 78 篇待总结(web 按 kind!='web' 正确排除)。剩 8 篇论文无免费源(4 failed+4 discovered,多为 IEEE/JAMIA/Elsevier 付费 + 两篇 MDPI 误判 403)→ `run.py <id> failed` 已列清单,留 tierb/手动。**tierb/summarize/verify 未跑**(需人/cron)。
+- **教训(自记)**:大池扩展(目标翻倍)时 orchestrator drive.py 容易超 50min 且 commit 前被杀=白跑;此情形**优先确定性 score_auto+commit --keep 收尾**,别盲目重启 orchestrator。已记 find STATE。
+
+## 2026-06-21 04:04 EDT — 新约定:agent 自建工具→pipeline/tools、agent 自由备忘→logs/claude_log/
+- 用户定两条 project 逻辑:① agent 临时造的小工具统一放 `pipeline/tools/`(已有目录);② **新目录 `logs/claude_log/`** 作 agent 的**自由备忘位**——当我觉得有值得记、又放不进现有记忆体系(根 claude_log.md/claude-memory/私有记忆)的零散东西时,自由裁量写。**非强制、不是每轮都写**(我一开始误解成"每轮必写拉取日志",被用户纠正、已改)。
+- `logs/` 整体 gitignore,用户选 A:给 `logs/claude_log/` 开例外随 git 走。`.gitignore` 改 `logs/` → `logs/*` + `!logs/claude_log/`(其余 logs 仍忽略,已验证)。
+- 落档:`logs/claude_log/README.md`、项目 `CLAUDE.md` 关键约定加两条、私有记忆 1 条。
+- 区别:根 `claude_log.md`=面向用户的改动总账(本条所在);`logs/claude_log/`=agent 自由裁量的兜底备忘(可空)。
+
+## 2026-06-21 03:50 EDT — 重装夜间 cron + 现起 verify_daemon(撞 codex 周限,睡到 6-24)
+- **缘由**:用户发现本机 `crontab -l` 是空的——`nightly-cron.md` 写着 2026-06-19 实装过,但实际机器上没了(被清/重装未补)。即本机此前**夜间 auto-sum 和早 9 点 verify_daemon 都不会自动跑**。
+- **先验后装**(papers→sources 大改名重构后,cron 调的链碰 DB,怕引旧表名半夜静默挂):①生产库表名已是 `sources/source_topic/summary_versions`,但 FK 列名**仍是 `paper_id`**(没跟表名改),daemon 与 sum/verify 的 SQL 原样能跑——实打 unverified SQL 通过;②全 pipeline 无残留 SQL 旧表名(`FROM/JOIN papers` 仅存于一次性迁移工具 migrate_*.py,不在 cron 链上);③run.py/verify_daemon/summarize_auto/escalate_verify 四脚本编译通过;④两条链只读决策逻辑实跑:auto-sum-next 选中 rl-digital-human-interaction(剩121),verify_daemon 报 24 待核。
+- **装回 crontab 三行**(照 `claude-memory/operation-maintenance/nightly-cron.md`,路径全核对:python=anaconda3/envs/research-agent,claude=~/.local/bin,codex=nvm node v24.16.0;**三行均带 `cd` 项目目录**——首次粘漏了 2:00 那条的 cd,已修):2:00/7:30 `auto-sum-next 20`、9:00 `verify_daemon`。
+- **现起 verify_daemon**(有 24 篇待核,走 codex 独立配额不碰 Max):pid 写出、进程在;但**一起手就撞 codex 配额耗尽**。查 run.log/verify_daemon.log 时间线:6-20 白天恢复点都是小时级(短窗,期间核了10+3+3…),**6-20 傍晚起恢复点跳到固定 `2026-06-24T22:07`**(error_classify 从 codex 报文解析,非默认值;多条记录在倒计时指向同一墙钟点)→ 判定**本周 codex 周限额已耗尽**,要等 6-24 22:07 才回血。
+- **用户决定:就留着**,daemon 睡到 6-24 22:07 自动醒续核(进度不丢;pidfile 占着,这三天每早 9 点 cron 拉起会被单例锁挡掉,无害)。当前核到位 84/108(rl-general-toolbox 84,rl-digital-human-interaction 0),剩 24 待核卡在配额。夜间 auto-sum 走 Max、不受此影响,今晚照跑。
+
+## 2026-06-21 03:44 EDT — web 线重构:对齐论文线(find 只发现/无上限 + fetch 抓正文落盘)
+- **缘由**:用户三点拍板——①web 发现**不设数量上限**,让 claude 自己找(工具给它,符合 agent-first 纲领);②"拉正文+落盘"是 fetch 的活,不该塞在 find 里;③web 发现要在**主题状态档**留痕(让"web 确实更新了"可见)。web 仍**直接落库、不打分**(用户确认)。
+- **做了什么**(把原 `find/discover_web.py`(发现+抓取揉一起)拆成论文线那样的两段):
+  - **`find/discover_web.py` 改为只发现**:去掉 max_n 上限(prompt 改"够格的全收、不设上限");够格的直接落库 `kind='web', status='discovered'`(经 store.upsert_paper 默认 discovered + set_paper_topic,不打分);**不再抓正文**(Chrome 那套搬走);**留痕**:写 `topics/<id>/web_candidates.json`(对齐论文的 candidates.json)+ 更新 `topic_state.json` 的 `web` 段(last_discover/in_db/last_found/last_added)。find 不再 import fetch。
+  - **新建 `fetch/fetch_web.py`**:论文线 fetch_oa 的 web 对应物。读该主题 `kind='web' status IN(discovered,source_failed)`,agent 抓正文(WebFetch/真 Chrome 工具箱,复用 fetch_tierb 生命周期)→ `storage/sources/<slug>/source.md` → `status='source_ready'`;抓失败标 source_failed(再跑会重试)。
+  - **run.py**:`fetch` 阶段并入 fetch_web(`fetch_oa` + `fetch_web`,web 无待抓则空转);`web` 阶段仍 = discover_web(只发现,opt-in 不进 AUTO);docstring 同步。
+- **状态流对齐**:web 现走标准 `discovered → source_ready`(与论文一致),不再发现即 source_ready。库里那 2 篇老 web 已是 source_ready,不受影响(fetch_web 只取 discovered/failed)。
+- **验证**:三文件 py_compile 过;离线冒烟(临时库,假 agent 输出)——落库 discovered/URL 规范化去重/web_candidates.json+topic_state[web] 留痕/fetch_web 取数队列 全通过。**联网真跑(花 token)未做,待用户。未 push。**
+- 涉及:`pipeline/find/discover_web.py`(重写)、`pipeline/fetch/fetch_web.py`(新)、`pipeline/run.py`。find/fetch STATE 留指针。
+
 ## 2026-06-21 03:24 EDT — 修数据:改名漏更 summary_versions.path → verify 实际全断(已修)
 - **缘由**:接 03:18 接口对齐后做"已存数据完整性"详查。原文文件(PDF/source.md)263 条全好(0丢失/0损坏/PDF头全过);总结文件 128 个物理上也全在 `storage/sources/`。**但**改名提交 `e973c4d` 更新了 `sources.source_path`、**漏更新了 `summary_versions.path`**——全表 128 行还指旧前缀 `storage/papers/`,文件已不在那。
 - **影响(实活故障)**:`verify_summaries.py:237` 直接用此列开文件 → `spath.exists()` 全假 → **每篇都报 "summary file missing",verify/verify_daemon 一篇都核不了**;`tools/prepare_update.py` 同样断;retrieve(answer/rerank/freshness)也断(本不在本轮范围,顺带修好)。`render_topic`(按 slug 重建)/`run.py` 燃尽/`suggest_updates`/`audit_quality` 只用 version 不开文件,不受影响。

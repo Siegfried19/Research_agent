@@ -4,6 +4,16 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-21 14:32 EDT · ✅ fetch_tierb Python 版首次完整 e2e 验证通过(销 2026-06-20 待办)
+- 自 2026-06-09 迁 Python 起挂着的"**fetch_tierb 未端到端实跑验证**"(见 2026-06-20 02:16 条),
+  本次在 agentic-knowledge-synthesis 的 8 篇付费墙篇上**完整跑通**:**8 抓到 / 0 失败**。
+- 覆盖了关键路径:**跨出版商 find_pdf_url**(Oxford/academic.oup、IEEE stampPDF、Elsevier sciencedirect、MDPI 各一篇均拿到直链)、NYU OpenAthens 跳转(Profile 2 会话已登,无需重登)、**混合 B 下载 + %PDF 校验**、**Chrome 生命周期**(fresh 启动→桥接重连→finally 无条件 close,跑后 0 残留进程,验证假阳性是 pgrep 匹配自身命令行)。
+- **wait_human 也验证了**:FoodAtlas(Elsevier "Just a moment..." Cloudflare)触发 `CHALLENGE: ...pausing for human`,用户点掉后 `challenge cleared, continuing` 自动续、成功。
+- 结论:tierb Python 形态可信。remote_view 仍 mothballed(本次用户在机器旁直接点,没用手机看屏)。详见 `../../../claude_log.md`(14:32 条)。
+
+## 2026-06-21 03:44 EDT · 新增 fetch_web.py：web 正文抓取落盘（论文线 fetch_oa 的对应物，详见 claude_log）
+- web 线拆分:发现归 `find/discover_web`(落库 status=discovered),**抓正文+落盘归本模块新 `fetch_web.py`**——读 `kind='web' status IN(discovered,source_failed)`,agent 自选工具(WebFetch/真 Chrome,复用本模块 fetch_tierb 的 chrome_lock/ensure/close 生命周期)抓成 `source.md`→`source_ready`,失败标 source_failed(再跑重试)。`run.py` fetch 阶段 = fetch_oa + fetch_web(web 无待抓则空转)。web 现走标准 discovered→source_ready,与论文一致。详见 `../../../claude_log.md`(03:44 条)。
+
 ## 2026-06-21 03:18 EDT · 指针：拉取改版后全链接口对齐（跨模块，详见 claude_log）
 - 大改名(papers→sources / pdf_path→source_path / 状态 pdf_*→source_*)+ 新增 `kind`(paper/web) 已传导完整,实时链零旧名残留、生产库已迁、py_compile 过。**新增 web 源排除谓词** `(kind IS NULL OR kind!='web')` 之前只在 build_worklist,本轮补到 `run.py:topic_progress`(夜间队列大脑,漏了会卡死队列)+`register_summaries`。详见 `../../../claude_log.md`(03:18 条),summarize STATE 同留指针。
 

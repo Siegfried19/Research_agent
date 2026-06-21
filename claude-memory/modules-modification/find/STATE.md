@@ -4,6 +4,14 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账（含旧 SESSION 的"为什么"）。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-21 06:12 EDT · 坑：drive.py 大池扩展易超时——确定性收尾兜底
+- agentic-knowledge-synthesis 从 50→~100 扩展:`drive.py`(orchestrator)**跑满 50min(timeout 3000)超时被杀**,前期已扩 topic.json 检索词+seed、池 77→587、打分 3/5 facet,但 **commit 前被杀=本次 find 不算数**。
+- **应对(已验证可行)**:别盲目重启 orchestrator(可能又超时)。改确定性收尾——`score_auto`(idempotent,补全剩余 facet 打分)→ `commit --plan` 看分布 → 人/接手 agent 定 `commit --keep <facet>=N` 按相关性提交。本次新增 48 篇,主题达 98 source。
+- 经验:**目标翻倍这种大扩展,orchestrator 单次 50min 常不够**(discover 多 facet + 嵌套打分 + 子 agent 慢)。要么给更大 timeout 分多次、要么直接走确定性链。详见 `../../../claude_log.md`(06:12 条)。
+
+## 2026-06-21 03:44 EDT · 指针：web 线拆分——discover_web 改为只发现（详见 claude_log）
+- `discover_web.py` 现**只管发现**(无数量上限,够格直接落库 kind=web/status=discovered;不打分;留痕 web_candidates.json + topic_state[web])。**抓正文+落盘搬到 `fetch/fetch_web.py`**(对齐论文 discover→fetch 两段);find 不再 import fetch。下面 03:02 条那套"抓取 agentic 化"逻辑整体迁到 fetch_web。详见 `../../../claude_log.md`(03:44 条)、fetch STATE。
+
 ## 2026-06-21 03:02 EDT · X 二期：discover_web 抓取 agentic 化（工具箱交给 agent）
 - 用户定"提供抓取工具、怎么看交给 claude"。抓正文阶段重构：agent 拿 WebFetch + Bash(opencli 真 Chrome：open/screenshot/extract) + Read，自己决定静态 WebFetch 还是动态截图+读图。脚本只管 Chrome 起停+独占锁（`start_chrome()` 复用 fetch_tierb 的 `chrome_lock`/`ensure_chrome`/`close_chrome`，防越开越多），起不来降级纯静态（`WEB_NO_CHROME=1` 亦可强制）。opencli 截图=`browser <session> screenshot <path>`。真跑前置：隔离 profile 登 X 账号。详见 `../../../claude_log.md`（03:02 条）。
 
