@@ -4,6 +4,14 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-21 03:24 EDT · 指针：修好导致 verify 全断的 summary_versions.path stale（详见 claude_log）
+- 改名(storage/papers→storage/sources)漏更新 `summary_versions.path`,致 `verify_summaries.py:237` 开文件全失败、**每篇报 "summary file missing"、verify 实际一篇都核不了**。已 `UPDATE ... REPLACE` 修正生产库 128 行(文件本就在新位置,纯路径修正),复核 verify 取数 0 missing。详见 `../../../claude_log.md`(03:24 条)。
+
+## 2026-06-21 02:23 EDT · daemon 配额默认睡眠 2h→4h
+- `verify_daemon.py` `QUOTA_DEFAULT_MIN` 120→240 分。**仅影响"撞配额但解析不出恢复时刻"那条兜底路径**（能解析出 "try again at X" 的照旧睡到那个点，不受影响）。
+- 缘由：用户提的——codex 额度窗口实测 ~5.5h，2h 默认常太早醒、一醒又撞墙白跑一批；4h 更贴近真实恢复。仍可用环境变量 `VERIFY_QUOTA_DEFAULT_MIN` 覆盖，不必改码。
+- 同会话顺带确认（无改动）：早 9:00 cron 即便 daemon 已在跑也不会重复——`acquire_singleton()` 见活 pidfile 直接拒启自退。
+
 ## 2026-06-20 04:19 EDT · 指针：新增按版本核查详情 verify.json（跨模块，详见 claude_log）
 - 新能力：核完每篇把 codex 详情**按版本累积**写 `store/papers/<slug>/verify.json`（`record_verify_detail`，verify_summaries + escalate_verify 都接）。**状态文件 verified/verify_status/verify_skip 与 daemon 不变**——状态在 `topics/<id>/` 喂 daemon，详情在论文文件夹，彻底分家。全局账见 `../../../claude_log.md`（04:19 条）。
 

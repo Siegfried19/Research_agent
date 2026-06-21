@@ -23,13 +23,24 @@ python3 pipeline/tools/notify.py test       # 验证能收到
 
 ## 对话 bot（2026-06-10 上线，照 Stock_agent/daily-digest/bot.py 移植）
 
-常驻长轮询：用户在 Telegram 上发任何话 → 转本机 `claude -p --resume`（opus、`--dangerously-skip-permissions`、cwd=仓库根，多轮记忆存 `logs/bot_session.txt`）。命令：`help` / `new`（清会话）/ `log [N]`（看 run.log）。只认配置里的 chat_id。
+常驻长轮询，**待命/会话开关模式（2026-06-21 改）**：默认**待命**（不烧 opus）。
 
-**起停**（单例，`bot.pid` 活着就拒启；**不随开机自启**，机器重启要手动拉起）：
+- **「开始」** → 拉起一个 `claude-opus-4-8` 会话（`--dangerously-skip-permissions`、cwd=仓库根、`--resume` 多轮记忆存 `logs/bot_session.txt`）；之后发的任何话都转给这个 opus，可问库/跑流水线/**远程改代码**。每次「开始」都是全新会话；「开始 顺手把X改成Y」会开会话并立刻执行后半句。
+- **「结束」** → 关闭会话回待命；待命态普通消息只回一句提示、**不触发 opus**（防手滑误烧 Max 额度）。
+- 其他命令任何状态可用：`log [N]`（看 run.log）/ `new`（清当前会话上下文重开）/ `help`。
+- 模型写死 `claude-opus-4-8`（常量 `OPUS_MODEL`，要换改这一处）。**重启 bot 回待命态**（会话状态在内存，不持久化）。只认配置里的 chat_id。
+
+**起停（2026-06-21 起由 systemd user service 托管，开机自启 + 崩溃自拉）**：
+单元文件 `~/.config/systemd/user/research-bot.service`（用 research-agent 环境 python 跑 bot.py；`Restart=always`）。已 `enable --now` + `loginctl enable-linger siegfried`（没登录/重启也跑）。
 ```bash
-cd ~/Projects/Research_agent && setsid nohup python3 -u pipeline/tools/bot.py >> logs/bot.log 2>&1 &
-kill $(cat logs/bot.pid)   # 停
+systemctl --user restart research-bot     # 改完 bot.py 重启（最常用）
+systemctl --user stop|start research-bot  # 停 / 起
+systemctl --user status research-bot      # 状态
+journalctl --user -u research-bot -f      # 看日志（取代旧的 logs/bot.log）
+systemctl --user disable research-bot     # 关掉开机自启
 ```
+> ⚠️ 别再用 `kill $(cat logs/bot.pid)` 停——`Restart=always` 会立刻把它拉回；要停必须走 `systemctl --user stop`。bot.py 自身的单例锁（`bot.pid` 活着就拒启）仍在，防手动再起第二只。
+> 换机器重建：拷单元文件 → `systemctl --user daemon-reload && systemctl --user enable --now research-bot` → `loginctl enable-linger <user>`。
 
 ### ⚠️ 与 tierb 协作（独占 getUpdates 的坑）
 

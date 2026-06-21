@@ -4,6 +4,13 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账（含旧 SESSION 的"为什么"）。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-21 03:02 EDT · X 二期：discover_web 抓取 agentic 化（工具箱交给 agent）
+- 用户定"提供抓取工具、怎么看交给 claude"。抓正文阶段重构：agent 拿 WebFetch + Bash(opencli 真 Chrome：open/screenshot/extract) + Read，自己决定静态 WebFetch 还是动态截图+读图。脚本只管 Chrome 起停+独占锁（`start_chrome()` 复用 fetch_tierb 的 `chrome_lock`/`ensure_chrome`/`close_chrome`，防越开越多），起不来降级纯静态（`WEB_NO_CHROME=1` 亦可强制）。opencli 截图=`browser <session> screenshot <path>`。真跑前置：隔离 profile 登 X 账号。详见 `../../../claude_log.md`（03:02 条）。
+
+## 2026-06-21 02:26 EDT · web 发现入库落地：discover_web.py（blog/技术报告，kind='web'）
+- 2026-06-20 16:16 敲定的"博客/网络源扩展"落码了（当时纯设计）。新建 `find/discover_web.py`：agent 联网搜（复用 hunt 外壳 `run_claude`+WebSearch/WebFetch）→ prompt 软判①相关性②内容质量 → 抓正文 markdown 落 `storage/papers/<slug>/source.md` → `upsert_paper(kind='web')`+`set_paper_topic` 入库 + URL 规范化去重。**套论文 discover/commit 骨架、不另起炉灶**；跳过 score、不总结（worklist 排除 `kind='web'`）。注册 `run.py <id> web`（opt-in，不进 AUTO）。
+- 与旧"add_url"副轨的关系：这就是它的实现，但**改成自动发现（非手动喂 URL）+ 复用 store 入库出口**（`upsert_paper` 的 kind 改成参数）。地基（`source_path`/`kind` 列）见 claude_log 02:14。真跑待用户（billed）。全局账见 `../../../claude_log.md`（02:26 条）。
+
 ## 2026-06-21 00:39 EDT · 指针：facet 现在落盘了（跨模块，详见 claude_log）
 - `commit` 经 `store.set_paper_topic` 把每篇的 facet 写进新列 `paper_topic.facet`（调用处未改，传的 `p` 本就带 facet）。供 retrieve 日后按 facet 过滤用。agentic 旧行已从 candidates.json 回填。全局账见 `../../../claude_log.md`（00:39 条）+ fetch STATE。
 

@@ -13,6 +13,8 @@
 2. **score_auto.py**（`candidates.json` → `scores/batch_*.json`）：逐批 `claude -p` 打 0–100 相关分。核心是**跨批次校准漂移修法**（见下）。可选 Codex 魔鬼代言人（`quality.codex_panel`，默认关）。
 3. **commit.py**（`scores/` + `candidates.json` → DB + `selected.json`）：合并分数 → 过质量闸 + 相关性门槛 → 选篇 → upsert papers/paper_topic → 重算全主题 rank → 重建主题内引用边。
 
+> **web 源旁路（2026-06-21）**：非论文的优质 blog/技术报告走 `discover_web.py`（agent 联网搜 → prompt 软判①相关性②内容质量 → 抓正文：**工具箱交给 agent 自己挑**——静态页 WebFetch / 动态·X·登录墙用真 Chrome（opencli `open`+`screenshot`，再 Read 截图）/ `extract` 抓 DOM → `upsert_paper(kind='web')`+`set_paper_topic`）。套**同一入库出口**、URL 规范化去重、跳过打分、不进总结（worklist 排除 `kind='web'`）。Chrome 起停/锁归脚本（复用 fetch_tierb），起不来降级纯静态。opt-in：`run.py <id> web`。详见 STATE（2026-06-21 条）。
+
 ## 设计原则与关键决策（为什么这么做）
 - **选篇靠 LLM 相关性打分，不靠 API 排序**：OpenAlex 等的相关性把引用量混进去，会把"高引但跑题"的经典论文顶上来。`prefilter_rank` 只用各源名次 + 多源一致加成、**故意不用引用数**，且只是召回向粗筛（决定谁进 ≤500 池），真正去留由 LLM 打分决定。
 - **打分步是 scale-proof 的**：工作量取决于"每次喂 LLM 多少篇"（池硬截 ≤500，每周增量实际几十篇），与库总篇数无关。所以漂移修法是打分步终局方案，**打分里永不需要 reranker**（reranker 真要上，落点是上游粗筛门或检索层，不在这段）。

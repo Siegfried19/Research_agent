@@ -4,6 +4,12 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-21 03:18 EDT · 指针：拉取改版后全链接口对齐（跨模块，详见 claude_log）
+- 大改名(papers→sources / pdf_path→source_path / 状态 pdf_*→source_*)+ 新增 `kind`(paper/web) 已传导完整,实时链零旧名残留、生产库已迁、py_compile 过。**新增 web 源排除谓词** `(kind IS NULL OR kind!='web')` 之前只在 build_worklist,本轮补到 `run.py:topic_progress`(夜间队列大脑,漏了会卡死队列)+`register_summaries`。详见 `../../../claude_log.md`(03:18 条),summarize STATE 同留指针。
+
+## 2026-06-21 01:11 EDT · 撤回 facet 入库（改回主题状态档单一真相源）
+- 接下一条（00:39）：facet **不再入库**。用户拍板"信息在主题状态档存好就够，别复制进数据库；数据库他自己主导"。`db.py` 的 facet 列 / `store.py` 的写入 / 生产库 267 行全撤；`ALTER TABLE paper_topic DROP COLUMN facet`（备份 `/tmp/papers.bak-before-facet-drop.sqlite`）。`failed` 子命令保留不动。命名+原则详见 `../../../claude_log.md`（01:11 条）、`ARCHITECTURE.md` §5（四类数据：数据库/主题状态档/原件库/日志）。
+
 ## 2026-06-21 00:39 EDT · fetch 失败兜底定稿落地：`failed` 报失败 + facet 入库（跨模块）
 
 > 与用户逐步敲定 fetch 失败处理并落码。**结论：fetch 几乎不失败（生产库当前 `pdf_failed=0`，历史仅 PPG/Lazy Agents 那 1 次已修），不值当建诊断/分类 agent。** 砍掉早先设想的"diagnose 失败分类层"，只留两件极小的事 + 为 retrieve 备料的 facet 入库。

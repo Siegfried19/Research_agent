@@ -43,8 +43,8 @@ fetch 几乎不失败（生产库常年 `pdf_failed=0`），所以**不建诊断
 - **⑥ 手动挂回库**（不写工具）：失败篇在 `papers`/`paper_topic` 的行 find 阶段已 commit，所以"入库"只是拷 PDF 到 `storage/papers/<slug>/paper.pdf` + `UPDATE papers SET status='pdf_downloaded', pdf_path=...`（即 `fetch_oa.py` 末尾三行）。用户自己下好 PDF，叫 agent 现场用 SQL 挂上，再走 worklist→sum。
 - 红线不变：**不接盗版源**；付费墙只走 NYU 合法订阅。
 
-## facet 入库（给 retrieve 备料）
-`paper_topic.facet` 记每篇在本主题下的 find 子方向（非-faceted 主题/旧行=`_all`）。find 的 `commit` 经 `store.set_paper_topic` 落盘，**fetch 本身 facet 无感**（仍按主题+rank 取 PDF）；这列是留给 retrieve 日后按 facet 过滤/分组用。详见 `../find/README.md`。
+## facet（只在主题状态档，不入库）
+每篇在本主题下的 find 子方向 facet 存在**主题状态档**（`topics/<id>/topic.json` 的 `facets` + `candidates.json` 每篇 `facet`），**不复制进数据库**——2026-06-21 撤回了曾加的 `paper_topic.facet` 列（主题状态档是单一真相源，详见 STATE / `claude_log.md` 01:11 条）。`fetch` 对 facet 无感（仍按主题+rank 取 PDF）；retrieve 日后要按 facet 过滤就直接读主题状态档。详见 `../find/README.md`。
 
 ## 边界（不属于本模块）
 - 选哪些篇下载（打分/选篇/资格闸）= **find** 模块；本模块只对已选中的篇取 PDF。

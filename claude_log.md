@@ -4,6 +4,93 @@
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `claude_memory/modules-modification/<x>/STATE.md`（各模块层积日志，取代旧 logs/SESSION-*.md）；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
 
+## 2026-06-21 03:24 EDT — 修数据:改名漏更 summary_versions.path → verify 实际全断(已修)
+- **缘由**:接 03:18 接口对齐后做"已存数据完整性"详查。原文文件(PDF/source.md)263 条全好(0丢失/0损坏/PDF头全过);总结文件 128 个物理上也全在 `storage/sources/`。**但**改名提交 `e973c4d` 更新了 `sources.source_path`、**漏更新了 `summary_versions.path`**——全表 128 行还指旧前缀 `storage/papers/`,文件已不在那。
+- **影响(实活故障)**:`verify_summaries.py:237` 直接用此列开文件 → `spath.exists()` 全假 → **每篇都报 "summary file missing",verify/verify_daemon 一篇都核不了**;`tools/prepare_update.py` 同样断;retrieve(answer/rerank/freshness)也断(本不在本轮范围,顺带修好)。`render_topic`(按 slug 重建)/`run.py` 燃尽/`suggest_updates`/`audit_quality` 只用 version 不开文件,不受影响。
+- **修法**:备份生产库到 `logs/temporary-log/papers.bak-before-svpath-fix-20260621-032345.sqlite`(1.2M)后,`UPDATE summary_versions SET path=REPLACE(path,'storage/papers/','storage/sources/')`(128 行)。**纯路径字符串修正,无文件移动。**
+- **复核**:旧前缀残留 0、128 行文件全部存在;模拟 verify 取数查询 "summary file missing"=0、"no pdf on disk"=0。verify 现可正常定位每篇总结+PDF。
+- 文件:仅生产库 `data-base/papers.sqlite`(数据修正,非 schema)。**未 push(待用户)。**
+
+## 2026-06-21 03:18 EDT — 拉取改版后对齐全链接口(fetch→summarize→verify + 运维自动化)
+- **缘由**：刚把"拉取"整段改版(papers→sources 大改名 + 新增 `kind`(paper/web) + `source_path` 泛化(论文 paper.pdf / web source.md) + 失败兜底 `failed`/`source_failed`)。本轮把下游所有接口对齐到新契约,**retrieve(查询)按用户要求不管**。
+- **审计结论**:大改名已基本传导完整——实时链路(find 非retrieve / fetch / summarize / verify / lib / run.py / ops tools)**零旧 SQL 名残留**(grep `papers`/`paper_topic`/`pdf_path`/`pdf_downloaded`/`pdf_failed` 全净);生产库已 ALTER 到 `sources`/`source_topic`/`source_path`/`kind`(状态 discovered/source_ready/summarized);全 pipeline py_compile 过。
+- **真 bug(运维自动化,用户点名处)**:新增的 `kind='web'` 只在 `build_worklist` 被排除("web 先不总结"),但**燃尽/队列大脑漏了同步**:
+  - `run.py:topic_progress()` 把 web 源(source_ready+source.md 在盘)误算成"doable"→ 夜间队列 `select_next_topic` 会**永远卡在含 web 的主题**(worklist 产 0、sum 空转、触发"0 进展"告警),燃尽永不收尾。**已实测**:`agentic-knowledge-synthesis` 有 2 篇 live web 源,修前 doable=2、修后 doable=0。
+  - `register_summaries.py` 把 web 源恒算作"missing a summary file"(噪音)。
+  - **修法**:两处都补上 build_worklist 的权威谓词 `(kind IS NULL OR kind!='web')`,三处现已一致。
+- **文档漂移**:`config.json` 的 `paths` 段(标注"代码不再读,仅文档")还写 `storage/papers`,实际已是 `storage/sources`(且支持 web 的 source.md)——已更正(确认全 pipeline 无代码读 `config.paths`)。
+- **未动**:`tools/migrate_slugs.py`/`migrate_store_layout.py` 仍引用旧名,但它们是一次性历史迁移脚本(从旧布局迁过来),引用旧名是对的、不在任何 auto 链,保留。`render_topic.py` 把 web 当参考条目展示(状态📄有全文/总结—)是合理设计,`已总结` 计数只数 summarized 不受影响,不动。
+- 涉及文件:`pipeline/run.py`、`pipeline/summarize/register_summaries.py`、`pipeline/config.json`。**未 push(待用户)。**
+
+## 2026-06-21 03:10 EDT — X 账号登入抓取 profile + 落 agent-first 方法论纲领
+- **登 X**：起隔离 profile 真 Chrome（`scrape-nyu`/Profile 2，与 NYU 共用）→ 导航 `x.com/login` → 用户手动登 → 验证 `x.com/home`（title"主页/X"）登录态有效 → `close_chrome` 收尾关掉。意义：`discover_web` 的 agent 抓 X 需登录内容时真 Chrome 自带登录态；**动态抓取本身不依赖此**（公开 JS 页直接抓），登 X 只解锁 X 这一站。
+- **方法论落档（用户 2026-06-21 定为纲领）**：尽量让 agent 干活；人负责 ①提供管道/工具 ②调教 prompt ③设计 high-level 流程。脚本只做确定性力气活（IO/进程/锁/校验/入库），别替 agent 写死它该判断的逻辑。落 `claude-memory/ARCHITECTURE.md §6.5` + 私有记忆。
+
+## 2026-06-21 03:02 EDT — X 二期：discover_web 抓取 agentic 化（工具箱交给 agent，加真 Chrome/截图）
+- **缘由**：接 web 发现入库。用户定"提供抓取工具、怎么看交给 claude 自己决定"——不写死静态/动态判断。
+- **做了什么**（`find/discover_web.py` 抓正文阶段重构）：
+  - **工具箱给 agent**：静态页 WebFetch；动态/X/登录墙用真 Chrome（Bash 跑 `opencli browser tierb open`+`screenshot`，再 Read 截图提正文）；也可 `extract` 抓 DOM。prompt 只列手段，不替它判断。
+  - **力气活归脚本**：`start_chrome()` 复用 fetch_tierb 的 `chrome_lock`（flock 独占防越开越多）+`ensure_chrome`，`finally close_chrome` 收尾；起不来自动降级纯静态。`WEB_NO_CHROME=1` 可强制纯静态。
+  - opencli 截图能力确认：`opencli browser <session> screenshot <path>`。
+- **验证**：编译；`_chrome_section` 渲染（命令模板含 url/profile/截图路径）；mock 端到端降级路径入库 OK（tools 降级只 WebFetch）。
+- **真跑前置（交用户）**：隔离 profile 先登 X 账号 + opencli/Chrome 环境（DISPLAY）。**未 push。**
+
+## 2026-06-21 02:46 EDT — 批2：核心表/目录大重命名 papers→sources、paper_topic→source_topic、storage/papers→storage/sources
+- **缘由**：接批1。用户要"统称叫 source"——收的不只论文（还有 web 源）。**纯命名统一、零新功能**，单独成批做（高风险：动整个核心表）。
+- **改了什么**：
+  - **代码**：37 文件精确 sed（表名 `papers`→`sources`、`paper_topic`→`source_topic`、路径 `storage/papers`→`storage/sources`）。**保护不动**：`papers.sqlite` 文件名、`paper_id` 列、`paper.pdf`、`set_paper_topic` 函数名、真·PDF 函数、`idx_papers_*` 索引名、`migrate_*` 历史脚本。
+  - **生产库**（备份 `logs/temporary-log/papers.bak-before-table-rename.sqlite`）：`ALTER TABLE papers RENAME TO sources`、`paper_topic RENAME TO source_topic`、`source_path` 值 223 行前缀 `storage/papers`→`storage/sources`。
+  - **目录**：`mv storage/papers storage/sources`（223 文件夹）；`.gitignore` 同步。
+  - **没动**：DB 文件名 `papers.sqlite`、列名 `paper_id`；retrieve 索引（`fts_sum`/`vec_papers` 是索引内部名、存 slug/paper_id 值，自洽免迁移）。
+- **验证**：全量编译；表名零残留；生产库自洽（表 sources/source_topic、行数 263/269、kind paper261/web2、web source.md 路径对）；临时库端到端；`build_worklist` 真测（只论文、排除 web）；`fetch_oa` 烟测。**未 push。**
+
+## 2026-06-21 02:30 EDT — Telegram bot 加「开始/结束」会话开关(远程拉起 opus 4.8 改代码) + verify 默认睡眠 2h→4h
+- **bot 待命/会话模式**(`pipeline/tools/bot.py`):用户要"在 TG 发话能拉起一个 opus 4.8 远程改代码,说结束才关"。原 bot 是"任何消息都直接走 opus";改成**默认待命**——发「开始」才拉起 `claude-opus-4-8` 会话(skip-permissions/cwd=仓库根/--resume 多轮记忆),期间随便聊都走 opus 可改代码;发「结束」关回待命,待命态普通消息只回提示不烧额度。设计经用户拍板(选"显式开关")。模型写死常量 `OPUS_MODEL=claude-opus-4-8`(--help 确认 CLI 收全名)。会话状态在内存,重启 bot 回待命。py_compile 过。
+- **verify daemon 默认睡眠**(`pipeline/tools/verify_daemon.py`):`QUOTA_DEFAULT_MIN` 120→240 分(只影响"撞配额但解析不出恢复时刻"兜底路径;能解析出时间的照旧)。缘由:codex 窗口 ~5.5h,2h 常太早醒又撞墙。详见 verify STATE.md(02:23 条)。
+- 文档:`operation-maintenance/telegram.md` 对话 bot 段重写。**未 push(待用户)。**
+- **bot 开机自启(2026-06-21 02:35)**:用户确认 bot 可用后要开机自启。建 systemd user service `~/.config/systemd/user/research-bot.service`(research-agent 环境 python 跑 bot.py,`Restart=always` 崩溃自拉),`enable --now` + `loginctl enable-linger siegfried`(没登录/重启也跑)。验证 active+enabled+Linger=yes,bot.pid==MainPID。**控制命令改走 systemctl(别再 kill pid,会被 Restart 拉回)**;telegram.md 起停段已更新。这是 `~/.config` 下的机器本地配置,不随 git,换机器要重建(单元文件内容已贴 telegram.md)。
+
+## 2026-06-21 02:26 EDT — web 发现入库落地（批1-A）：discover_web.py（kind='web'，复用骨架）
+- **缘由**：接 02:14（批1-B 地基）。落 blog/web 源的"发现+入库"。用户拍板：**自动找（非手动喂 URL）、流程套论文那套、相关性 + 内容质量都用 prompt 软约束**。查证确认此功能此前没写过（你记得的是 hunt `recover_agent.py`——同样 agent 联网，但它是给已入库论文补 PDF）。
+- **做了什么**：
+  - 新建 `pipeline/find/discover_web.py`：agent 联网搜（复用 hunt 的 `run_claude`+WebSearch/WebFetch）按 topic 找优质 blog/技术报告 → prompt 软判①相关性②内容质量③禁付费墙/登录 → 收录的逐条 WebFetch 抓正文 markdown → `web_source_file()` 落 `source.md` → 复用 `store.upsert_paper(kind='web')`+`set_paper_topic` 入库 + URL 规范化（剥 utm/fragment）去重。两阶段（发现清单 / 逐条抓正文，正文不挤 JSON）。
+  - `lib/store.py`：`upsert_paper` 的 kind 从写死 `'paper'` 改成**参数**（默认 paper，web 传 web）——同一入库出口。
+  - `run.py`：注册 `web` stage（`python3 run.py <id> web`）；**opt-in，不进 AUTO**（烧 claude 联网，按需跑）。
+  - 不打分（跳过 score）、不总结（worklist 已按 `kind!='web'` 排除）。
+- **验证**：编译；纯函数（norm_url 剥 utm/fragment、parse_items 容错）；mock 端到端（临时库 + 假 claude：web 入库 kind=web/source_ready/source.md 落盘/关联 topic rel=88，测试文件夹已清）。
+- **未做（交用户，billed）**：真跑 `run.py <id> web`（真烧 claude 联网 + 抓取）。**未 push。**
+
+## 2026-06-21 02:14 EDT — pdf→source 命名统一 + 加 kind 类型列（批1-B，动生产库）
+- **缘由**：blog/web 源要入库，但系统命名全焊死 PDF。与用户敲定：统称改 `source`、给每篇加**显式类型标记**。**分两批**：本条=批1-B（字段级改名 + kind，blog 地基）；批2（表名 `papers`→`sources` / 目录大重命名）单独开分支后做。
+- **改了什么**：
+  - `lib/db.py`：papers 列 `pdf_path`→`source_path`、加 `kind` 列（paper/web；进 SCHEMA + `ADD_COLUMNS` 自动迁移）。
+  - `lib/store.py`：加 `web_source_file()`（web 落 `source.md`）；`upsert_paper` INSERT 设 `kind='paper'`（论文入库默认）。
+  - **生产库迁移**（备份 `logs/temporary-log/papers.bak-before-source-rename.sqlite`）：`RENAME COLUMN pdf_path→source_path`；status `pdf_downloaded`→`source_ready`（121 行）/`pdf_failed`→`source_failed`（0）；加 `kind` 回填 `paper`（261 行）。
+  - **17 文件批量**：`pdf_path`→`source_path`、status 值→`source_*`（sed，排除 `migrate_*` 历史脚本）；**保留**真·PDF 函数（download_pdf/find_pdf_url/grab_pdf/verify_pdf/pdf_text/沙箱 paper.pdf）。
+  - `summarize/build_worklist.py`：查询加 `kind!='web'` 过滤 → web 先不总结（用户定 blog 暂不总结）。
+- **没动**：表名 `papers`/`paper_topic`、目录 `storage/papers`（批2）；`pdf_fetched_at` 列名（暂留，收尾再议）。
+- **验证**：全量 py_compile；临时库（新库列对 / 论文 upsert=paper / worklist 排除 web）；`fetch_oa` 烟测；生产库自洽（source_path✓ kind✓ 无 pdf_path / status 40+121+100 / kind paper 261）。**未 push。**
+- **剩**：批1-A（`add_url` 抓取入库 `kind='web'` + web 自动发现）、批1 文档收尾、批2 表名大重命名。
+
+## 2026-06-21 02:11 EDT — 应用户要求停掉所有正在运行的自动化
+- **缘由**：用户要把目前所有正在运行的自动化关掉。
+- **做了什么**：
+  - **crontab 清空**：先备份 `crontab -l` → `logs/cron-backup/crontab-20260621-021036.bak`（含原 3 条：`0 2`/`30 7` auto-sum-next、`0 9` verify_daemon），再 `crontab -r`。要恢复直接 `crontab logs/cron-backup/crontab-20260621-021036.bak`。
+  - **停掉正在跑的活批次**：今晚 02:00 的 cron 已起来在跑 `run.py queue auto-sum-next 20`（主题 rl-digital-human-interaction，挂着 2 个 claude -p 在写总结）；清 crontab 只挡未来触发，已跑的手动 TERM 整条进程树（run.py/summarize_auto/cron-sh + 2 个 claude 子进程）。sum 幂等，丢掉的在写篇下批重做，无 DB 损坏。
+  - **清残留 pidfile**：删 `logs/verify_daemon.pid`（陈旧，进程早退）。bot.py 本就没在跑。
+- **现状**：crontab 空、无相关进程、无 pidfile。代码一行没动，纯运维开关；恢复见上面备份。
+
+## 2026-06-21 01:11 EDT — 撤回 facet 入库（回到"主题状态档单一真相源"）+ 定四类数据命名
+- **缘由**：接上一条。和用户对齐数据分层后他拍板——**信息在主题状态档（`topics/<id>/` 的 json）存好就够，不必复制进数据库；数据库由用户自己主导**。facet 本已在 `topic.json`（facets）+ `candidates.json`（每篇 facet）里，00:39 条又复制进 `paper_topic.facet` 属冗余 → 全部撤回。
+- **撤回的三处**（对应 00:39 条）：
+  - `lib/db.py`：删 SCHEMA 里 `paper_topic.facet` 列 + `ADD_COLUMNS` 的 facet 条目（还原 priority 行尾）。
+  - `lib/store.py`：`set_paper_topic` 改回不写 facet。
+  - 生产库 `data-base/papers.sqlite`：`ALTER TABLE paper_topic DROP COLUMN facet`（SQLite 3.51 支持），清掉 267 行冗余副本；源头 json 不动，可随时重建。备份 `/tmp/papers.bak-before-facet-drop.sqlite`。
+- **保留**：`run.py` 的 `failed` 子命令（与数据库 schema 无关，不受影响）。
+- **命名约定落档**：`ARCHITECTURE.md` §5 加"四类数据落点"术语表——**数据库 / 主题状态档 / 原件库 / 日志**，别再混叫。
+- **验证**：py_compile（db/store）过；生产库删列后行数仍 267；临时库 `open_db` 无 facet 列、`set_paper_topic` 能写。**未 push（待用户）。**
+- **文件**：`pipeline/lib/{db,store}.py`、`data-base/papers.sqlite`、`claude-memory/ARCHITECTURE.md`、fetch README/STATE 指针。
+
 ## 2026-06-21 00:39 EDT — fetch 失败兜底定稿 + facet 入库（跨 db/find/fetch/retrieve）
 - **缘由**：和用户逐步对齐 fetch 失败处理。先评估出 **fetch 几乎不失败**（生产库 `pdf_failed=0`，历史只 PPG/Lazy Agents 1 次已修），于是把早先设想的"diagnose 失败分类 agent"整个砍掉，只留极简兜底；另按用户要求把 facet 落库供 retrieve 用。
 - **做了什么**：

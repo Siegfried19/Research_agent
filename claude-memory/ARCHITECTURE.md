@@ -43,9 +43,17 @@ run auto = discover → score → commit → fetch → recover → hunt → tier
 - **retrieve 是旁路查询层**：读 `data-base/papers.sqlite` + `store/` + verify 的 `verify_status.json`，**不写生产库、不在 run auto 上**。索引库 `db/{fts,vec}.sqlite` gitignored、可重建。总结/PDF 更新后跑 `ask.py --reindex`（或 `retrieve/index`）增量跟上。
 
 ## 5. 数据模型（data-base/papers.sqlite，5 表）
-- **papers** — 全局论文库：主键 = 规范化 DOI；`slug` = 论文文件夹名（`storage/papers/<slug>/`）；`status` = discovered/pdf_downloaded/pdf_failed/summarized；`quality_tier`/`quality_signals` = 质量标记。
+
+> **四类数据落点（命名约定，别混着叫，2026-06-21 定）**
+> - **数据库 / 库** = `data-base/*.sqlite`（papers/fts/vec）——可查询的结构化账本，存**指针和关系**（谁是谁、在哪、什么状态），很多字段就是指向磁盘文件的路径。
+> - **主题状态档** = `topics/<id>/`（topic.json + candidates/selected/worklist/verify 状态 json）——每主题跑流水线的中间产物 + 进度。**它是单一真相源；在这存好的信息不必再复制进数据库**（facet 即一例，2026-06-21 撤回了它的 paper_topic 列，见 claude_log）。
+> - **原件库** = `storage/sources/<slug>/`（paper.pdf 或 web 的 source.md + v*.md 总结 + verify.json）——每篇的实际正文/原件（一篇一个家）。
+> - **日志** = `logs/`——机器跑的流水，可删、不入库。
+> 口诀：**数据库存"指针和关系"，主题状态档和原件库存"实际内容"。**
+
+- **sources**（原名 papers，2026-06-21 改）— 全局论文/资料库：主键 = 规范化 DOI（web 源 = 规范化 URL）；`slug` = 文件夹名（`storage/sources/<slug>/`）；`source_path` = 原文落点（论文 `paper.pdf` / web `source.md`，原名 pdf_path）；`kind` = 类型 `paper`/`web`（入库即定，worklist/检索按它分流）；`status` = discovered/source_ready/source_failed/summarized；`quality_tier`/`quality_signals` = 质量标记。
 - **topics** — 研究主题（idea + 生成的 queries + target + 可选 score_anchors）。
-- **paper_topic** — 论文×主题（relevance 分 + 理由 + rank；主键 = topic+paper）。
+- **source_topic**（原名 paper_topic）— 资料×主题（relevance 分 + 理由 + rank；主键 = topic+paper_id）。
 - **summary_versions** — 总结版本历史（version/path/based_on/note）。
 - **citations** — 库内论文相互引用边（主题内边 commit 建，全库边由 `tools/cross_topic.py` 重建）。
 
@@ -56,7 +64,7 @@ run auto = discover → score → commit → fetch → recover → hunt → tier
 pipeline/
 ├─ run.py        ★唯一入口/总指挥（run auto 按序 spawn 各段，cwd=仓库根）
 ├─ ask.py        ★retrieve 入口/出口①②公共 API（路径冻结，全局 CLAUDE.md 引它）
-├─ find/         🔍 discover, score_auto, commit
+├─ find/         🔍 discover, score_auto, commit, discover_web(web源入库 kind='web'), drive(orchestrator)
 ├─ fetch/        📥 fetch_oa, recover_oa, recover_agent, fetch_tierb
 ├─ summarize/    ✍️ build_worklist, summarize_auto, register_summaries, render_topic
 ├─ verify/       ✅ verify_summaries, escalate_verify
@@ -70,6 +78,15 @@ pipeline/
 - **path shim 约定**：段/tools 里每个脚本顶部三行把 `pipeline/` 插进 `sys.path`，使 `from lib.xxx` 在任何子目录解析得到；同段 sibling import 靠 `sys.path[0]`，跨段走包路径（各段有 `__init__.py`）。
 - **加新脚本**：进主链 → 放对应段文件夹（没有就新建段+空 `__init__.py`）+ 复制 shim 三行 + 在 `run.py` 的 `steps()`/`AUTO` 注册；旁路 → `tools/`；公共 API/入口 → 根目录（根目录脚本被外部引用，路径不可随意搬）。
 - **运行环境**：统一 conda `research-agent`（GPU torch + 嵌入；`environment.yml` 重建）。`run.py`/`ask.py` 顶部 `envguard.ensure_env()` 自动 re-exec 到对环境；找不到不拦着（主链回退 base，retrieve 回退纯 FTS）。
+
+## 6.5 用 agent 的方式（贯穿全局的分工，2026-06-21 用户定为纲领）
+**尽量让 agent 来工作；人负责①提供管道和工具 ②调教 prompt ③设计整个 high-level 流程。** 这是本项目用 agent 的基本姿势，设计任何新东西都按它分工：
+- **agent** = 判断 + 编排 + 干具体活（看情况自己决定怎么做）。
+- **脚本/管道** = 确定性的力气活：IO、进程/Chrome 生命周期、锁、校验、入库出口——**不交给 agent**。
+- **人** = 写 prompt 引导、设计流程骨架、把工具箱摆出来。
+
+例（都是这个模式）：`discover_web` 抓取（脚本管 Chrome 起停/独占锁，工具箱 WebFetch/真 Chrome/Read 给 agent 自己挑怎么抓）、find orchestrator（`find/drive.py`）、hunt（`fetch/recover_agent.py`）。
+**铁律**：别替 agent 写死它本该自己判断的逻辑（如"静态走 X、动态走 Y"这种硬分支）——摆出工具让它自己挑。
 
 ## 7. 🌟 总蓝图（三层 + 三出口）
 三层架构，下层喂上层；做任何决策先对齐这个：

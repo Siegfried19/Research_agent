@@ -4,6 +4,9 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-21 03:18 EDT · 指针：web 源排除谓词补齐 + 拉取改版接口对齐（跨模块，详见 claude_log）
+- `kind='web'` 源不进总结的谓词 `(kind IS NULL OR kind!='web')` 之前只在 `build_worklist`,本轮补到 `register_summaries`(否则 web 恒算"missing")+ `run.py:topic_progress`(否则夜间队列卡死)。三处现已一致。大改名(papers→sources 等)在 summarize 侧已传导完整。详见 `../../../claude_log.md`(03:18 条)。
+
 ## 2026-06-20 04:19 EDT · 指针：存储布局改版（跨模块，详见 claude_log）
 - 总结落点 `store/summaries/<slug>/vN.md` → `store/papers/<slug>/vN.md`。build_worklist/register_summaries/summarize_auto/render_topic + tools/prepare_update 已改走 `lib/store.py:paper_dir/summary_file`。全局账见 `../../../claude_log.md`（04:19 条）。
 
