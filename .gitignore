@@ -23,7 +23,10 @@ config/x11vnc.plain
 
 # logs/ 整个忽略：全是运行时/详细日志/临时快照/机器总账(run.log)，都可重建、与重建无关，
 # 不入库；换机器整目录拷会带。
-logs/
+# 例外：logs/claude_log/ 是 agent 自留工作笔记(这轮拉了啥/为啥，给自己以后翻)，要随 git
+# 跨机器走，故单独 un-ignore(2026-06-21 用户定)。其余 logs/* 照旧忽略。
+logs/*
+!logs/claude_log/
 
 # 第三方参考库（体积大，不入库；2026-06-20 用户改名 ref/ → reference/）
 reference/

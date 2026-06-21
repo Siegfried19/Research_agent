@@ -29,6 +29,8 @@ python3 pipeline/run.py <id> auto
 - **不用 Google Scholar 批量**（无 API、强反爬）。下载四级、撞墙就固化新渠道；批量下载**限速**别刷崩学校访问。
 - `claude -p`/codex 偶撞限流 → 重跑该阶段即可（幂等，已做的跳过）；撞限流调小并发。
 - **git push 只用户来**（我只 commit、不 push）。
+- **agent 自建小工具 → `pipeline/tools/`**（2026-06-21 用户定）：临时跑的脚本/小工具别散落，统一放旁路 tools 目录。
+- **agent 自由备忘 → `logs/claude_log/`**（新目录，2026-06-21 用户定，已开 gitignore 例外随 git 走）：**非强制、不是每轮都写**。当我自己觉得有值得记、又放不进现有记忆体系（根 `claude_log.md` / `claude-memory/` / 私有记忆）的零散东西时，自由裁量写这儿；没必要就空着。见 `logs/claude_log/README.md`。
 
 ## 📌 文档落盘铁律（改完收尾必做，不等人催 —— 同全局口径）
 做了实质改动就由 Claude 自己落盘：
