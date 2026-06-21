@@ -68,10 +68,10 @@ def load_papers(main, topic=None):
     have_sum = "p.id IN (SELECT DISTINCT paper_id FROM summary_versions)"
     if topic:
         return main.execute(
-            f"SELECT p.* FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id "
+            f"SELECT p.* FROM sources p JOIN source_topic pt ON pt.paper_id=p.id "
             f"WHERE pt.topic_id=? AND {have_sum} ORDER BY pt.rank", (topic,)).fetchall()
     return main.execute(
-        f"SELECT p.* FROM papers p WHERE {have_sum} ORDER BY p.year DESC").fetchall()
+        f"SELECT p.* FROM sources p WHERE {have_sum} ORDER BY p.year DESC").fetchall()
 
 
 def build_catalog(main, status_map, rows):
@@ -82,7 +82,7 @@ def build_catalog(main, status_map, rows):
         vstatus = answer.resolve_verify(status_map, p["id"], ver)
         note = answer.TIER_NOTE.get(p["quality_tier"] or "", "") + answer.VERIFY_NOTE.get(vstatus or "", "")
         spath = str(ROOT / path) if path and (ROOT / path).exists() else "（总结缺失）"
-        ppath = str(ROOT / p["pdf_path"]) if p["pdf_path"] else "（无PDF）"
+        ppath = str(ROOT / p["source_path"]) if p["source_path"] else "（无PDF）"
         lines.append(f"[{n}] {p['title']} ({p['year']}, {p['venue'] or '?'}){note}\n"
                      f"    slug={p['slug']}  总结={spath}  pdf={ppath}")
         index_map[n] = p

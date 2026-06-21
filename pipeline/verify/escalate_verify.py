@@ -10,23 +10,23 @@ Stops when: fresh major rate below threshold AND nothing pending re-check, or
 every paper is verified, or max-rounds is hit.
 
 Two modes:
-- capped (run.py's `verify` stage, pass --max-papers): NO sampling/escalation —
-  all unverified summaries are eligible, newest-summarized first, and --max-papers
+- capped (run.py's `verify` stage, pass --max-sources): NO sampling/escalation —
+  all unverified summaries are eligible, newest-summarized first, and --max-sources
   decides how many get checked this run; later rounds only re-check redone versions.
   --start-pct is ignored here. This is the nightly/auto path: it keeps verify inside
   one codex quota window so new summaries enter the library already fact-checked.
-- sampling (manual/debug, no --max-papers): check --start-pct% of the pool; if the
+- sampling (manual/debug, no --max-sources): check --start-pct% of the pool; if the
   fresh-sample major rate >= threshold, DOUBLE the sample next round (what "escalate"
   refers to). pct/threshold matter only here.
 
 Per-paper redo attempts are capped (default 2 per run); a paper still major
 after that is flagged in the report for human triage, not looped forever.
 Verification is advisory: exit code is 0 even if issues remain (see report).
---max-papers N caps the total papers checked this run (incl. major re-checks) so
+--max-sources N caps the total sources checked this run (incl. major re-checks) so
 it stays inside one codex quota window (~20 for this subscription); leftover is
 reported and drained on the next run, newest-summarized first.
 Usage: python3 pipeline/verify/escalate_verify.py <topicId> [--start-pct P] [--threshold T]
-       [--concurrency N] [--max-rounds R] [--max-attempts A] [--max-papers M]
+       [--concurrency N] [--max-rounds R] [--max-attempts A] [--max-sources M]
 """
 import sys
 
@@ -53,18 +53,18 @@ def main():
         sys.exit(1)
     argv = sys.argv[1:]
     topic_id = argv[0]
-    pct = flag(argv, "--start-pct", 100.0)  # 仅 sampling 模式(不传 --max-papers)有意义;capped 模式忽略
+    pct = flag(argv, "--start-pct", 100.0)  # 仅 sampling 模式(不传 --max-sources)有意义;capped 模式忽略
     threshold = flag(argv, "--threshold", 10.0)          # fresh-sample major %, escalate at/above
     concurrency = flag(argv, "--concurrency", 3, int)
     max_rounds = flag(argv, "--max-rounds", 6, int)
     max_attempts = flag(argv, "--max-attempts", 2, int)  # corrections per paper per run
     # 全程总量上限(含 major 复核):主动停在 codex 配额窗口以内(此订阅 ~20 次/窗口,
     # 见 logs/SESSION-2026-06-17-codex-quota.md)。None=不限(手动全量核查时用)。
-    max_papers = int(argv[argv.index("--max-papers") + 1]) if "--max-papers" in argv else None
+    max_papers = int(argv[argv.index("--max-sources") + 1]) if "--max-sources" in argv else None
     # 两模式(2026-06-19 拆清,治"--start-pct 100 + 上限"的冗余):
-    #   capped —— run auto 走这条(传 --max-papers):不抽样/不翻倍,所有未核都合格、最近总结的优先,
-    #     由 --max-papers 定本轮核几篇;跨轮只为复核重做出的新版。--start-pct 在此模式被忽略。
-    #   sampling —— 手动调试用(不传 --max-papers):抽 --start-pct%,fresh major 率≥阈值则下轮翻倍
+    #   capped —— run auto 走这条(传 --max-sources):不抽样/不翻倍,所有未核都合格、最近总结的优先,
+    #     由 --max-sources 定本轮核几篇;跨轮只为复核重做出的新版。--start-pct 在此模式被忽略。
+    #   sampling —— 手动调试用(不传 --max-sources):抽 --start-pct%,fresh major 率≥阈值则下轮翻倍
     #     扩面(escalate 本名由来)。pct/threshold 仅此模式有意义。
     capped_mode = max_papers is not None
 
@@ -75,13 +75,13 @@ def main():
     pending_recheck = False
     quota_stopped = False  # 因 codex 侧问题(配额/瞬时/真故障)中止(已发 Telegram)
     stop_cat = None        # 中止时的失败类别(LLM 判,见 lib/error_classify)
-    capped = False         # 达到 --max-papers 上限而停(剩余留下次)
+    capped = False         # 达到 --max-sources 上限而停(剩余留下次)
     budget = max_papers    # 剩余可核次数(None=不限);每轮按 len(picked) 递减
 
     for rnd in range(1, max_rounds + 1):
         if budget is not None and budget <= 0:
             capped = True
-            log.info(f"escalate r{rnd}: 达到 --max-papers={max_papers} 上限,停(剩余留下次/下窗口)")
+            log.info(f"escalate r{rnd}: 达到 --max-sources={max_papers} 上限,停(剩余留下次/下窗口)")
             break
         rows, seen, skip = load_candidates(topic_id)
         must, rest = split_must(rows, seen, skip)
@@ -161,7 +161,7 @@ def main():
                                concurrency, topic_id=topic_id)
             pending_recheck = bool(done)
 
-        # 抽样翻倍仅 sampling 模式有意义;capped(run auto)只靠 --max-papers 上限限流,不翻倍。
+        # 抽样翻倍仅 sampling 模式有意义;capped(run auto)只靠 --max-sources 上限限流,不翻倍。
         if not capped_mode and fresh_ok and fresh_major_pct >= threshold:
             pct = min(100.0, pct * 2)
             log.info(f"escalate r{rnd}: rate over threshold -> escalating sample to {pct:.0f}%")
@@ -180,7 +180,7 @@ def main():
     rows_after, seen_after, skip_after = load_candidates(topic_id)
     must_after, rest_after = split_must(rows_after, seen_after, skip_after)
     remaining = len(must_after) + len(rest_after)
-    cap_note = (f"🧮 **本轮达 --max-papers={max_papers} 上限而停**,剩 {remaining} 篇待核——"
+    cap_note = (f"🧮 **本轮达 --max-sources={max_papers} 上限而停**,剩 {remaining} 篇待核——"
                 f"再跑 verify 即从断点续核(篇序:最近总结的优先)。\n" if capped else "")
     quota_note = (f"⚠️ **本轮因 codex 侧问题（{stop_cat}）中止**,部分篇未核(已发 Telegram)——"
                   "待恢复后重跑 verify 即从断点续核。\n" if quota_stopped else "")
@@ -190,7 +190,7 @@ def main():
               + f"本主题尚有 **{remaining}** 篇待核查。"
               + f"本报告由 escalate_verify 汇总(多轮升级抽检,major 自动整篇重新总结+复核;"
                 f"标注\"需人工分诊\"的为重做 {max_attempts} 次仍 major)。"))
-    log.info(f"escalate done: {len(results)} papers verified this run, "
+    log.info(f"escalate done: {len(results)} sources verified this run, "
              f"pass={n_pass} minor={n_minor} major={n_major}, "
              f"redone={sum(attempts.values())}, stubborn={len(stubborn)}, "
              f"剩余待核={remaining}{' [达上限]' if capped else ''}{' [配额中止]' if quota_stopped else ''}")

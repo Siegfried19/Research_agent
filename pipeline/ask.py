@@ -12,7 +12,7 @@
 
   默认(无--answer/--json)  人看的命中列表(快,纯召回,走混合召回,不调 claude)
   --answer   带引用中文回答(撑不住就老实说"库里没有")
-  --json     机器可读(给外部 agent):{answerable, answer, sources:[{doi,quality_tier,verify_status,summary_path,pdf_path}]}
+  --json     机器可读(给外部 agent):{answerable, answer, sources:[{doi,quality_tier,verify_status,summary_path,source_path}]}
   --reindex  重建索引(fts + vec;全读模式用不到,pipeline/命中列表才用)
   --no-rerank  pipeline 模式跳过 RCS 精挑(快,但不精排)
   --no-understand  [debug专用] 跳过 claude 问题理解层走老机械分词;正常跑别用
@@ -53,14 +53,14 @@ def _show_hits(q, hits):
     main = open_db()
     for i, h in enumerate(hits, 1):
         p = h["paper"]
-        tps = main.execute("SELECT topic_id, relevance FROM paper_topic WHERE paper_id=?",
+        tps = main.execute("SELECT topic_id, relevance FROM source_topic WHERE paper_id=?",
                            (p["id"],)).fetchall()
         tline = ", ".join(f"{t['topic_id']}({t['relevance']:.0f})" for t in tps)
         tier = {"suspect": " ⚠️低可信", "flag": " (预印本)"}.get(p["quality_tier"] or "", "")
         print(f"{i}. [{h['score']:.3f}] {p['title']} ({p['year']}, {p['venue'] or '?'}){tier}")
         if tline:
             print(f"   主题: {tline}")
-        print(f"   总结: storage/papers/{p['slug']}/  PDF: {p['pdf_path'] or '-'}\n")
+        print(f"   总结: storage/sources/{p['slug']}/  PDF: {p['source_path'] or '-'}\n")
     main.close()
 
 

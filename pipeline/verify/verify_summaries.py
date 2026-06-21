@@ -1,5 +1,5 @@
 """Cross-model fact-check of summaries (Codex checks what Claude wrote).
-Scope: ALL suspect-tier papers + corrected/updated summaries (v>=2 not yet
+Scope: ALL suspect-tier sources + corrected/updated summaries (v>=2 not yet
 re-checked) + a sample of the rest (default 100% = all unverified; small daily
 batches, no reason to sample). Codex gets the summary +
 the paper PDF dropped into an isolated sandbox and reads it ITSELF (extracts text
@@ -10,7 +10,7 @@ Verifies numbers/claims, reports issues. REPORT ONLY — never modifies summarie
 A major triggers a full fresh re-summary (summarize_auto.resummarize), driven by
 escalate_verify; minor/unverifiable are report-only.
 State: topics/<id>/verified.json maps paper_id -> last verified summary version,
-so re-runs sample fresh papers and corrected versions become eligible again.
+so re-runs sample fresh sources and corrected versions become eligible again.
 For auto-escalating rounds / full sweeps use escalate_verify.py.
 Usage: python3 pipeline/verify/verify_summaries.py <topicId> [samplePct] [concurrency] [--limit N]
 """
@@ -81,15 +81,15 @@ def load_skip(topic_id):
     return json.loads(sp.read_text(encoding="utf-8")) if sp.exists() else {}
 
 
-def record_skip(topic_id, papers, reason):
+def record_skip(topic_id, sources, reason):
     """把"这一版核不了"的篇钉进 verify_skip.json(version 钉版:总结重做出新版→自动重新合格)。
-    papers: [{"id":.., "version":..}]。用于 bad_input(PDF读不了)/malformed,免得每轮白核成配额黑洞。"""
-    papers = [p for p in papers if p.get("id")]
-    if not papers:
+    sources: [{"id":.., "version":..}]。用于 bad_input(PDF读不了)/malformed,免得每轮白核成配额黑洞。"""
+    sources = [p for p in sources if p.get("id")]
+    if not sources:
         return
     sp = _skip_path(topic_id)
     skip = load_skip(topic_id)
-    for p in papers:
+    for p in sources:
         skip[p["id"]] = {"version": p.get("version"), "reason": reason, "ts": now_iso()}
     sp.write_text(json.dumps(skip, ensure_ascii=False, indent=1), encoding="utf-8")
 
@@ -187,12 +187,12 @@ def _status_path(topic_id):
 
 
 def load_candidates(topic_id):
-    """Latest-version summarized papers of the topic + verified-versions map."""
+    """Latest-version summarized sources of the topic + verified-versions map."""
     conn = open_db()
     rows = [dict(r) for r in conn.execute(
         """SELECT p.*, sv.path AS summary_path, sv.version AS summary_version,
-                  sv.created_at AS summary_created FROM papers p
-            JOIN paper_topic pt ON pt.paper_id=p.id
+                  sv.created_at AS summary_created FROM sources p
+            JOIN source_topic pt ON pt.paper_id=p.id
             JOIN summary_versions sv ON sv.paper_id=p.id
            WHERE pt.topic_id=? AND p.status='summarized'
              AND sv.version=(SELECT MAX(version) FROM summary_versions WHERE paper_id=p.id)
@@ -205,7 +205,7 @@ def load_candidates(topic_id):
 
 def split_must(rows, seen, skip=None):
     """must = suspects + corrected/updated (v>=2) not verified at current version;
-    rest = the other not-yet-verified papers (sampling pool)。
+    rest = the other not-yet-verified sources (sampling pool)。
     已记入 verify_skip 的篇(同版核不了的:坏PDF/反复 malformed)排除掉——总结重做出新版会自动重新合格。"""
     skip = skip or {}
 
@@ -237,23 +237,23 @@ def verify_batch(picked, concurrency):
         spath = ROOT / r["summary_path"]
         if not spath.exists():
             return {**base, "error": "summary file missing"}
-        pdf_path = str(ROOT / r["pdf_path"]) if r.get("pdf_path") else None
+        source_path = str(ROOT / r["source_path"]) if r.get("source_path") else None
         # summarized 的篇必然曾有 PDF;这里没 PDF=异常(被删/移动)→ 归 bad_input,逐篇跳过
         # (PDF 是唯一原文来源,没 PDF 就不核,绝不另找来源去核一份本就从 PDF 写出来的总结)。
-        if not (pdf_path and Path(pdf_path).exists()):
+        if not (source_path and Path(source_path).exists()):
             return {**base, "error": "no pdf on disk (anomaly: summarized paper lost its PDF)"}
         summary = spath.read_text(encoding="utf-8")
         tmpd = None
         try:
             if VERIFY_BACKEND == "claude":
                 # 应急后端:claude 用 Read 工具直读 PDF(整篇,看公式/图表),无沙箱、无文本兜底。
-                prompt = vprompt(r["title"], summary, pdf_path, backend="claude")
+                prompt = vprompt(r["title"], summary, source_path, backend="claude")
                 out = run_claude(prompt, tools=["Read"], timeout=900)
             else:
                 # codex 自渲染:隔离临时目录(拷入 paper.pdf)+ workspace-write,让它自己读全篇
                 # (抽文本查数字 + 按需渲染页面看公式/图表),不预喂抽取文本;reasoning_effort=中等。
                 tmpd = Path(tempfile.mkdtemp(prefix="vfy_cdx_"))
-                shutil.copy2(pdf_path, tmpd / "paper.pdf")
+                shutil.copy2(source_path, tmpd / "paper.pdf")
                 prompt = vprompt(r["title"], summary, "./paper.pdf", backend="codex")
                 out = run_codex(prompt, sandbox="workspace-write", cwd=str(tmpd), timeout=900,
                                 effort=REASONING_EFFORT)
@@ -288,7 +288,7 @@ def record_verified(topic_id, ok):
 
 
 def record_verify_detail(ok):
-    """把每篇核查【详情】按版本累积写进 storage/papers/<slug>/verify.json,永不覆盖旧版——
+    """把每篇核查【详情】按版本累积写进 storage/sources/<slug>/verify.json,永不覆盖旧版——
     留全程问题历史(哪个版本、codex 挑出哪些 issues)。与 topics/<id>/ 下的【状态】文件
     (verified.json/verify_status.json,喂 daemon/续核)无关、不重叠,daemon 不读这份。
     跨主题天然单一:键是论文 slug,一篇就一份,不按 topic 分。"""
@@ -397,7 +397,7 @@ def main():
 
     ok, failed = verify_batch(picked, concurrency)
     record_verified(topic_id, ok)
-    record_verify_detail(ok)   # 详情按版本留痕进 storage/papers/<slug>/verify.json(不动状态/daemon)
+    record_verify_detail(ok)   # 详情按版本留痕进 storage/sources/<slug>/verify.json(不动状态/daemon)
     stopped, cat = False, None
     if failed:
         d = classify_and_signal(topic_id, failed)

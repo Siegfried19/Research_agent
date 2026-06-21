@@ -2,7 +2,7 @@
 算 Recall@k / MRR,对比 纯FTS vs 混合(FTS+向量) —— 证明语义召回有没有真把准度提上去。
 
 gold 文件 JSON 每条:{"q": "<问题>", "gold_titles": ["<标题关键词>", ...]} 或 {"q":..,"gold":["<doi>",..]}。
-标题关键词按子串解析到 papers.id;hand-label 时写标题片段最省事。
+标题关键词按子串解析到 sources.id;hand-label 时写标题片段最省事。
 
   python3 pipeline/tools/eval_retrieval.py [store/eval_gold.json] [-k 10]
 
@@ -23,7 +23,7 @@ def resolve_gold(main, item):
     """把 gold_titles(标题子串) / gold(doi) 解析成 paper_id 集合。"""
     ids = set(item.get("gold", []))
     for kw in item.get("gold_titles", []):
-        for r in main.execute("SELECT id FROM papers WHERE title LIKE ?", (f"%{kw}%",)):
+        for r in main.execute("SELECT id FROM sources WHERE title LIKE ?", (f"%{kw}%",)):
             ids.add(r["id"])
     return ids
 

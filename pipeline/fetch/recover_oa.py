@@ -1,4 +1,4 @@
-"""Recover free full text for papers we missed, WITHOUT any login.
+"""Recover free full text for sources we missed, WITHOUT any login.
 Per paper lacking a PDF, try (in order): arXiv by id, Unpaywall (repository/arXiv
 locations BEFORE publisher — publisher PDFs often 403), arXiv by title, then
 conference-run OA sites via DBLP title search (PMLR/ACL Anthology/OpenReview).
@@ -98,7 +98,7 @@ def arxiv_pdf_by_title(title):
 
 def proceedings_pdf_by_title(title):
     """Conference-run OA sites (PMLR / ACL Anthology / OpenReview), found via DBLP
-    title search. Covers papers with no DOI and no arXiv (e.g. ICML on PMLR)."""
+    title search. Covers sources with no DOI and no arXiv (e.g. ICML on PMLR)."""
     try:
         d = get_json(f"https://dblp.org/search/publ/api?q={quote(title[:120])}&format=json&h=5",
                      timeout=30)
@@ -146,20 +146,20 @@ def main():
     conn = open_db()
     if topic_id == "all":
         rows = conn.execute(
-            "SELECT * FROM papers WHERE pdf_path IS NULL AND status IN ('pdf_failed','discovered')").fetchall()
+            "SELECT * FROM sources WHERE source_path IS NULL AND status IN ('source_failed','discovered')").fetchall()
     else:
         rows = conn.execute(
-            """SELECT p.* FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
-                WHERE pt.topic_id=? AND p.pdf_path IS NULL AND p.status IN ('pdf_failed','discovered')
+            """SELECT p.* FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
+                WHERE pt.topic_id=? AND p.source_path IS NULL AND p.status IN ('source_failed','discovered')
                 ORDER BY pt.rank""", (topic_id,)).fetchall()
 
-    log.info(f"# Recover free OA: {len(rows)} papers lacking full text")
+    log.info(f"# Recover free OA: {len(rows)} sources lacking full text")
     timeout = config["download"]["timeout_ms"] / 1000
     recovered = 0
     for r in rows:
         base = r["slug"] or file_id(r["id"])
-        pdf_path = pdf_file(base)
-        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path = pdf_file(base)
+        source_path.parent.mkdir(parents=True, exist_ok=True)
         cands = candidate_urls(r)
         if not cands:
             log.info(f"  --   no free source: {(r['title'] or '')[:50]}")
@@ -168,9 +168,9 @@ def main():
         done = False
         for url, via in cands:
             try:
-                bytes_ = download_pdf(url, pdf_path, config["download"]["user_agent"], timeout)
-                conn.execute("UPDATE papers SET pdf_path=?, status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
-                             (str(pdf_path.relative_to(ROOT)), now_iso(), r["id"]))
+                bytes_ = download_pdf(url, source_path, config["download"]["user_agent"], timeout)
+                conn.execute("UPDATE sources SET source_path=?, status='source_ready', pdf_fetched_at=? WHERE id=?",
+                             (str(source_path.relative_to(ROOT)), now_iso(), r["id"]))
                 conn.commit()
                 recovered += 1
                 log.info(f"  OK [{via}, {bytes_ // 1024}KB] {(r['title'] or '')[:48]}")

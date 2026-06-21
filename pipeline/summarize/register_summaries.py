@@ -1,4 +1,4 @@
-"""After summarization, register v1 summaries and mark papers summarized.
+"""After summarization, register v1 summaries and mark sources summarized.
 Usage: python3 pipeline/summarize/register_summaries.py <topicId|all>
 """
 import sys
@@ -14,12 +14,17 @@ from lib.store import summary_file
 def main():
     topic_id = sys.argv[1] if len(sys.argv) > 1 else "all"
     conn = open_db()
+    # web 源(kind='web')不进总结(同 build_worklist 谓词),否则它们无 v1.md 会被
+    # 永远算作"missing a summary file"。
     if topic_id == "all":
-        rows = conn.execute("SELECT id, slug FROM papers WHERE status='pdf_downloaded'").fetchall()
+        rows = conn.execute(
+            "SELECT id, slug FROM sources WHERE status='source_ready' "
+            "AND (kind IS NULL OR kind!='web')").fetchall()
     else:
         rows = conn.execute(
-            """SELECT p.id, p.slug FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
-                WHERE pt.topic_id=? AND p.status='pdf_downloaded'""", (topic_id,)).fetchall()
+            """SELECT p.id, p.slug FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
+                WHERE pt.topic_id=? AND p.status='source_ready'
+                  AND (p.kind IS NULL OR p.kind!='web')""", (topic_id,)).fetchall()
 
     registered, missing = 0, 0
     for r in rows:
@@ -31,7 +36,7 @@ def main():
         conn.execute(
             """INSERT OR IGNORE INTO summary_versions (paper_id,version,path,based_on,note,created_at)
                VALUES (?,?,?,?,?,?)""", (r["id"], 1, rel, "[]", "首次总结", now_iso()))
-        conn.execute("UPDATE papers SET status='summarized', summarized_at=? WHERE id=?", (now_iso(), r["id"]))
+        conn.execute("UPDATE sources SET status='summarized', summarized_at=? WHERE id=?", (now_iso(), r["id"]))
         registered += 1
     conn.commit()
     conn.close()

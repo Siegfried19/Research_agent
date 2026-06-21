@@ -1,7 +1,7 @@
 """全天候 verify 排空守护进程(2026-06-18,用户定:codex 平时闲着,就让核查整天啃积压)。
 
 循环:挑队列里还有"待核(已总结但没核到当前版本)"的最高优先主题 → 跑一批
-`run.py <tid> verify`(已带 --max-papers 上限、最近的优先、撞配额会写 logs/codex_quota.json)→
+`run.py <tid> verify`(已带 --max-sources 上限、最近的优先、撞配额会写 logs/codex_quota.json)→
   · 撞配额:解析"try again at X"睡到那个点自动醒来续(解不出睡默认窗口 ~5.5h),睡前发 Telegram;
   · 这批有进展:立刻接着下一批,把当前额度窗口吃满;
   · 这批没进展又没撞配额(剩下的多半是坏 PDF 等永久核不了的):跳过该主题,避免空转;
@@ -40,7 +40,7 @@ QUOTA_STATE = ROOT / "logs" / "codex_quota.json"   # escalate/verify 写的失�
 BATCH_PAUSE = 10  # 同一窗口内两批之间的小憩(秒),别贴着猛跑
 # 退避策略(2026-06-20,失败类别由 lib/error_classify 的 LLM 判,daemon 据此睡多久):
 TRANSIENT_BACKOFF = [15, 30, 60]   # 瞬时/unknown 类:递增退避(分钟)——连着撞就睡更久,别硬敲
-QUOTA_DEFAULT_MIN = int(os.environ.get("VERIFY_QUOTA_DEFAULT_MIN", 120))  # 配额类没给恢复时刻时的默认睡眠(分)
+QUOTA_DEFAULT_MIN = int(os.environ.get("VERIFY_QUOTA_DEFAULT_MIN", 240))  # 配额类没给恢复时刻时的默认睡眠(分;4h,贴近 codex ~5.5h 窗口,免太早醒又撞墙)
 MAX_NOPROGRESS = 2   # 无信号又无进展连续这么多次 → 跳过该主题(诚实"原因未明",不再断言"坏PDF")
 
 
@@ -48,8 +48,8 @@ def unverified_count(tid):
     """该主题已总结、还没核到当前版本、且没被钉版跳过(verify_skip)的篇数。"""
     conn = open_db()
     rows = conn.execute(
-        """SELECT p.id AS id, MAX(sv.version) AS v FROM papers p
-             JOIN paper_topic pt ON pt.paper_id=p.id
+        """SELECT p.id AS id, MAX(sv.version) AS v FROM sources p
+             JOIN source_topic pt ON pt.paper_id=p.id
              JOIN summary_versions sv ON sv.paper_id=p.id
             WHERE pt.topic_id=? AND p.status='summarized'
             GROUP BY p.id""", (tid,)).fetchall()
@@ -131,7 +131,7 @@ def acquire_singleton():
 
 
 def run_one_batch(tid):
-    """跑一批该主题的 verify(经 run.py,带 --max-papers 上限 + render + reindex)。返回 rc。"""
+    """跑一批该主题的 verify(经 run.py,带 --max-sources 上限 + render + reindex)。返回 rc。"""
     return subprocess.run([PY, str(RUNPY), tid, "verify"], cwd=str(ROOT)).returncode
 
 

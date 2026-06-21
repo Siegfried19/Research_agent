@@ -32,8 +32,8 @@
     "user_agent": "ResearchAgent/0.1 (mailto:a0904251001@gmail.com)"
   },
   "paths": {
-    "_comment": "2026-06-20 布局改版:一篇一个家 storage/papers/<slug>/(paper.pdf + v*.md + verify.json)。路径由 lib/store.py 的 paper_dir/pdf_file/summary_file/verify_file 统一构造,代码不再读本节;此处仅作文档。",
-    "papers": "storage/papers",
+    "_comment": "2026-06-20 布局改版:一篇一个家 storage/sources/<slug>/(paper.pdf 或 source.md + v*.md + verify.json)。路径由 lib/store.py 的 paper_dir/pdf_file/summary_file/verify_file/web_source_file 统一构造,代码不再读本节;此处仅作文档。",
+    "sources": "storage/sources",
     "topics": "topics"
   },
   "tier_b": {

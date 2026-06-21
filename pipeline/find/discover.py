@@ -53,22 +53,22 @@ def language_ok(p):
     return (not p.get("language")) or (p["language"] in config["languages"])
 
 
-def prefilter_rank(papers):
+def prefilter_rank(sources):
     """Recall-oriented prefilter: best position across sources + multi-source agreement.
-    Citations are NOT used to select (they over-promote famous-but-off-topic papers)."""
+    Citations are NOT used to select (they over-promote famous-but-off-topic sources)."""
     max_rank = {}
-    for p in papers:
+    for p in sources:
         for s, r in p["relRankBySource"].items():
             max_rank[s] = max(max_rank.get(s, 0), r)
-    for p in papers:
+    for p in sources:
         best = 0.0
         for s, r in p["relRankBySource"].items():
             denom = max_rank.get(s, 0) + 1
             best = max(best, 1 - r / denom)
         multi = min(0.2, (len(p["sources"]) - 1) * 0.1)
         p["_pre"] = min(1.0, best + multi)
-    papers.sort(key=lambda p: p["_pre"], reverse=True)
-    return papers
+    sources.sort(key=lambda p: p["_pre"], reverse=True)
+    return sources
 
 
 def main():
@@ -112,11 +112,11 @@ def main():
     all_recs, lines = gather(queries, win)
     log.info("\n".join(lines))
 
-    papers = [p for p in merge_all(all_recs) if language_ok(p)]
+    sources = [p for p in merge_all(all_recs) if language_ok(p)]
 
     # 硬信号挡板:掠夺刊/撤稿在进池前就丢弃(不浪费打分 token)
     kept, blocked = [], []
-    for p in papers:
+    for p in sources:
         p["quality"] = quality.assess(p)
         (blocked if p["quality"]["tier"] == "block" else kept).append(p)
     if blocked:
@@ -126,7 +126,7 @@ def main():
     for p in kept:
         if p["quality"]["tier"] == "suspect":
             log.info(f"  SUSPECT(入池带标记) [{','.join(p['quality']['signals'])}] {p['title'][:70]}  ({p.get('venue') or '-'})")
-    papers = prefilter_rank(kept)
+    sources = prefilter_rank(kept)
 
     edge_thr = config["ranking"]["edge_citation_threshold"]
 
@@ -136,7 +136,7 @@ def main():
                 return qmap[q]
         return only_facet or (facet_order[0] if facet_order else "_all")
 
-    new_cands = [poolmod.candidate_entry(p, edge_thr, facet=facet_for(p)) for p in papers[:pool_size]]
+    new_cands = [poolmod.candidate_entry(p, edge_thr, facet=facet_for(p)) for p in sources[:pool_size]]
 
     d = ROOT / "topics" / topic["id"]
     d.mkdir(parents=True, exist_ok=True)
@@ -163,16 +163,16 @@ def main():
     cpath.write_text(json.dumps({
         "topic": {"id": topic["id"], "title": topic["title"], "idea": topic["idea"], "queries": T.all_queries(topic)},
         "window": win, "target": target, "generated_at": now_iso(),
-        "raw_records": len(all_recs), "merged_unique": len(papers), "pool": len(cands),
+        "raw_records": len(all_recs), "merged_unique": len(sources), "pool": len(cands),
         "candidates": cands,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
     with_abs = sum(1 for p in cands if p["abstract"])
     oa = sum(1 for p in cands if p["is_oa"])
-    log.info(f"\n# Result\n  raw {len(all_recs)}  merged-unique {len(papers)}  pool {len(cands)}{merge_note}")
+    log.info(f"\n# Result\n  raw {len(all_recs)}  merged-unique {len(sources)}  pool {len(cands)}{merge_note}")
     log.info(f"  pool has-abstract {with_abs}  OA-downloadable {oa}")
     log.info(f"  -> topics/{topic['id']}/candidates.json  (next: relevance scoring)")
-    run_log(topic["id"], f"discover: raw={len(all_recs)} merged={len(papers)} pool={len(cands)} oa={oa} quality_blocked={len(blocked)}")
+    run_log(topic["id"], f"discover: raw={len(all_recs)} merged={len(sources)} pool={len(cands)} oa={oa} quality_blocked={len(blocked)}")
 
 
 if __name__ == "__main__":

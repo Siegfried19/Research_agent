@@ -1,4 +1,4 @@
-"""Phase 2: download open-access PDFs for a topic's selected papers.
+"""Phase 2: download open-access PDFs for a topic's selected sources.
 Usage: python3 pipeline/fetch/fetch_oa.py <topicId|all>
 PDF 是唯一原文来源(总结/核查都直读 PDF);不再抽存 store/text 文本(2026-06-16 移除)。
 """
@@ -45,10 +45,10 @@ def main():
     conn = open_db()
     if topic_id == "all":
         rows = conn.execute(
-            "SELECT * FROM papers WHERE is_oa=1 AND oa_url IS NOT NULL AND status='discovered'").fetchall()
+            "SELECT * FROM sources WHERE is_oa=1 AND oa_url IS NOT NULL AND status='discovered'").fetchall()
     else:
         rows = conn.execute(
-            """SELECT p.* FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
+            """SELECT p.* FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
                 WHERE pt.topic_id=? AND p.is_oa=1 AND p.oa_url IS NOT NULL AND p.status='discovered'
                 ORDER BY pt.rank""", (topic_id,)).fetchall()
 
@@ -58,23 +58,23 @@ def main():
     ok = fail = 0
     for r in rows:
         base = r["slug"] or file_id(r["id"])
-        pdf_path = pdf_file(base)
-        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path = pdf_file(base)
+        source_path.parent.mkdir(parents=True, exist_ok=True)
         bytes_, last_err = None, None
         for u in urls_for(r):
             try:
-                bytes_ = download_pdf(u, pdf_path, ua, timeout)
+                bytes_ = download_pdf(u, source_path, ua, timeout)
                 break
             except (HttpError, Exception) as e:  # noqa: BLE001
                 last_err = e
         if bytes_ is None:
-            conn.execute("UPDATE papers SET pdf_path=NULL, status='pdf_failed', pdf_fetched_at=? WHERE id=?",
+            conn.execute("UPDATE sources SET source_path=NULL, status='source_failed', pdf_fetched_at=? WHERE id=?",
                          (now_iso(), r["id"]))
             fail += 1
             log.info(f"  FAIL [{last_err}] {(r['title'] or '')[:50]}")
         else:
-            conn.execute("UPDATE papers SET pdf_path=?, status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
-                         (str(pdf_path.relative_to(ROOT)), now_iso(), r["id"]))
+            conn.execute("UPDATE sources SET source_path=?, status='source_ready', pdf_fetched_at=? WHERE id=?",
+                         (str(source_path.relative_to(ROOT)), now_iso(), r["id"]))
             ok += 1
             log.info(f"  OK   [{bytes_ // 1024}KB] {(r['title'] or '')[:55]}")
         conn.commit()

@@ -1,4 +1,4 @@
-"""Build a summarization worklist for a topic (papers with a PDF, not yet summarized).
+"""Build a summarization worklist for a topic (sources with a PDF, not yet summarized).
 Usage: python3 pipeline/summarize/build_worklist.py <topicId>
 """
 import json
@@ -20,8 +20,9 @@ def main():
     conn = open_db()
     rows = conn.execute(
         """SELECT p.*, pt.relevance, pt.relevance_reason
-             FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
-            WHERE pt.topic_id=? AND p.status='pdf_downloaded'
+             FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
+            WHERE pt.topic_id=? AND p.status='source_ready'
+              AND (p.kind IS NULL OR p.kind!='web')  -- web(blog等)先不总结,只总结论文
             ORDER BY pt.rank""", (topic_id,)).fetchall()
     conn.close()
 
@@ -35,7 +36,7 @@ def main():
             "doi": r["doi"], "landing_url": r["landing_url"], "is_edge": bool(r["is_edge"]),
             "relevance": r["relevance"], "relevance_reason": r["relevance_reason"],
             "quality_tier": r["quality_tier"], "quality_signals": r["quality_signals"],
-            "pdf_path": str(ROOT / r["pdf_path"]) if r["pdf_path"] else None,
+            "source_path": str(ROOT / r["source_path"]) if r["source_path"] else None,
             "summary_dir": str(sdir),
             "summary_path": str(sdir / "v1.md"),
         })
@@ -43,8 +44,8 @@ def main():
     out = ROOT / "topics" / topic_id / "summarize_worklist.json"
     out.write_text(json.dumps({"topicId": topic_id, "total": len(work), "work": work},
                               ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"worklist: {len(work)} papers -> topics/{topic_id}/summarize_worklist.json")
-    print(f"  with-pdf: {sum(1 for w in work if w['pdf_path'])}")
+    print(f"worklist: {len(work)} sources -> topics/{topic_id}/summarize_worklist.json")
+    print(f"  with-pdf: {sum(1 for w in work if w['source_path'])}")
 
 
 if __name__ == "__main__":

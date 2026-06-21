@@ -31,7 +31,7 @@ def main():
                VALUES (?,?,?,?,?,?)""",
             (w["paperId"], w["nextVersion"], rel, based_on,
              f"基于 {len(w.get('related') or [])} 篇相关论文更新", now_iso()))
-        conn.execute("UPDATE papers SET summarized_at=? WHERE id=?", (now_iso(), w["paperId"]))
+        conn.execute("UPDATE sources SET summarized_at=? WHERE id=?", (now_iso(), w["paperId"]))
         n += 1
     conn.commit()
     conn.close()

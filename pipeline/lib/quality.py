@@ -69,7 +69,7 @@ PREPRINT_VENUES = {"arxiv", "biorxiv", "medrxiv", "ssrn", "preprints", "research
 
 def assess(p):
     """p: dict with (any of) doi, venue, publisher, is_retracted, is_in_doaj, sources.
-    Works on both candidates.json entries and papers-table rows (missing keys = unknown)."""
+    Works on both candidates.json entries and sources-table rows (missing keys = unknown)."""
     L = _lists()
     venue_norm = norm_name(p.get("venue"))
     pub_norm = norm_name(p.get("publisher"))

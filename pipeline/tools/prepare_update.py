@@ -1,8 +1,8 @@
-"""Build an update worklist to re-summarize papers in light of related work.
+"""Build an update worklist to re-summarize sources in light of related work.
 Usage:
   python3 pipeline/tools/prepare_update.py <paperId> [<paperId> ...]
   python3 pipeline/tools/prepare_update.py --related <relId,relId> <paperId>
-If no --related given, related papers default to summarized citation-neighbors.
+If no --related given, related sources default to summarized citation-neighbors.
 """
 import json
 import sys
@@ -48,7 +48,7 @@ def main():
     conn = open_db()
     work = []
     for pid in ids:
-        p = conn.execute("SELECT id, slug, title FROM papers WHERE id=?", (pid,)).fetchone()
+        p = conn.execute("SELECT id, slug, title FROM sources WHERE id=?", (pid,)).fetchone()
         if not p:
             print(f"skip (not in db): {pid}")
             continue
@@ -57,13 +57,13 @@ def main():
             print(f"skip (no existing summary): {pid}")
             continue
         rel_ids = [r for r in (explicit_related or citation_neighbors(conn, pid)) if r != pid
-                   and conn.execute("SELECT 1 FROM papers WHERE id=? AND status='summarized'", (r,)).fetchone()]
+                   and conn.execute("SELECT 1 FROM sources WHERE id=? AND status='summarized'", (r,)).fetchone()]
         if not rel_ids:
-            print(f"skip (no summarized related papers): {(p['title'] or '')[:40]}")
+            print(f"skip (no summarized related sources): {(p['title'] or '')[:40]}")
             continue
         related = []
         for r in rel_ids:
-            rp = conn.execute("SELECT title FROM papers WHERE id=?", (r,)).fetchone()
+            rp = conn.execute("SELECT title FROM sources WHERE id=?", (r,)).fetchone()
             sv = conn.execute("SELECT path FROM summary_versions WHERE paper_id=? ORDER BY version DESC LIMIT 1",
                               (r,)).fetchone()
             if sv:
@@ -77,7 +77,7 @@ def main():
 
     out = ROOT / "storage" / "update_worklist.json"
     out.write_text(json.dumps({"total": len(work), "work": work}, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"update worklist: {len(work)} papers -> storage/update_worklist.json")
+    print(f"update worklist: {len(work)} sources -> storage/update_worklist.json")
     for w in work:
         print(f"  v{w['currentVersion']}->v{w['nextVersion']}  {len(w['related'])} related  {(w['title'] or '')[:45]}")
 

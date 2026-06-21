@@ -80,7 +80,7 @@ def resolve_verify(status_map, paper_id, cur_version):
 
 
 def make_source(main, status_map, paper, rcs=None):
-    """一个 papers 行(+可选 rcs) → 出口用结构化来源 dict。**共享契约层**:
+    """一个 sources 行(+可选 rcs) → 出口用结构化来源 dict。**共享契约层**:
     readall(全读) 和 pipeline(检索) 两条出口都用它拼 --json 的 sources,保证字段/标记口径一致。"""
     p = paper
     ver, path = _latest_version(main, p["id"])
@@ -92,7 +92,7 @@ def make_source(main, status_map, paper, rcs=None):
         "summary_version": ver,
         "rcs_score": (rcs or {}).get("score"),
         "summary_path": str(fp) if fp and fp.exists() else None,
-        "pdf_path": str(ROOT / p["pdf_path"]) if p["pdf_path"] else None,
+        "source_path": str(ROOT / p["source_path"]) if p["source_path"] else None,
     }
 
 

@@ -65,8 +65,8 @@ def citation_key(p, used):
 
 
 def source_pointer(p):
-    if p["pdf_path"] and (ROOT / p["pdf_path"]).exists():
-        return f"file://{ROOT / p['pdf_path']}"
+    if p["source_path"] and (ROOT / p["source_path"]).exists():
+        return f"file://{ROOT / p['source_path']}"
     if p["doi"]:
         return f"https://doi.org/{p['doi']}"
     return f"file://{paper_dir(p['slug'])}"
@@ -126,14 +126,14 @@ def main():
     if a.topic == "all":
         rows = conn.execute(
             """SELECT p.*, GROUP_CONCAT(pt.topic_id) topic_ids, MAX(pt.relevance) relevance
-                 FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
+                 FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
                 WHERE pt.relevance >= ? GROUP BY p.id ORDER BY relevance DESC""",
             (a.min_relevance,)).fetchall()
         out = ROOT / "storage" / "literature_corpus_all.yaml"
     else:
         rows = conn.execute(
             """SELECT p.*, pt.topic_id topic_ids, pt.relevance relevance
-                 FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
+                 FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
                 WHERE pt.topic_id=? AND pt.relevance >= ? ORDER BY pt.rank""",
             (a.topic, a.min_relevance)).fetchall()
         out = ROOT / "topics" / a.topic / "literature_corpus.yaml"

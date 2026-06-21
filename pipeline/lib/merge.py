@@ -1,4 +1,4 @@
-"""Dedup + merge normalized records from multiple sources into canonical papers."""
+"""Dedup + merge normalized records from multiple sources into canonical sources."""
 import hashlib
 import re
 import unicodedata

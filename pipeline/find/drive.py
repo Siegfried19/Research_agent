@@ -64,7 +64,7 @@ __SITUATION__
 
 【项目契约(你必须遵守,这些不是你能凭空知道的)】
 - 选篇靠你的相关性判断,不靠 API 引用量排序(高引常跑题)。
-- 文件名用 slug 不用 DOI;papers.id 是 TEXT 主键(无 DOI 没关系)。
+- 文件名用 slug 不用 DOI;sources.id 是 TEXT 主键(无 DOI 没关系)。
 - 质量"标记进库、出口认标记":block 永不入库,flag/suspect 带标记入库需更相关(commit 已内置该闸)。
 - 幂等可重跑(已做的跳过);别 git push(只 commit 由用户 push)。
 - 撞限流就重跑该步;并发别开太猛刷崩学校访问。
@@ -80,7 +80,7 @@ def build_situation(topic_id):
     topic = T.load_topic(topic_id)
     state = T.load_state(topic_id)
     conn = open_db()
-    n_db = conn.execute("SELECT COUNT(*) FROM paper_topic WHERE topic_id=?", (topic_id,)).fetchone()[0]
+    n_db = conn.execute("SELECT COUNT(*) FROM source_topic WHERE topic_id=?", (topic_id,)).fetchone()[0]
     conn.close()
     mode = "增量(每周追新,据此别重收已入库的)" if n_db > 0 else "冷启动(库空,力度可大)"
     lines = [f"  该主题已入库 {n_db} 篇 → {mode}。",

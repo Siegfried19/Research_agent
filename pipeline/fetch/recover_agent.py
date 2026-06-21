@@ -1,4 +1,4 @@
-"""Agentic free-source hunt: for papers STILL lacking full text after recover_oa's
+"""Agentic free-source hunt: for sources STILL lacking full text after recover_oa's
 rule-based channels, ask headless Claude (with web search) to find a legitimate
 free PDF url. The script (not the agent) downloads, validates %PDF, checks the
 title matches, and updates the DB. Whatever still fails goes on to Tier B — this
@@ -53,12 +53,12 @@ def parse_verdict(out):
     return json.loads(out[i:j + 1])
 
 
-def pdf_text(pdf_path):
+def pdf_text(source_path):
     """pdftotext 抽到临时文件、读出文本再删——只为下面的标题核对(张冠李戴防线)用,
     不再持久化到 store/text(2026-06-16 移除:总结/核查都直读 PDF)。抽不出返回 None。"""
     try:
-        tmp = Path(tempfile.gettempdir()) / f"hunt_{_os.getpid()}_{abs(hash(str(pdf_path)))}.txt"
-        subprocess.run(["pdftotext", "-q", "-enc", "UTF-8", str(pdf_path), str(tmp)],
+        tmp = Path(tempfile.gettempdir()) / f"hunt_{_os.getpid()}_{abs(hash(str(source_path)))}.txt"
+        subprocess.run(["pdftotext", "-q", "-enc", "UTF-8", str(source_path), str(tmp)],
                        timeout=60, check=False)
         if tmp.exists() and tmp.stat().st_size > 200:
             t = tmp.read_text(encoding="utf-8", errors="ignore")
@@ -76,19 +76,19 @@ def main():
     conn = open_db()
     if topic_id == "all":
         rows = conn.execute(
-            "SELECT * FROM papers WHERE pdf_path IS NULL AND status IN ('pdf_failed','discovered')").fetchall()
+            "SELECT * FROM sources WHERE source_path IS NULL AND status IN ('source_failed','discovered')").fetchall()
     else:
         rows = conn.execute(
-            """SELECT p.* FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
-                WHERE pt.topic_id=? AND p.pdf_path IS NULL AND p.status IN ('pdf_failed','discovered')
+            """SELECT p.* FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
+                WHERE pt.topic_id=? AND p.source_path IS NULL AND p.status IN ('source_failed','discovered')
                 ORDER BY pt.rank""", (topic_id,)).fetchall()
     if not rows:
         log.info("# Agent hunt: nothing lacking full text — skip")
-        run_log(topic_id, "recover_agent: 0 papers to hunt")
+        run_log(topic_id, "recover_agent: 0 sources to hunt")
         conn.close()
         return
 
-    log.info(f"# Agent hunt: {len(rows)} papers, concurrency={concurrency}")
+    log.info(f"# Agent hunt: {len(rows)} sources, concurrency={concurrency}")
     timeout = config["download"]["timeout_ms"] / 1000
 
     def hunt(r, i):
@@ -110,23 +110,23 @@ def main():
             log.info(f"  --   agent found nothing: {title}")
             continue
         base = r["slug"] or file_id(r["id"])
-        pdf_path = pdf_file(base)
-        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path = pdf_file(base)
+        source_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            bytes_ = download_pdf(v["url"], pdf_path, config["download"]["user_agent"], timeout)
+            bytes_ = download_pdf(v["url"], source_path, config["download"]["user_agent"], timeout)
         except Exception as e:  # noqa: BLE001
             log.info(f"  FAIL [agent url no good: {e}] {title}")
             continue
         # 张冠李戴防线:agent 可能给了"真实有效但属于另一篇"的 PDF —— %PDF 校验挡不住,
         # 这里用标题核对兜底(抽得出文本才能核;没文本则放过,反正总结阶段会因无 PDF/文本跳过)。
-        text = pdf_text(pdf_path)
+        text = pdf_text(source_path)
         if text and not title_matches(r["title"], text):
-            pdf_path.unlink(missing_ok=True)
+            source_path.unlink(missing_ok=True)
             log.info(f"  REJECT [疑似张冠李戴:正文与标题不匹配] {title}")
             continue
-        conn.execute("UPDATE papers SET pdf_path=?, oa_url=COALESCE(oa_url,?), "
-                     "status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
-                     (str(pdf_path.relative_to(ROOT)), v["url"], now_iso(), r["id"]))
+        conn.execute("UPDATE sources SET source_path=?, oa_url=COALESCE(oa_url,?), "
+                     "status='source_ready', pdf_fetched_at=? WHERE id=?",
+                     (str(source_path.relative_to(ROOT)), v["url"], now_iso(), r["id"]))
         conn.commit()
         found += 1
         log.info(f"  OK   [{v.get('confidence')}, {bytes_ // 1024}KB, {(v.get('source') or '')[:40]}] {title}")

@@ -1,4 +1,4 @@
-"""Find papers shared across topics + citation bridges between topics.
+"""Find sources shared across topics + citation bridges between topics.
 Writes store/cross_topic.json. Usage: python3 pipeline/tools/cross_topic.py
 """
 import json
@@ -18,14 +18,14 @@ def main():
     # so cross-topic edges are missing until we rebuild over the whole library.
     all_papers = [{"id": r["id"], "ext_ids": json.loads(r["ext_ids"] or "{}"),
                    "ref_ext_ids": json.loads(r["ref_ext_ids"] or "[]")}
-                  for r in conn.execute("SELECT id, ext_ids, ref_ext_ids FROM papers").fetchall()]
+                  for r in conn.execute("SELECT id, ext_ids, ref_ext_ids FROM sources").fetchall()]
     build_citations(conn, all_papers)  # 副作用:重建全库引用边并落库
     conn.commit()
 
     topics_by_paper = {}
-    for r in conn.execute("SELECT paper_id, topic_id, relevance FROM paper_topic").fetchall():
+    for r in conn.execute("SELECT paper_id, topic_id, relevance FROM source_topic").fetchall():
         topics_by_paper.setdefault(r["paper_id"], []).append({"topic": r["topic_id"], "relevance": r["relevance"]})
-    paper_meta = {p["id"]: dict(p) for p in conn.execute("SELECT id, title, year FROM papers").fetchall()}
+    paper_meta = {p["id"]: dict(p) for p in conn.execute("SELECT id, title, year FROM sources").fetchall()}
 
     shared = []
     for pid, tps in topics_by_paper.items():
@@ -51,7 +51,7 @@ def main():
     (ROOT / "storage").mkdir(parents=True, exist_ok=True)
     (ROOT / "storage" / "cross_topic.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"# Cross-topic analysis ({len(topics)} topics)")
-    print(f"  shared papers (in >=2 topics): {len(shared)}")
+    print(f"  shared sources (in >=2 topics): {len(shared)}")
     print(f"  cross-topic citation bridges: {len(bridges)}")
     if len(topics) < 2:
         print("  (need >=2 topics for meaningful cross-topic comparison)")

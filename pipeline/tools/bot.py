@@ -3,12 +3,17 @@
 
     python3 pipeline/tools/bot.py        # 常驻运行（长轮询，不开任何本机端口）
 
+会话开关(2026-06-21)：默认**待命**,不烧 opus。发「开始」才拉起一个 claude-opus-4-8
+会话(--resume 连续会话,带项目全部上下文与工具权限,可问库/跑流水线/改代码);发「结束」
+关闭回待命,待命态普通消息只回提示、不触发 opus。重启 bot 也回待命态。
+
 命令（私聊发给 bot，无需斜杠）：
-    log [N]           看 logs/run.log 最后 N 行（默认 30）
-    new               开新对话（清掉 claude 会话上下文）
+    开始 [可带后半句]  拉起 opus 4.8 会话(每次都是全新会话)；带后半句则开会话并立刻执行
+    结束              关闭会话,回待命
+    log [N]           看 logs/run.log 最后 N 行（默认 30；待命/会话中都能用）
+    new               清空当前会话上下文重开（仍在会话中）
     help              用法
-    其他任何话         转给本机 claude -p（--resume 连续会话，带项目全部上下文
-                      与工具权限，可问库、可跑流水线、可改代码）
+    会话中的其他话     转给本机 claude -p（连续会话,可问库、可跑流水线、可改代码）
 
 安全：只响应 config/telegram.json 里 chat_id 的消息；token 不进 git。
 与 tierb 的协作：bot 常驻时独占 getUpdates，所以每条消息也落一份到
@@ -32,13 +37,19 @@ from lib.notify import BOT_INBOX, BOT_PID, BOT_WAIT, _load
 
 LOGS = ROOT / "logs"
 SESSION_FILE = LOGS / "bot_session.txt"
+OPUS_MODEL = "claude-opus-4-8"  # 远程改代码会话用的模型,写死 opus 4.8(用户 2026-06-21 定)
+
+# 待命/会话开关关键词(2026-06-21):默认待命,发「开始」拉起 opus 会话,发「结束」关回待命。
+OPEN_WORDS = ("开始",)
+CLOSE_WORDS = ("结束",)
 
 USAGE = (
-    "命令：\n"
-    "log [N] — 看 run.log 最后 N 行（默认 30）\n"
-    "new — 开新对话（清掉上下文）\n"
-    "其他任何话 — 和 Claude 连续对话（带项目全部上下文，"
-    "可问论文库、可跑流水线、可改代码；多轮记忆）\n"
+    "用法(默认待命,不烧 opus):\n"
+    "开始 — 拉起 opus 4.8 会话,之后随便聊都走 opus,可远程改代码/问库/跑流水线(多轮记忆)\n"
+    "结束 — 关闭会话,回到待命(普通消息不再触发 opus)\n"
+    "log [N] — 看 run.log 最后 N 行(默认 30；待命/会话中都能用)\n"
+    "new — 清空当前会话上下文重开(仍在会话中)\n"
+    "help — 看本用法\n"
 )
 
 
@@ -55,7 +66,7 @@ def fix_path():
 
 def claude_chat(text):
     """与 Claude Code 连续对话：--resume 续接同一会话，带工具权限。"""
-    args = ["claude", "-p", "--model", "opus",
+    args = ["claude", "-p", "--model", OPUS_MODEL,
             "--dangerously-skip-permissions", "--output-format", "json"]
     sid = SESSION_FILE.read_text(encoding="utf-8").strip() if SESSION_FILE.exists() else ""
     if sid:
@@ -80,6 +91,7 @@ class Bot:
     def __init__(self, cfg):
         self.token = cfg["token"]
         self.chat_id = str(cfg["chat_id"])
+        self.session_open = False  # 默认待命;发「开始」才拉起 opus 会话(重启 bot 也回待命)
 
     def api(self, method, http_timeout=70, **params):
         r = requests.post(f"https://api.telegram.org/bot{self.token}/{method}",
@@ -95,30 +107,60 @@ class Bot:
                 print(f"sendMessage 失败: {e}", file=sys.stderr)
 
     def handle(self, text):
-        parts = text.strip().split()
+        t = text.strip()
+        parts = t.split()
         if not parts:
             return
         cmd = parts[0].lower().lstrip("/")
 
-        if cmd in ("help", "start"):
+        # —— 全局命令(待命/会话中都能用)——
+        if cmd in ("help", "start"):  # /start = Telegram 首次默认命令 → 给用法
             self.send(USAGE)
-
-        elif cmd == "new":
-            SESSION_FILE.unlink(missing_ok=True)
-            self.send("已开新对话。")
-
-        elif cmd == "log":
+            return
+        if cmd == "log":
             n = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 30
             f = LOGS / "run.log"
             lines = f.read_text(encoding="utf-8").splitlines() if f.exists() else []
             self.send("\n".join(lines[-n:]) or "(run.log 为空)")
+            return
 
-        else:  # 自由对话 → Claude Code 连续会话
-            self.send("处理中...")
-            try:
-                self.send(claude_chat(text))
-            except subprocess.TimeoutExpired:
-                self.send("claude 超时(30 分钟)")
+        # —— 会话开关 ——
+        if parts[0] in OPEN_WORDS:
+            self.session_open = True
+            SESSION_FILE.unlink(missing_ok=True)  # 每次「开始」都是全新会话
+            self.send("🟢 opus 会话已开(claude-opus-4-8),可以远程改代码了。发「结束」关闭。")
+            rest = t[len(parts[0]):].strip()  # 「开始 顺手把X改成Y」→ 开会话并立刻执行后半句
+            if rest:
+                self.send("处理中...")
+                try:
+                    self.send(claude_chat(rest))
+                except subprocess.TimeoutExpired:
+                    self.send("claude 超时(30 分钟)")
+            return
+        if parts[0] in CLOSE_WORDS:
+            if self.session_open:
+                self.session_open = False
+                SESSION_FILE.unlink(missing_ok=True)
+                self.send("🔴 会话已关,回到待命。发「开始」再开。")
+            else:
+                self.send("当前已是待命状态。发「开始」拉起 opus 会话。")
+            return
+
+        if cmd == "new":
+            SESSION_FILE.unlink(missing_ok=True)
+            self.send("已清空会话上下文。" if self.session_open
+                      else "当前待命中——发「开始」拉起 opus 会话。")
+            return
+
+        # —— 自由对话:仅在会话开启时才走 opus(待命态不烧额度)——
+        if not self.session_open:
+            self.send("💤 待命中。发「开始」拉起 opus 4.8 会话即可远程改代码。")
+            return
+        self.send("处理中...")
+        try:
+            self.send(claude_chat(text))
+        except subprocess.TimeoutExpired:
+            self.send("claude 超时(30 分钟)")
 
     def spool(self, text):
         """每条主人消息落一份到 inbox，给 wait_for_reply 读。"""
@@ -143,7 +185,7 @@ class Bot:
                 offset = u["update_id"] + 1
         except Exception:
             pass
-        self.send("🤖 Research_agent bot 已上线。发 help 看用法。")
+        self.send("🤖 Research_agent bot 已上线(待命中)。发「开始」拉起 opus 4.8 远程改代码,发 help 看用法。")
         print("bot 运行中...")
         while True:
             try:

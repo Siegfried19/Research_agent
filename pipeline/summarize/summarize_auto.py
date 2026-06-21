@@ -100,7 +100,7 @@ def _resummary_block(prior_issues):
 """
 
 
-def build_prompt(w, pdf_path, prior_issues=None, version=1, note="首次总结"):
+def build_prompt(w, source_path, prior_issues=None, version=1, note="首次总结"):
     """单 agent 总结流程(2026-06-18 起去掉 note_plan/接地门,回到"边读边写"):
     通读 PDF → 写总结(数字让位 PDF、论断原子化+内联 strength) → 7问自查。
     prior_issues 非空 = 核查后重做(resummarize):顶部插避坑块,version/note 写进 frontmatter。"""
@@ -118,7 +118,7 @@ def build_prompt(w, pdf_path, prior_issues=None, version=1, note="首次总结")
 - 与本研究主题的相关性评分: {w.get('relevance', '?')} ({w.get('relevance_reason') or ''})
 
 【第一步·通读全文】用 Read 读取以下 PDF 的**全部页面**(多页论文;若超过 20 页用 pages 参数分批读完,不要只读前几页;**含正文之后的附录/补充材料/大表**):
-{pdf_path}
+{source_path}
 你直读 PDF,能看到公式、图、表格(纯文本抽取会丢)。**读完再动笔,不要只读前几页就写。**
 
 【第二步·写总结】严格用最下面的模板,中文:
@@ -161,11 +161,11 @@ def resummarize(work, concurrency=2, topic_id=None):
             continue
         if topic_id:
             p = conn.execute(
-                """SELECT p.*, pt.relevance, pt.relevance_reason FROM papers p
-                     LEFT JOIN paper_topic pt ON pt.paper_id=p.id AND pt.topic_id=?
+                """SELECT p.*, pt.relevance, pt.relevance_reason FROM sources p
+                     LEFT JOIN source_topic pt ON pt.paper_id=p.id AND pt.topic_id=?
                     WHERE p.id=?""", (topic_id, wk["paperId"])).fetchone()
         else:
-            p = conn.execute("SELECT * FROM papers WHERE id=?", (wk["paperId"],)).fetchone()
+            p = conn.execute("SELECT * FROM sources WHERE id=?", (wk["paperId"],)).fetchone()
         if not p:
             log.info(f"skip (not in db): {wk['paperId']}")
             continue
@@ -188,7 +188,7 @@ def resummarize(work, concurrency=2, topic_id=None):
 
     def worker(t, _i):
         w = t["w"]
-        pp = w.get("pdf_path")
+        pp = w.get("source_path")
         pdf_abs = None
         if pp:
             cand = Path(pp) if Path(pp).is_absolute() else ROOT / pp
@@ -220,7 +220,7 @@ def resummarize(work, concurrency=2, topic_id=None):
                VALUES (?,?,?,?,?,?)""",
             (t["w"]["id"], t["nextVersion"], rel, "[]",
              f"核查后重做(核查发现 {len(t['issues'])} 处问题,从 PDF 重写)", now_iso()))
-        conn.execute("UPDATE papers SET summarized_at=? WHERE id=?", (now_iso(), t["w"]["id"]))
+        conn.execute("UPDATE sources SET summarized_at=? WHERE id=?", (now_iso(), t["w"]["id"]))
     conn.commit()
     conn.close()
     log.info(f"resummarize done: {len(done)}/{len(todo)} redone+registered")
@@ -232,7 +232,7 @@ def main():
     if len(sys.argv) < 2:
         print("usage: summarize_auto.py <topicId> [concurrency] [--limit N]", file=sys.stderr)
         sys.exit(1)
-    # --limit N: only summarize the first N still-to-do papers this run (worklist
+    # --limit N: only summarize the first N still-to-do sources this run (worklist
     # is rank-ordered, so this takes the highest-ranked unsummarized). Idempotent
     # across runs — the next run picks up where this one stopped. Used by the
     # nightly cron to cap each batch (e.g. ~10/run) so it fits one token window.
@@ -260,7 +260,7 @@ def main():
             f.write(line)
 
     def worker(w, _i):
-        pp = w.get("pdf_path")
+        pp = w.get("source_path")
         pdf_abs = None
         if pp:
             cand = Path(pp) if Path(pp).is_absolute() else ROOT / pp

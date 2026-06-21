@@ -15,7 +15,7 @@ Stages:
   finalize  register summaries + render topic.md
   verify    cross-model fact-check unverified summaries (Codex, ≤VERIFY_MAX_PER_RUN
             per run, newest first), redo majors whole (claude -p, vN+1) + re-check,
-            report papers still pending, then re-render topic.md
+            report sources still pending, then re-render topic.md
   auto      run all of the above, in order
 
   auto-pull  daytime/attended half: discover..hunt + tierb + worklist.
@@ -24,7 +24,7 @@ Stages:
   auto-sum   nightly/unattended half: sum + finalize (verify split out → daemon).
              The token-heavy summarize, meant to run via cron while you sleep so
              it doesn't compete with your daytime Max usage. No human, no paywall.
-             Idempotent — already-summarized papers are skipped, so a partial run
+             Idempotent — already-summarized sources are skipped, so a partial run
              just gets finished on the next night. Fact-checking (verify) is no
              longer in this chain: it runs all-day via tools/verify_daemon.py so
              the two don't fight over the same codex quota window.
@@ -59,6 +59,7 @@ def steps(stage, tid):
         "score":    [("find/score_auto.py", [tid])],
         "commit":   [("find/commit.py", [f"topics/{tid}"])],
         "find":     [("find/drive.py", [tid])],  # orchestrator-driven find = discover+score+commit by one Claude (default in AUTO since 2026-06-20)
+        "web":      [("find/discover_web.py", [tid])],  # agent 联网搜优质 blog/技术报告入库(kind='web');opt-in,不进 AUTO
         "fetch":    [("fetch/fetch_oa.py", [tid])],
         "recover":  [("fetch/recover_oa.py", [tid])],
         "hunt":     [("fetch/recover_agent.py", [tid])],
@@ -67,7 +68,7 @@ def steps(stage, tid):
         "sum":      [("summarize/summarize_auto.py", [tid])],
         "finalize": [("summarize/register_summaries.py", [tid]), ("summarize/render_topic.py", [tid])],
         "verify":   [("verify/escalate_verify.py",
-                      [tid, "--max-papers", str(VERIFY_MAX_PER_RUN)]),  # capped 模式:不抽样,上限定量
+                      [tid, "--max-sources", str(VERIFY_MAX_PER_RUN)]),  # capped 模式:不抽样,上限定量
                      ("summarize/render_topic.py", [tid])],
     }.get(stage)
 
@@ -115,7 +116,7 @@ def run_steps(name, tid, step_list):
 def run_auto_sum(tid, limit=None, concurrency=2):
     """Nightly unattended half: sum -> finalize. continue-on-error (idempotent
     stages; partial progress finished next night). When limit is set, only that
-    many papers are summarized this run. Fact-checking (verify) is NOT in this
+    many sources are summarized this run. Fact-checking (verify) is NOT in this
     chain anymore (2026-06-19): the all-day verify_daemon owns it, so cron and
     daemon don't share the codex quota window. The burn-down report still shows
     📋待核N so you can see how much the daemon has left to check."""
@@ -142,19 +143,23 @@ def run_auto_sum(tid, limit=None, concurrency=2):
 
 def topic_progress(tid):
     """夜间燃尽报告用:返回该主题 (已总结, 还能做的剩余, 无PDF做不了的) 三个数。
-    'doable' = status=pdf_downloaded 且 PDF 文件确实在盘上(排除永远做不了的,
-    否则每晚误报"还有剩余")。让通知能分清"做完了"和"又跑了普通一晚"。"""
+    'doable' = status=source_ready 且 PDF 文件确实在盘上(排除永远做不了的,
+    否则每晚误报"还有剩余")。让通知能分清"做完了"和"又跑了普通一晚"。
+    **web 源(kind='web')不进总结**(同 build_worklist 谓词),这里也排除,否则
+    它们恒为 source_ready 会被当成"剩余",队列推不进、燃尽永不收尾。"""
     conn = open_db()
     rows = conn.execute(
-        """SELECT p.status AS status, p.pdf_path AS pdf_path FROM papers p
-             JOIN paper_topic pt ON pt.paper_id=p.id WHERE pt.topic_id=?""", (tid,)).fetchall()
+        """SELECT p.status AS status, p.source_path AS source_path FROM sources p
+             JOIN source_topic pt ON pt.paper_id=p.id
+            WHERE pt.topic_id=?
+              AND (p.kind IS NULL OR p.kind!='web')""", (tid,)).fetchall()
     conn.close()
     summarized = sum(1 for r in rows if r["status"] == "summarized")
     doable = stuck = 0
     for r in rows:
-        if r["status"] != "pdf_downloaded":
+        if r["status"] != "source_ready":
             continue
-        pp = r["pdf_path"]
+        pp = r["source_path"]
         path = (Path(pp) if pp and Path(pp).is_absolute() else (ROOT / pp) if pp else None)
         if path and path.exists():
             doable += 1
@@ -167,8 +172,8 @@ def unverified_count(tid):
     """该主题已总结但还没核到当前版本的篇数(verify 燃尽用,治"积压看不见")。"""
     conn = open_db()
     rows = conn.execute(
-        """SELECT p.id AS id, MAX(sv.version) AS v FROM papers p
-             JOIN paper_topic pt ON pt.paper_id=p.id
+        """SELECT p.id AS id, MAX(sv.version) AS v FROM sources p
+             JOIN source_topic pt ON pt.paper_id=p.id
              JOIN summary_versions sv ON sv.paper_id=p.id
             WHERE pt.topic_id=? AND p.status='summarized'
             GROUP BY p.id""", (tid,)).fetchall()
@@ -253,9 +258,9 @@ def report_failed(tid):
     conn = open_db()
     rows = conn.execute(
         """SELECT p.id, p.slug, p.title, p.doi, p.landing_url, p.status, pt.rank
-             FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
-            WHERE pt.topic_id=? AND p.pdf_path IS NULL
-              AND p.status IN ('pdf_failed','discovered')
+             FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
+            WHERE pt.topic_id=? AND p.source_path IS NULL
+              AND p.status IN ('source_failed','discovered')
             ORDER BY pt.rank""", (tid,)).fetchall()
     conn.close()
     if not rows:
@@ -288,7 +293,7 @@ def run_stage(stage, tid):
 def main():
     if len(sys.argv) < 3:
         print("usage: run.py <topicId> <stage>\n"
-              "stages: discover|score|commit|fetch|recover|hunt|tierb|worklist|sum|finalize|verify|reindex|failed\n"
+              "stages: discover|score|commit|web|fetch|recover|hunt|tierb|worklist|sum|finalize|verify|reindex|failed\n"
               "        auto (all) | auto-pull (attended half) | auto-sum [N] (nightly, single topic)\n"
               "        auto-sum-next [N] (nightly queue: picks top-priority topic with work;\n"
               "                           <topicId> ignored — reads topics table)", file=sys.stderr)

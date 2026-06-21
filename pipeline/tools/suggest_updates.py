@@ -14,19 +14,19 @@ def main():
     topic_id = sys.argv[1] if len(sys.argv) > 1 else "all"
     conn = open_db()
     if topic_id == "all":
-        papers = conn.execute("SELECT id, title FROM papers WHERE status='summarized'").fetchall()
+        sources = conn.execute("SELECT id, title FROM sources WHERE status='summarized'").fetchall()
     else:
-        papers = conn.execute(
-            """SELECT p.id, p.title FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
+        sources = conn.execute(
+            """SELECT p.id, p.title FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
                 WHERE pt.topic_id=? AND p.status='summarized'""", (topic_id,)).fetchall()
 
     suggestions = []
-    for p in papers:
+    for p in sources:
         v = conn.execute("SELECT MAX(version) v, MAX(created_at) c FROM summary_versions WHERE paper_id=?",
                          (p["id"],)).fetchone()
         since = v["c"] if v else None
         neigh = conn.execute(
-            """SELECT DISTINCT q.id, q.title FROM papers q
+            """SELECT DISTINCT q.id, q.title FROM sources q
                 WHERE q.status='summarized' AND q.id<>?
                   AND (q.id IN (SELECT dst_paper_id FROM citations WHERE src_paper_id=?)
                     OR q.id IN (SELECT src_paper_id FROM citations WHERE dst_paper_id=?))

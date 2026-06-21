@@ -76,7 +76,7 @@ The research idea (in Chinese):
 
 \"\"\"{idea}\"\"\"
 
-Below are {len(batch)} candidate papers. Your ONLY job is to find papers that should be
+Below are {len(batch)} candidate sources. Your ONLY job is to find sources that should be
 REJECTED from the corpus. For each paper, decide reject=true ONLY if you have a concrete,
 specific reason, e.g.:
 - clearly off-topic for the research idea above (despite keyword overlap)
@@ -118,7 +118,7 @@ def boundary_rerank(score_dir, idea, anchors, allc, topic_id, band=8, k=5,
     from lib.db import open_db
     conn = open_db()
     existing = {r[0] for r in conn.execute(
-        "SELECT paper_id FROM paper_topic WHERE topic_id=?", (topic_id,)).fetchall()}
+        "SELECT paper_id FROM source_topic WHERE topic_id=?", (topic_id,)).fetchall()}
     conn.close()
     flag_min = (config.get("quality") or {}).get("flag_min_relevance", 45)
     if centers is None:

@@ -1,6 +1,6 @@
-"""Seed specific papers into a topic's candidate pool by id — bypass keyword search + prefilter.
+"""Seed specific sources into a topic's candidate pool by id — bypass keyword search + prefilter.
 
-A point-name channel for foundational papers the keyword search misses or truncates:
+A point-name channel for foundational sources the keyword search misses or truncates:
   - topic.json `seed_ids` (user-specified must-haves)
   - `turning_seeds` ids the orchestrator discovers by following citations
 

@@ -10,8 +10,8 @@ _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)
 from lib.db import open_db, ROOT
 from lib.slug import file_id
 
-STAT = {"discovered": "⚪ 待取", "pdf_downloaded": "📄 有全文",
-        "pdf_failed": "⛔ 取全文失败", "summarized": "✅ 已总结"}
+STAT = {"discovered": "⚪ 待取", "source_ready": "📄 有全文",
+        "source_failed": "⛔ 取全文失败", "summarized": "✅ 已总结"}
 
 
 def main():
@@ -26,7 +26,7 @@ def main():
         sys.exit(1)
     rows = conn.execute(
         """SELECT p.*, pt.relevance, pt.relevance_reason, pt.rank
-             FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
+             FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
             WHERE pt.topic_id=? ORDER BY pt.rank""", (topic_id,)).fetchall()
     ids = {r["id"] for r in rows}
     edges = [(e["s"], e["d"]) for e in
@@ -37,7 +37,7 @@ def main():
 
     def latest_summary(r):
         base = r["slug"] or file_id(r["id"])
-        sv = f"storage/papers/{base}/v1.md"
+        sv = f"storage/sources/{base}/v1.md"
         return sv if (ROOT / sv).exists() else None
 
     n_sum = sum(1 for r in rows if r["status"] == "summarized")
@@ -78,7 +78,7 @@ def main():
 
     out = ROOT / "topics" / topic_id / "topic.md"
     out.write_text("\n".join(md) + "\n", encoding="utf-8")
-    print(f"rendered -> topics/{topic_id}/topic.md  ({len(rows)} papers, {len(edges)} citation edges)")
+    print(f"rendered -> topics/{topic_id}/topic.md  ({len(rows)} sources, {len(edges)} citation edges)")
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ def load_matrix():
 
 def _titles(ids):
     main = open_db()
-    t = {r["id"]: r["title"] for r in main.execute("SELECT id, title FROM papers")}
+    t = {r["id"]: r["title"] for r in main.execute("SELECT id, title FROM sources")}
     main.close()
     return [t.get(i) or i for i in ids]
 

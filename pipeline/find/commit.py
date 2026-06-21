@@ -47,7 +47,7 @@ def emit_plan(by_facet, existing, incremental):
             "eligible": len(plist),
             "fresh": sum(1 for p in plist if p["id"] not in existing),
             "buckets": _buckets(plist),
-            "papers": [{"id": p["id"], "rel": p["relevance"], "q": p["quality"]["tier"],
+            "sources": [{"id": p["id"], "rel": p["relevance"], "q": p["quality"]["tier"],
                         "seeded": p.get("seeded", False), "in_db": p["id"] in existing,
                         "title": (p["title"] or "")[:90]} for p in plist],
         })
@@ -137,7 +137,7 @@ def main():
     conn = open_db()
     store.upsert_topic(conn, topic, target)
     existing = {r["paper_id"] for r in
-                conn.execute("SELECT paper_id FROM paper_topic WHERE topic_id=?", (topic["id"],)).fetchall()}
+                conn.execute("SELECT paper_id FROM source_topic WHERE topic_id=?", (topic["id"],)).fetchall()}
     incremental = len(existing) > 0
 
     # facet grouping: every candidate carries a 'facet' tag ('_all' for non-faceted topics)
@@ -183,17 +183,17 @@ def main():
 
     all_pt = conn.execute(
         """SELECT pt.paper_id, pt.relevance, p.citation_count
-             FROM paper_topic pt JOIN papers p ON p.id=pt.paper_id
+             FROM source_topic pt JOIN sources p ON p.id=pt.paper_id
             WHERE pt.topic_id=? ORDER BY pt.relevance DESC, p.citation_count DESC""", (topic["id"],)).fetchall()
     for i, row in enumerate(all_pt):
-        conn.execute("UPDATE paper_topic SET rank=? WHERE topic_id=? AND paper_id=?",
+        conn.execute("UPDATE source_topic SET rank=? WHERE topic_id=? AND paper_id=?",
                      (i + 1, topic["id"], row["paper_id"]))
 
     full_set = [{"id": r["id"], "ext_ids": json.loads(r["ext_ids"] or "{}"),
                  "ref_ext_ids": json.loads(r["ref_ext_ids"] or "[]")}
                 for r in conn.execute(
-                    """SELECT p.id, p.ext_ids, p.ref_ext_ids FROM papers p
-                        JOIN paper_topic pt ON pt.paper_id=p.id WHERE pt.topic_id=?""", (topic["id"],)).fetchall()]
+                    """SELECT p.id, p.ext_ids, p.ref_ext_ids FROM sources p
+                        JOIN source_topic pt ON pt.paper_id=p.id WHERE pt.topic_id=?""", (topic["id"],)).fetchall()]
     edges = store.build_citations(conn, full_set)
     topic_total = len(all_pt)
     conn.commit()
@@ -214,7 +214,7 @@ def main():
         log.info(f"  per-facet added: {dict(per)}")
     log.info(f"  quality gate: blocked {n_qblock}, flagged-out {n_qflag_out}, suspect-in {n_qsuspect}, "
              f"panel-out {n_panel_out} (flag/suspect 需 relevance>={flag_min})")
-    log.info(f"  topic now has {topic_total} papers  (new-to-db {n_new}, reused {n_existing}, OA {n_oa}, edge {n_edge})")
+    log.info(f"  topic now has {topic_total} sources  (new-to-db {n_new}, reused {n_existing}, OA {n_oa}, edge {n_edge})")
     log.info(f"  citation edges (topic): {edges}")
     run_log(topic["id"], f"commit[{mode}]: added={len(selected)} total={topic_total} edges={edges} qblock={n_qblock} qflagout={n_qflag_out} qsuspect={n_qsuspect}")
 

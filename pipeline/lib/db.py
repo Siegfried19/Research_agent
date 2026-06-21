@@ -17,7 +17,7 @@ PIPELINE_DIR = ROOT / "pipeline"
 CONFIG_PATH = PIPELINE_DIR / "config.json"
 
 SCHEMA = """
-CREATE TABLE IF NOT EXISTS papers (
+CREATE TABLE IF NOT EXISTS sources (
   id              TEXT PRIMARY KEY,
   doi             TEXT,
   slug            TEXT,
@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS papers (
   sources         TEXT,
   ext_ids         TEXT,
   ref_ext_ids     TEXT,
-  pdf_path        TEXT,
+  source_path     TEXT,  -- 原文落点(论文=paper.pdf / web=source.md 的相对路径);原名 pdf_path
+  kind            TEXT,  -- 类型:paper(论文)/web(blog·技术报告等);入库即定,检索/worklist 按它分流
   text_path       TEXT,  -- DEPRECATED(2026-06-16):不再抽存 store/text,此列恒为 NULL;留列免动 prod 库
   status          TEXT DEFAULT 'discovered',
   is_edge         INTEGER DEFAULT 0,
@@ -53,14 +54,13 @@ CREATE TABLE IF NOT EXISTS topics (
   last_run_at   TEXT,
   priority      INTEGER DEFAULT 0   -- auto-sum-next 队列排序:高在前,同则按建立序(rowid)
 );
-CREATE TABLE IF NOT EXISTS paper_topic (
+CREATE TABLE IF NOT EXISTS source_topic (
   topic_id         TEXT,
   paper_id         TEXT,
   relevance        REAL,
   relevance_reason TEXT,
   matched_queries  TEXT,
   rank             INTEGER,
-  facet            TEXT,  -- 该篇在本主题下的子方向(find 阶段定;非 faceted 主题/旧行=NULL,读时当 '_all');留给 retrieve 按 facet 过滤
   added_at         TEXT,
   PRIMARY KEY (topic_id, paper_id)
 );
@@ -81,19 +81,19 @@ CREATE TABLE IF NOT EXISTS citations (
 """
 
 INDEXES = """
-CREATE INDEX IF NOT EXISTS idx_papers_slug   ON papers(slug);
-CREATE INDEX IF NOT EXISTS idx_papers_doi    ON papers(doi);
-CREATE INDEX IF NOT EXISTS idx_papers_status ON papers(status);
-CREATE INDEX IF NOT EXISTS idx_pt_topic      ON paper_topic(topic_id);
-CREATE INDEX IF NOT EXISTS idx_pt_paper      ON paper_topic(paper_id);
+CREATE INDEX IF NOT EXISTS idx_papers_slug   ON sources(slug);
+CREATE INDEX IF NOT EXISTS idx_papers_doi    ON sources(doi);
+CREATE INDEX IF NOT EXISTS idx_papers_status ON sources(status);
+CREATE INDEX IF NOT EXISTS idx_pt_topic      ON source_topic(topic_id);
+CREATE INDEX IF NOT EXISTS idx_pt_paper      ON source_topic(paper_id);
 CREATE INDEX IF NOT EXISTS idx_cit_dst       ON citations(dst_paper_id);
 """
 
-ADD_COLUMNS = [("papers", "slug", "TEXT"),
-               ("papers", "quality_tier", "TEXT"),      # block/suspect/flag/ok/trusted (lib/quality.py)
-               ("papers", "quality_signals", "TEXT"),    # 逗号分隔的命中信号
-               ("topics", "priority", "INTEGER DEFAULT 0"),  # auto-sum-next 队列排序
-               ("paper_topic", "facet", "TEXT")]  # find 子方向落盘,供 retrieve 用(2026-06-21)
+ADD_COLUMNS = [("sources", "slug", "TEXT"),
+               ("sources", "quality_tier", "TEXT"),      # block/suspect/flag/ok/trusted (lib/quality.py)
+               ("sources", "quality_signals", "TEXT"),    # 逗号分隔的命中信号
+               ("sources", "kind", "TEXT"),               # paper/web 类型标记(2026-06-21)
+               ("topics", "priority", "INTEGER DEFAULT 0")]  # auto-sum-next 队列排序
 
 
 def _ensure_columns(conn):

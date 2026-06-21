@@ -2,7 +2,7 @@
 pull PDFs that free routes (OA/recover/arXiv) couldn't get — paywalled (NYU
 OpenAthens) or bot-protected OA (Cloudflare). Fully scripted; the ONLY human step
 is clicking a Cloudflare/Duo challenge when one appears (we pause + ping Telegram,
-then resume). Idempotent: skips papers already pdf_downloaded.
+then resume). Idempotent: skips sources already source_ready.
 
   python3 pipeline/fetch/fetch_tierb.py <topicId>
 
@@ -328,8 +328,8 @@ def verify_pdf(p):
 
 def fetch_one(conn, r):
     slug = r["slug"] or file_id(r["id"])
-    pdf_path = pdf_file(slug)
-    pdf_path.parent.mkdir(parents=True, exist_ok=True)
+    source_path = pdf_file(slug)
+    source_path.parent.mkdir(parents=True, exist_ok=True)
     tlog(f"\n>>> {(r['title'] or '')[:55]}  [{r['id']}]")
 
     br("open", redirector(r["id"]), timeout=60)
@@ -337,13 +337,13 @@ def fetch_one(conn, r):
     st = get_state()
     if is_challenge(st):
         if not wait_human(r, st):
-            return "pdf_failed"
+            return "source_failed"
         st = get_state()
 
     pdf_url = find_pdf_url(r["id"])
     if not pdf_url:
         tlog("  no PDF link found on landing page")
-        return "pdf_failed"
+        return "source_failed"
     tlog(f"  pdf link: {pdf_url[:90]}")
 
     before = list_dir(DL_DIR)
@@ -352,23 +352,23 @@ def fetch_one(conn, r):
     st = get_state()
     if is_challenge(st):
         if not wait_human(r, st):
-            return "pdf_failed"
+            return "source_failed"
 
     try:
-        grab_pdf(pdf_path, before)
+        grab_pdf(source_path, before)
     except Exception as e:  # noqa: BLE001
         tlog(f"  grab failed: {e}")
-        return "pdf_failed"
-    if not verify_pdf(pdf_path):
+        return "source_failed"
+    if not verify_pdf(source_path):
         tlog("  downloaded file failed PDF verification")
-        pdf_path.unlink(missing_ok=True)
-        return "pdf_failed"
+        source_path.unlink(missing_ok=True)
+        return "source_failed"
 
-    conn.execute("UPDATE papers SET pdf_path=?, status='pdf_downloaded', pdf_fetched_at=? WHERE id=?",
-                 (str(pdf_path.relative_to(ROOT)), now_iso(), r["id"]))
+    conn.execute("UPDATE sources SET source_path=?, status='source_ready', pdf_fetched_at=? WHERE id=?",
+                 (str(source_path.relative_to(ROOT)), now_iso(), r["id"]))
     conn.commit()
-    tlog(f"  OK [{pdf_path.stat().st_size // 1024}KB] -> pdf_downloaded")
-    return "pdf_downloaded"
+    tlog(f"  OK [{source_path.stat().st_size // 1024}KB] -> source_ready")
+    return "source_ready"
 
 
 def main():
@@ -379,15 +379,15 @@ def main():
     conn = open_db()
     rows = conn.execute(
         """SELECT p.id, p.title, p.slug, p.status, p.landing_url
-             FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
-            WHERE pt.topic_id=? AND p.status IN ('pdf_failed','discovered')
+             FROM sources p JOIN source_topic pt ON pt.paper_id=p.id
+            WHERE pt.topic_id=? AND p.status IN ('source_failed','discovered')
             ORDER BY pt.rank""", (topic_id,)).fetchall()
     if not rows:
-        print("Tier B: nothing to fetch (all papers already have full text).")
+        print("Tier B: nothing to fetch (all sources already have full text).")
         conn.close()
         return
 
-    tlog(f"Tier B: {len(rows)} papers need full text. log -> {LOG_FILE.relative_to(ROOT)}")
+    tlog(f"Tier B: {len(rows)} sources need full text. log -> {LOG_FILE.relative_to(ROOT)}")
     lock_fp = chrome_lock()
     try:
         ensure_chrome()
@@ -401,12 +401,12 @@ def main():
                 res = fetch_one(conn, r)
             except Exception as e:  # noqa: BLE001
                 tlog(f"  ERROR: {e}")
-                res = "pdf_failed"
-            if res == "pdf_downloaded":
+                res = "source_failed"
+            if res == "source_ready":
                 ok += 1
             else:
                 fail += 1
-                conn.execute("UPDATE papers SET status='pdf_failed', pdf_fetched_at=? WHERE id=?", (now_iso(), r["id"]))
+                conn.execute("UPDATE sources SET status='source_failed', pdf_fetched_at=? WHERE id=?", (now_iso(), r["id"]))
                 conn.commit()
             time.sleep(TB.get("delay_ms", 4000) / 1000)
         conn.close()

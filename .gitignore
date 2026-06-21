@@ -1,6 +1,6 @@
 # 大体积 / 版权全文 —— 绝不入库或推送
-# 新布局(2026-06-20):一篇一个家 storage/papers/<slug>/,版权 PDF 必须忽略;同目录 .md/verify.json 可入库
-storage/papers/*/paper.pdf
+# 新布局(2026-06-20):一篇一个家 storage/sources/<slug>/,版权 PDF 必须忽略;同目录 .md/verify.json 可入库
+storage/sources/*/paper.pdf
 storage/text/
 storage/dl_tmp/
 

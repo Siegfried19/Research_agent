@@ -3,7 +3,7 @@
 - FTS5 那路 = 从 ask.py 移来的 trigram 全文搜(标题/摘要/中文总结),管术语/缩写/精确短语。
 - 向量那路 = index.knn,管概念/同义/症状(对字不对意思的解药)。
 - RRF(Reciprocal Rank Fusion):两路各自排名,按 1/(K+rank) 相加 → 取长补短,无需调权重。
-- 统一在 paper_id 空间融合(FTS 的 slug 经 papers 表映射到 paper_id)。
+- 统一在 paper_id 空间融合(FTS 的 slug 经 sources 表映射到 paper_id)。
 
 向量那路需 research-agent 环境(torch);FTS 那路纯 stdlib,可单独用。
 """
@@ -45,7 +45,7 @@ def ensure_fts(force=False):
     latest = latest_summary_map(main)
     seen = {r[0]: r[1] for r in fts.execute("SELECT slug, key FROM meta")}
     qualifying, n = set(), 0
-    for p in main.execute("SELECT id, slug, title, abstract FROM papers WHERE slug IS NOT NULL"):
+    for p in main.execute("SELECT id, slug, title, abstract FROM sources WHERE slug IS NOT NULL"):
         qualifying.add(p["slug"])
         path = latest.get(p["id"])
         spath = ROOT / path if path else None
@@ -150,7 +150,7 @@ def hybrid(query, topn=20, k=50, use_vec=True, understanding=None):
     """混合召回。返回 topn 个 paper 行(dict),按 RRF 融合分降序。
     understanding(理解层产物)给了就用它的干净词喂 FTS + 用 HyDE 嵌入向量;否则回退原始查询。"""
     main = open_db()
-    slug2pid = {r["slug"]: r["id"] for r in main.execute("SELECT id, slug FROM papers WHERE slug IS NOT NULL")}
+    slug2pid = {r["slug"]: r["id"] for r in main.execute("SELECT id, slug FROM sources WHERE slug IS NOT NULL")}
 
     fts = ensure_fts()
     fts_ids = [slug2pid[s] for s in fts_rank(fts, query, understanding) if s in slug2pid]
@@ -165,7 +165,7 @@ def hybrid(query, topn=20, k=50, use_vec=True, understanding=None):
     fused = rrf_fuse(rankings)[:topn]
     hits = []
     for pid, sc in fused:
-        p = main.execute("SELECT * FROM papers WHERE id=?", (pid,)).fetchone()
+        p = main.execute("SELECT * FROM sources WHERE id=?", (pid,)).fetchone()
         if p:
             hits.append({"paper": p, "score": sc})
     main.close()

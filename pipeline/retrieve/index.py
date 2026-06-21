@@ -69,7 +69,7 @@ def build_index(force=False):
     todo = []       # (pid, body, body_hash, cheap_key) —— 内容真变,要重嵌
     keyonly = []    # (pid, cheap_key) —— 只 mtime 变内容没变,只更钥匙不重嵌
     qualifying = set()
-    for p in main.execute("SELECT id, slug, title, abstract FROM papers WHERE slug IS NOT NULL"):
+    for p in main.execute("SELECT id, slug, title, abstract FROM sources WHERE slug IS NOT NULL"):
         qualifying.add(p["id"])
         path = latest.get(p["id"])
         spath = ROOT / path if path else None
