@@ -4,6 +4,13 @@
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `claude_memory/modules-modification/<x>/STATE.md`（各模块层积日志，取代旧 logs/SESSION-*.md）；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
 
+## 2026-06-21 18:44 EDT — 重写 README（双语 + todo 路线图，准备挂 GitHub）
+- 旧 README 已严重过期（还在写 node `--experimental-sqlite` 脚本、旧表名 `papers`/`paper_topic`、旧 workflow 流程、未接付费墙）。按当前架构整体重写 `README.md`：
+- 顶部加居中标题/badge + **English short version**（给 GitHub 国际读者）；正文中文优先（项目工作语言）。
+- 对齐现状：入口 `python3 pipeline/run.py <id> auto`、五模块表、`sources` 表 + 四类数据落点、走本机 CLI 不花 API 钱、auto-pull/auto-sum/verify_daemon 拆分、目录骨架。
+- 加 **TODO 路线图**：按总蓝图三层（流水线✅/知识库🚧/三出口🚧）+ 运维，勾选已建成项，留未完项（合成知识层、引用图可视化、ARS 桥终验、检索评测、迁移文档）。
+- 文件：`README.md`（仅文档，无代码改动）。
+
 ## 2026-06-21 17:46 EDT — ★ retrieve 出口重构：从"问答引擎"翻成"库地图 + 消费者拥有调查循环"
 - **从需求重谈**(非改 bug,是设计推倒重来):与用户从需求捋出几条 → ①出口"人查/agent 查"其实是同一件事(消费者永远是 agent);②**消费者拥有调查循环**(agent 自驱,我们别写死问答管道替它决定);③纪律=质量优先/别图省 token/别过度依赖工具;④接入=项目 SSH 挂载主力机=本地文件(砍掉远程 API/`--json` 契约);⑤运维只手动跑 sum+verify→地图**访问前现拼**、不挂 pipeline。
 - **落代码(实测过,未提交)**:🆕 `pipeline/retrieve/map.py` **库地图生成器=新主入口**(纯 stdlib,不碰 conda,挂载点裸 python3 可跑;3 数据源 join/merge:papers.sqlite + topics/*/verify_status.json + topics/*/selected.json(facet);两级分组 topic→facet、组内年份降序;收"有料可读"=有总结或原件;大白话标记+头部图例,核查 6 态收成`重大存疑`/`未充分核查`两类;输出 stdout + `data-base/INDEX.md`)。实测 319 篇/3 主题、137 有总结/190 仅 PDF,跑在 /usr/bin/python3 exit 0。🆕 `lib/verify_status.py`(抽 answer.py 的 load/resolve_verify 成 stdlib 共享,单一真相源)。🆕 `instruction-for-other-agent.md`(项目根,对外调查指南;调查纪律 v1 已起草=召回优先/质量优先/总结主力+原件下钻/认标记/闭集引用/诚实/交付可用 7 条)。
