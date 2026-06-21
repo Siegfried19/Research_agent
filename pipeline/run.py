@@ -58,6 +58,7 @@ def steps(stage, tid):
         "discover": [("find/discover.py", [f"topics/{tid}/topic.json"])],
         "score":    [("find/score_auto.py", [tid])],
         "commit":   [("find/commit.py", [f"topics/{tid}"])],
+        "find":     [("find/drive.py", [tid])],  # orchestrator-driven find = discover+score+commit by one Claude (default in AUTO since 2026-06-20)
         "fetch":    [("fetch/fetch_oa.py", [tid])],
         "recover":  [("fetch/recover_oa.py", [tid])],
         "hunt":     [("fetch/recover_agent.py", [tid])],
@@ -71,11 +72,11 @@ def steps(stage, tid):
     }.get(stage)
 
 
-AUTO = ["discover", "score", "commit", "fetch", "recover", "hunt", "tierb", "worklist", "sum", "finalize", "verify"]
+AUTO = ["find", "fetch", "recover", "hunt", "tierb", "worklist", "sum", "finalize", "verify"]
 # Token-aware split (2026-06-16): pull half is attended (tierb) + small token cost;
 # sum half is the token-heavy summarize, meant for an unattended nightly cron
 # (verify split out 2026-06-19 → all-day verify_daemon, so they don't share the codex window).
-AUTO_PULL = ["discover", "score", "commit", "fetch", "recover", "hunt", "tierb", "worklist"]
+AUTO_PULL = ["find", "fetch", "recover", "hunt", "tierb", "worklist"]
 # 2026-06-19: verify 从夜间链摘出,交给全天候 verify_daemon(tools/verify_daemon.py)单跑,
 # 避免 cron 与 daemon 抢同一个 codex 配额窗口。夜间只 sum+finalize;verify 阶段保留给 daemon/手动。
 AUTO_SUM = ["sum", "finalize"]

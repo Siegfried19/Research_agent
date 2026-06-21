@@ -16,6 +16,8 @@ from lib.merge import merge_all
 from lib.http import sleep
 from lib.log import get_logger, run_log
 from lib import quality
+from lib import pool as poolmod
+from lib import topic as T
 
 config = load_config()
 log = get_logger("discover")
@@ -70,21 +72,44 @@ def prefilter_rank(papers):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("usage: discover.py topics/<slug>/topic.json", file=sys.stderr)
+    args = sys.argv[1:]
+    only_facet = None
+    if "--facet" in args:
+        i = args.index("--facet")
+        only_facet = args[i + 1]
+        del args[i:i + 2]
+    if not args:
+        print("usage: discover.py topics/<slug>/topic.json [--facet <key>]", file=sys.stderr)
         sys.exit(1)
-    topic = json.loads(Path(sys.argv[1]).resolve().read_text(encoding="utf-8"))
+    topic = T.load_topic(args[0])
+
+    # query -> facet map + per-candidate tagging (non-faceted topics map everything to '_all')
+    qmap, facet_order = {}, [f["key"] for f in topic["facets"]]
+    for f in topic["facets"]:
+        for q in f["queries"]:
+            qmap.setdefault(q, f["key"])
+
+    if only_facet:
+        fac = T.facet_by_key(topic, only_facet)
+        if not fac:
+            print(f"unknown facet '{only_facet}' (have: {facet_order})", file=sys.stderr)
+            sys.exit(1)
+        queries = fac["queries"]
+    else:
+        queries = T.all_queries(topic)
+
     today = datetime.now()
     from_year = today.year - (topic.get("window_years") or config["window_years"])
     win = {"fromYear": from_year, "toYear": today.year, "fromDate": f"{from_year}-01-01"}
     target = topic.get("target") or config["first_run_target"]
     pool_size = min(500, max(target * 2, 60))
 
-    log.info(f"# Discovery: {topic['title']} ({topic['id']})")
-    log.info(f"  window {win['fromDate']}..{win['toYear']}  target {target}  pool {pool_size}  queries {len(topic['queries'])}")
-    run_log(topic["id"], f"discover: start target={target} pool={pool_size} queries={len(topic['queries'])}")
+    facet_note = f" facet={only_facet}" if only_facet else (f" faceted={len(facet_order)}" if topic["_faceted"] else "")
+    log.info(f"# Discovery: {topic['title']} ({topic['id']}){facet_note}")
+    log.info(f"  window {win['fromDate']}..{win['toYear']}  target {target}  pool {pool_size}  queries {len(queries)}")
+    run_log(topic["id"], f"discover: start target={target} pool={pool_size} queries={len(queries)}{facet_note}")
 
-    all_recs, lines = gather(topic["queries"], win)
+    all_recs, lines = gather(queries, win)
     log.info("\n".join(lines))
 
     papers = [p for p in merge_all(all_recs) if language_ok(p)]
@@ -104,33 +129,50 @@ def main():
     papers = prefilter_rank(kept)
 
     edge_thr = config["ranking"]["edge_citation_threshold"]
-    pool = [{
-        "id": p["id"], "doi": p["doi"], "title": p["title"], "authors": p["authors"], "year": p["year"],
-        "venue": p["venue"], "publisher": p.get("publisher"), "is_in_doaj": bool(p.get("is_in_doaj")),
-        "is_retracted": bool(p.get("is_retracted")), "abstract": p["abstract"], "language": p["language"],
-        "citation_count": p["citation_count"], "is_oa": p["is_oa"], "oa_url": p["oa_url"],
-        "landing_url": p["landing_url"], "sources": p["sources"], "ext_ids": p["ext_ids"],
-        "ref_ext_ids": p["ref_ext_ids"], "matched_queries": p["queries"],
-        "is_edge": (p["citation_count"] or 0) < edge_thr,
-        "prefilter": round(p["_pre"], 3),
-        "quality": p["quality"],
-    } for p in papers[:pool_size]]
+
+    def facet_for(p):  # tag by the first facet whose query matched this paper
+        for q in (p.get("queries") or []):
+            if q in qmap:
+                return qmap[q]
+        return only_facet or (facet_order[0] if facet_order else "_all")
+
+    new_cands = [poolmod.candidate_entry(p, edge_thr, facet=facet_for(p)) for p in papers[:pool_size]]
 
     d = ROOT / "topics" / topic["id"]
     d.mkdir(parents=True, exist_ok=True)
-    (d / "candidates.json").write_text(json.dumps({
-        "topic": {"id": topic["id"], "title": topic["title"], "idea": topic["idea"], "queries": topic["queries"]},
+    cpath = d / "candidates.json"
+    merge_note = ""
+    if only_facet and cpath.exists():
+        # targeted facet re-search: merge into the existing pool (keep other facets + seeds)
+        prev = json.loads(cpath.read_text(encoding="utf-8"))
+        cands = prev.get("candidates", [])
+        seen = set()
+        for c in cands:
+            seen |= poolmod.candidate_keys(c)
+        added = 0
+        for c in new_cands:
+            if poolmod.candidate_keys(c) & seen:
+                continue
+            cands.append(c)
+            seen |= poolmod.candidate_keys(c)
+            added += 1
+        merge_note = f"  (facet merge: +{added} new)"
+    else:
+        cands = new_cands
+
+    cpath.write_text(json.dumps({
+        "topic": {"id": topic["id"], "title": topic["title"], "idea": topic["idea"], "queries": T.all_queries(topic)},
         "window": win, "target": target, "generated_at": now_iso(),
-        "raw_records": len(all_recs), "merged_unique": len(papers), "pool": len(pool),
-        "candidates": pool,
+        "raw_records": len(all_recs), "merged_unique": len(papers), "pool": len(cands),
+        "candidates": cands,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    with_abs = sum(1 for p in pool if p["abstract"])
-    oa = sum(1 for p in pool if p["is_oa"])
-    log.info(f"\n# Result\n  raw {len(all_recs)}  merged-unique {len(papers)}  pool {len(pool)}")
+    with_abs = sum(1 for p in cands if p["abstract"])
+    oa = sum(1 for p in cands if p["is_oa"])
+    log.info(f"\n# Result\n  raw {len(all_recs)}  merged-unique {len(papers)}  pool {len(cands)}{merge_note}")
     log.info(f"  pool has-abstract {with_abs}  OA-downloadable {oa}")
     log.info(f"  -> topics/{topic['id']}/candidates.json  (next: relevance scoring)")
-    run_log(topic["id"], f"discover: raw={len(all_recs)} merged={len(papers)} pool={len(pool)} oa={oa} quality_blocked={len(blocked)}")
+    run_log(topic["id"], f"discover: raw={len(all_recs)} merged={len(papers)} pool={len(cands)} oa={oa} quality_blocked={len(blocked)}")
 
 
 if __name__ == "__main__":

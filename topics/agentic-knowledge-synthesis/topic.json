@@ -2,23 +2,70 @@
   "id": "agentic-knowledge-synthesis",
   "title": "Agent 消费知识库与跨论文综合（长上下文时代）",
   "idea": "在长上下文(Opus)时代，一个由 AI 管理、供 agent 与人共同消费的研究论文库，应如何被正在干活、撞到问题的 agent 查询——让它去查文献而非闷头自想——并能跨多篇论文做综合、发现论文间关联(矛盾/共识/谁建立在谁之上/独立结论拼出的新洞见)。重点侧面：(1) 跨论文综合与多文档推理/综述自动生成；(2) 跨论文关联发现，以及『如何构建跨论文关系结构』的方法学——引用图之外更好的结构(知识图谱构建、论断/关系抽取、矛盾与共识检测、literature-based discovery 假设生成)；(3) agent 主动求知：检索增强/工具增强 agent、何时该检索、如何把检索结果接回任务；(4) 长上下文 vs 检索(强模型档，只取与综合相关的)；(5) 库上科学问答(agent+人 双消费、可追溯/可解释)。前提：长上下文为给定条件、消费方 agent 为主人为次、已有库内引用图资产。偏好方法可落地、有跨文档实验或评测的论文，而非泛 RAG 工程/向量库调优/纯单篇问答。",
-  "queries": [
-    "multi-document scientific summarization large language models",
-    "cross-document reasoning large language models",
-    "automatic literature review generation language model",
-    "literature-based discovery hypothesis generation",
-    "scientific contradiction and consensus detection across papers",
-    "knowledge graph construction from scientific papers",
-    "claim and relation extraction scientific literature argument mining",
-    "retrieval-augmented generation autonomous agents",
-    "tool-augmented language model reasoning retrieval",
-    "agentic retrieval deep research agent",
-    "adaptive retrieval when to retrieve language model",
-    "long-context language model versus retrieval augmented generation",
-    "long context multi-document synthesis language model",
-    "scientific question answering over paper corpus",
-    "hierarchical retrieval and summarization for long documents"
-  ],
   "window_years": 3,
-  "target": 35
+  "target": 35,
+  "preferences": "偏好方法可落地、有跨文档实验或评测的论文；排斥泛 RAG 工程/向量库调优/纯单篇问答。",
+
+  "facets": [
+    {
+      "key": "cross-doc-synthesis",
+      "title": "跨论文综合 / 多文档推理 / 综述自动生成",
+      "hit_criteria": "命中=对多篇文档做综合/推理/综述生成且有跨文档方法或评测；只做单篇摘要/问答不命中；泛 LLM 摘要不针对多文档算半相关。",
+      "queries": [
+        "multi-document scientific summarization large language models",
+        "cross-document reasoning large language models",
+        "automatic literature review generation language model",
+        "hierarchical retrieval and summarization for long documents"
+      ],
+      "seed_ids": ["arxiv:2401.18059", "arxiv:2406.02818", "arxiv:2411.14199"],
+      "note": "RAPTOR/CoA/OpenScholar 奠基作，关键词常漏，别饿死"
+    },
+    {
+      "key": "cross-paper-structure",
+      "title": "跨论文关联发现 / 关系结构方法学(KG·关系抽取·矛盾共识·LBD)",
+      "hit_criteria": "命中=构建论文间关系结构或发现关联(知识图谱构建/论断关系抽取/矛盾共识检测/literature-based discovery)；纯引用图统计不涉关系语义算半相关；通用 NER/RE 不针对科学文献关联不算。",
+      "queries": [
+        "literature-based discovery hypothesis generation",
+        "scientific contradiction and consensus detection across papers",
+        "knowledge graph construction from scientific papers",
+        "claim and relation extraction scientific literature argument mining"
+      ],
+      "seed_ids": ["arxiv:2404.16130"],
+      "note": "GraphRAG 是这条线奠基作(首轮被词法切掉)"
+    },
+    {
+      "key": "agentic-retrieval",
+      "title": "agent 主动求知(检索/工具增强 agent·何时检索·接回任务)",
+      "hit_criteria": "命中=agent 主动决定检索/调工具并把结果接回任务，或研究『何时该检索』；静态 RAG 管道不涉 agent 决策算半相关；纯向量库/embedding 调优不算。",
+      "queries": [
+        "retrieval-augmented generation autonomous agents",
+        "tool-augmented language model reasoning retrieval",
+        "agentic retrieval deep research agent",
+        "adaptive retrieval when to retrieve language model"
+      ],
+      "seed_ids": ["arxiv:2503.13657"],
+      "note": "MAST(为何多 agent 系统失败)——多 agent 设计的反面教材，重点"
+    },
+    {
+      "key": "longctx-vs-retrieval",
+      "title": "长上下文 vs 检索(强模型档)",
+      "hit_criteria": "命中=直接比较/权衡长上下文与检索增强，或长上下文下的多文档综合；泛长上下文 benchmark 不涉检索权衡算半相关。",
+      "queries": [
+        "long-context language model versus retrieval augmented generation",
+        "long context multi-document synthesis language model"
+      ],
+      "seed_ids": [],
+      "note": ""
+    },
+    {
+      "key": "corpus-qa",
+      "title": "库上科学问答(可追溯/可解释·agent+人双消费)",
+      "hit_criteria": "命中=在科学论文库上做问答且强调可追溯/可解释/多文档证据聚合；单篇阅读理解问答不算；泛开放域 QA 不针对论文库算半相关。",
+      "queries": [
+        "scientific question answering over paper corpus"
+      ],
+      "seed_ids": ["arxiv:2409.13740"],
+      "note": "PaperQA2(超人级科学知识综合)奠基作"
+    }
+  ]
 }

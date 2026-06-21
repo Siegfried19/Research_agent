@@ -1,0 +1,39 @@
+{
+  "id": "agentic-knowledge-synthesis",
+  "last_find": "2026-06-20 19:54 EDT",
+  "in_db_total": 41,
+  "target": 35,
+  "facets": {
+    "cross-doc-synthesis": {
+      "committed": 9,
+      "coverage": "good",
+      "note": "3 seeds 全入(OpenScholar/RAPTOR/CoA);留 rel>=55。可下探的尾巴多为泛 RAG 综述,按 preferences 已舍。"
+    },
+    "cross-paper-structure": {
+      "committed": 9,
+      "coverage": "good-but-skewed",
+      "note": "seed GraphRAG 入;留 rel>=67。明显偏生物医学 LBD/假设生成(BioVerge/hypergraph/temporal-KG 等)。下轮可补非生物域的 claim/relation 抽取与矛盾-共识检测(本轮该方向召回弱)。"
+    },
+    "agentic-retrieval": {
+      "committed": 16,
+      "coverage": "saturated",
+      "note": "为兑现 MUST-include seed MAST(rel=24,facet 内垫底)只能 keep 全量 16,顺带带进 3 个偏题:Ego-R1(视频)、Generative Agents(社会模拟)、Securing the Agent(企业安全)——可删。核心强项:InfoDeepSeek/Agentic-RAG-Survey/Reasoning-RAG/Evaluating-RAG-agents-scientific。"
+    },
+    "longctx-vs-retrieval": {
+      "committed": 3,
+      "coverage": "patched",
+      "note": "关键词只召回 3 篇、首轮仅留 1(Mindscape 62)。按 id 补播两篇正题奠基作:Retrieval meets Long Context(95)、In Defense of RAG(92)。仍偏薄,下轮可再补 'Long-Context LLMs Meet RAG'、NoLiMa 等。Tool-Savvy(45 flag)半相关已舍。"
+    },
+    "corpus-qa": {
+      "committed": 4,
+      "coverage": "thin",
+      "note": "seed PaperQA2 入;SQuAI(95)/SciQA(80)/Retrieving-Supporting-Evidence(45,追溯)。queries 仅 1 条,召回天然薄。下轮可加可追溯/证据聚合向的检索词。"
+    }
+  },
+  "turning_seeds": [
+    "cross-paper-structure 去生物医学化:补通用科学文献的 claim/relation 抽取、跨论文矛盾-共识检测(SciFact/contradiction 这类)。",
+    "longctx-vs-retrieval 补强:'Long-Context LLMs Meet RAG'(arxiv:2410.05983?)、NoLiMa、RULER 等长上下文-检索权衡新作。",
+    "corpus-qa 扩词:traceable/attributable scientific QA、evidence aggregation over corpus。",
+    "翻已入库论文(GraphRAG/OpenScholar/PaperQA2/InfoDeepSeek)的被引/参考,捞反复被引却漏网的奠基作(本轮 citation 边稀疏,edges 仅 1)。"
+  ]
+}

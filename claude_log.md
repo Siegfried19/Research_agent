@@ -4,6 +4,49 @@
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `claude_memory/modules-modification/<x>/STATE.md`（各模块层积日志，取代旧 logs/SESSION-*.md）；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
 
+## 2026-06-20 22:48 EDT — TODO-6 验证收口:修两个 bug(orchestrator挂后台 / commit不豁免seed)+ 清 3 偏题
+- 接上一条(orchestrator 自报的 19:54 实跑)。验证**成功**——6 奠基作全回库(GraphRAG 首轮被切、这次 rel=95 回来),但抓出两个 bug,均已修。
+- **Bug 1(orchestrator 行为)**:首次拉起时 orchestrator 把 score_auto 挂后台 +"等唤醒"就停了,无头 `claude -p` 没唤醒机制→commit 没跑、库 0 篇。**修**:`drive.py` prompt 加【无头运行】铁条(前台同步、绝不挂后台、走完 discover→score→commit 再回报)。重跑即 41 篇入库。
+- **Bug 2(commit 设计缺口)**:`--keep N` 纯 top-N 不认 `seeded`,标"重点"的 MAST(rel24)只能 keep=16 全留、拖 3 偏题。**修** `commit.py`:seeded 篇强制入库(资格闸绕过 rel/flag/panel + 选篇后强制并入;block 仍挡)——seed 机制最后一环。实测 keep=1+seeded rel20 → 强制带上。
+- **清理**:删掉被过度 keep 拖进的 3 篇(Ego-R1/Generative Agents/Securing the Agent),生产库 41→**38 篇**,6 奠基作仍在。
+- 顺带:`seed.py` 加 `--facet`(种子落正确 facet,运行中改的,保留)。
+- 改动(commit.py / drive.py / seed.py + DB 删 3)在工作区,**未 push**。详见 find STATE 22:48 条。
+
+## 2026-06-20 19:54 EDT — find 实跑:主题 agentic-knowledge-synthesis 冷启动选篇入库 41 篇
+- **做了什么**:作为 orchestrator 跑完整 find 一轮(discover→seed→score_auto→commit --plan→--keep)。discover 四源召回 2476 去重→候选池 75(+seed);score_auto faceted×5 自举锚点打分;首轮 --keep 写库 39,增量补 longctx 2 篇 → **库内 41 篇**(target 35)。
+- **关键判断**:① 6 个 facet seed 全入,含特意保的 MAST(rel=24 facet 垫底,`--keep` 是纯 top-N 不豁免 seed → 只能 agentic-retrieval=16 全留兑现 MUST-include,代价 3 个偏题 Ego-R1/Generative Agents/Securing-the-Agent 入库待删);② longctx-vs-retrieval 关键词只召回 3 篇(饿),按 id 补播 arxiv:2310.03025 / 2409.01666(命中后 rel 95/92),发现二者被 discover 误标 `_all` → 手改 candidates.json 的 facet 再重打分入库;③ cross-paper-structure 偏生物医学 LBD。
+- **文件**:写 `topics/agentic-knowledge-synthesis/{candidates.json,scores/,selected.json,topic_state.json}` + 生产库 `data-base/papers.sqlite`(paper_topic +41)。**未改 find 模块代码**(纯实跑+一次性 candidates 数据纠偏)。下轮起点见 topic_state.json 的 turning_seeds。
+
+## 2026-06-20 18:48 EDT — 收尾:去新旧并行(全主题归一走新路)+ orchestrator 转 AUTO 默认 + 停 verify_daemon
+- **做了什么**:按用户"都用新的、不要新旧并行"收口。① `run.py` AUTO/AUTO_PULL 的 discover+score+commit → 换成 `find`(orchestrator 转默认);② `score_auto` 删掉非-faceted 单尺分支 + `autopick_anchors`,**永远走 facet 路**(无 facets 的老主题=1 隐式 `_all`),`boundary_rerank` 去留线只剩资格闸 {30,flag_min}(删 target 线);③ 应用户要求 `kill` 了 `tools/verify_daemon.py`(全天候核查守护,与 find 无关)——**核查暂停,需手动 `python3 pipeline/tools/verify_daemon.py` 重启**。
+- **老主题影响(获准)**:rl-general-toolbox / rl-digital-human-interaction 走 `_all` 新路——边界去留线从"第 target 名"变"资格闸 30/45"、冷启动自举改 in-memory 不回写 topic.json;已入库的不动。**用户说暂不拆它们成 facet,后续自己用对话处理。**
+- **实测**:faceted(2 facet)+ 老主题归一(`single(_all)`)两路 score→commit 端到端过(临时 DB);全量 compile OK,无 autopick/target 残留。
+- 详细见 find STATE 顶部两条(18:20 / 18:48)。**改动仍在工作区,git push 等用户。**
+
+## 2026-06-20 18:08 EDT — find 段「facet 改写」整套落码完成(1→5 代码全落 + 自测;6 验证场就绪待用户跑)
+- **做了什么**:把 16:44 定稿的设计按 TODO 1→5 全部落代码并自测,TODO-6 验证场备好。find 段从"焊死 discover→score→commit 一条龙"变成"orchestrator claude 全权驱动 + 脚本当工具"。
+- **新增**:`pipeline/lib/pool.py`(候选池存储层:candidate_entry/record_to_candidate/去重键/读写)、`pipeline/lib/topic.py`(意图+状态存档层:load_topic 归一成永远带 facets、向后兼容退化、topic_state 读写)、`pipeline/find/seed.py`(按 id 播种 CLI)、`pipeline/find/drive.py`(拉起 orchestrator + §5 prompt)、`pipeline/tools/notify_cli.py`。
+- **改**:`lib/sources.py`(抽 per-record 规范化器 + by-id 单查 + fetch_by_id 调度:DOI→OpenAlex/arxiv→官方API/SS兜底)、`find/discover.py`(facet 标签 + --facet 合并)、`find/score_auto.py`(非faceted原样、faceted 新分支 per-facet anchors+hit_criteria)、`find/commit.py`(--plan 摆分布 / --keep 按facet留N / 无flag=auto老行为)、`run.py`(加 `find` 阶段=drive.py;**18:20 修正**:AUTO/AUTO_PULL 的 discover+score+commit 直接换成 `find`,orchestrator 转为默认——用户"搭建阶段直接用新的")。
+- **方案 A(用户拍板)**:单 candidates.json + 每条候选带 facet 标签,不拆多文件。
+- **测过**:fetch_by_id 三篇真论文 OK;seed.py 端到端(播入/去重/失败);topic 层向后兼容(gt 退化1隐式facet);score_auto faceted(假run_claude:自举锚点/per-facet批文件)+ 非faceted back-compat;commit --plan/--keep(临时DB:精确 2A+1B);drive --dry-run(gt 非faceted/agentic faceted 都渲染对);全量 compile OK。**未碰生产库、未烧真 claude(除 by-id 元数据查)。**
+- **6 验证场**:`topics/agentic-knowledge-synthesis/topic.json` 改 faceted(5 facets/15q/6 奠基作 seed_ids,arxiv id 全核对:GraphRAG 2404.16130 等)。**实跑交用户(billed,写生产库)**:`python3 pipeline/run.py agentic-knowledge-synthesis find`。
+- **7(gt 拆 6 facet)**:老主题 opt-in,按用户决定留用户后续自改,本次不动。
+- 详细过程账见 find STATE 顶部五条(17:14→18:08)。**git push 仍等用户。**
+
+## 2026-06-20 16:44 EDT — find 段「facet 改写」整套设计定稿 + 成品落档(纯设计,未落码)
+- **做了什么**:把 02:16 顶条挂的「🔶 找段大方向改写」从悬而未决推到**可落代码的定稿**——地基①存档格式 + 地基②编排模型 + 治理/通知模型全敲定。
+- **成品文档**:`claude-memory/Prompt-structure-design/find-facet-rewrite-design.md`(存档 schema 说明 + orchestrator prompt 初稿 + 实现 TODO),新会话照此实现。过程账详记 find STATE 三条(16:16/16:30/16:44)。
+- **核心决定**:①存档拆两文件(topic.json 意图手定 / topic_state.json 状态 pipeline 写),facets[] 带 hit_criteria/anchors/seed_ids/queries,配额=claude 判断不存数字;②编排=拉起一个 claude 全权驱动(cron/对话共用),python 只拉起+收尾,脚本当它 Bash 调的工具,prompt 只给情况/工具/项目契约/通知规则不教怎么找;③fan-out 在 find 是甜区(一 facet 一子agent),拐弯不设界(它判断),通知三档(例行留痕/新发现TG/回报照旧)。
+- **前置零件**:「按 id 播种」(lib/sources 缺按 id 单查元数据,seed_ids/add_url 共用)。
+- **下一步**:按 TODO 落码,验证场=agentic-knowledge-synthesis 重搜捞回被切的奠基作。
+
+## 2026-06-20 16:16 EDT — 博客/网络源扩展(add_url)架构敲定 + 推翻旧 text_path 支点(纯设计,未落码)
+- **做了什么**:把 2026-06-19「add_url 副轨」计划重审一遍,敲定可落代码的最终架构,并揪出旧计划一个**死支点**。跨 find/fetch/summarize 三段设计,详记 `claude-memory/modules-modification/find/STATE.md` 顶条(2026-06-20 16:16)。
+- **⚠️ 旧计划 text_path 支点作废**:`lib/db.py:38` text_path 已 DEPRECATED(2026-06-16,恒 NULL,留列免动 prod),summarize 只读 pdf_path——「写 text_path 自动流过 summarize」不成立。
+- **敲定**:①抓取分级=静态博客 claude WebFetch 自抓(替 trafilatura) / X·硬页 opencli 真 Chrome(复用 fetch_tierb 那套,图多截图喂 claude);②落盘路线B(用户拍板)=博客 md/截图占 `pdf_path` 位、存 `storage/papers/<slug>/`;③质量砍硬档(废 url_allowlist 白名单)→软约束=查找+总结两道 claude 判可信度;④blog 标记三重(id=URL / sources=web+域名 / quality_signals 加不参与过滤的 web tag),全不改库表。
+- **defer(用户)**:summarize 接口统一(DB→worklist→prompt 焊死 PDF 假设,方案已想好:抽象成 source_kind 分支,本轮未动)。
+- **为什么**:agent/长上下文前沿一大半不在 arXiv(在 Anthropic/Lilian Weng/X 等),只搜 arXiv 系统性漏半领域;且与 facet 改写「按 id 播种捞奠基作」共「按外部标识入库」地基。
+
 ## 2026-06-20 05:25 EDT — 顶层目录大改名全链路收口(用户改名,代码/DB/gitignore/文档全跟上)
 - **用户把顶层目录改名(保留)**:`db`→`data-base`、`store`→`storage`、`ref`→`reference`、`review`→`for-human-review`、`docs/claude_memory`→`claude-memory`、`vendor`→`dependencies`(后两个本会话早先已处理)。其中 **`db`/`store` 是代码+DB 硬编码依赖**,改名一度让整套跑挂——本次全链路改对。
 - **代码(功能性)**:`ROOT/"db"`→`"data-base"`(lib/db.py DB_PATH、retrieve/index.py VEC_PATH、search.py FTS_PATH);`ROOT/"store"`→`"storage"`(lib/store.py paper_dir、fetch_tierb DL_DIR、cross_topic、prepare_update、register_updates、update_auto、export_corpus、eval_retrieval、init.py DIRS、render_topic、ask 提示)。**关键纰漏**:export_corpus.py:72 是**单引号** `ROOT/'store'/'summaries'`,首轮双引号扫描漏掉,二次单+双引号穷扫才揪出修掉。

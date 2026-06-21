@@ -4,6 +4,177 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账（含旧 SESSION 的"为什么"）。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-20 22:48 EDT · TODO-6 验证场跑通(真实数据)+ 抓出并修两个 bug
+
+> 拉起 orchestrator 真跑 agentic-knowledge-synthesis(冷启动,生产库)。**验证成功:端到端跑通、6 奠基作全回库。** 过程抓出两个 bug,都已修。
+>
+> **结果**:discover faceted(5 facet/pool 70)→ seed 6/6 → score_auto[faceted x5] 75 scored → commit FIRST RUN +39 → 增量 +2 = 41 篇 → 清掉 3 篇偏题 = **38 篇入库**。GraphRAG(首轮被切)rel=95 回来,6 奠基作全部入库。orchestrator 展现真判断:按 facet 分配、自己发现 longctx 饿死补播、改 discover 误标的 facet、写 turning_seeds。
+>
+> **Bug 1(已修)——orchestrator 挂后台等唤醒**:首跑时 orchestrator 把 score_auto 挂后台 + "pause 等唤醒",但无头 `claude -p` 没有唤醒机制→进程提前结束,commit 没跑、库 0 篇。**修**:`drive.py` prompt 加【⚠️ 无头运行】块——每步前台同步跑、绝不挂后台、一口气 discover→score→commit 走完再回报。重跑即通。
+>
+> **Bug 2(已修)——commit 不豁免 seed**:`--keep N` 纯按 rel 取 top-N,不认 `seeded`。用户标"重点"的 MAST 只打 rel=24 垫底,要进只能 keep=16,顺带拖 3 篇偏题(Ego-R1/Generative Agents/Securing the Agent)。**违背 seed=必进 的初衷。修**:`commit.py` 两处加 seed 强制入库——①资格闸:seeded 绕过 rel≥30/flag/panel(block 仍挡);②选篇后:所有 seeded(非block/不在库/未选中)强制并入,不受 keep/top-N 截断。实测 `--keep fa=1` + seeded rel20 → 强制带上共 2 篇。**以后 orchestrator 可 keep=4 只留真好的,MAST 照进不拖垃圾。**
+>
+> **运行中发现的改进(保留)**:`seed.py` 被加了 `--facet`(种子按 topic.json per-facet seed_ids 落到正确 facet,否则标 `_all` 会在打分时漏掉);orchestrator 手动修了 candidates.json 里被 discover 误标的 facet。
+> **遗留(下轮)**:cross-paper-structure 偏生物医学;citation 边稀疏(仅 1 条);turning_seeds 已写入 topic_state.json。
+> **TODO-6 完成。** 改动(commit/drive/seed + 38 篇入库 + 3 篇删除)在工作区,未 push。
+
+## 2026-06-20 18:48 EDT · 合并:删掉 score 的新旧并行,全主题归一走 facet 路
+
+> 用户:"都变成新的"(不喜欢新旧并行)。**score_auto 不再分 faceted/非faceted 两支——永远走 facet 循环**(load_topic 把无 facets 的老主题归一成 1 个隐式 `_all` facet)。
+> - `score_auto.main()`:删掉非 faceted 单尺分支 + `if _faceted...return` 包壳;现在永远 `for fac in facets`(facets 来自 load_topic,≥1)。日志 tag = `faceted xN` 或 `single(_all)`。删掉 `target`/`anchors` 的旧读取。
+> - `boundary_rerank`:删掉 `target` 参数 + "首跑用第 target 名截断线"那套;**去留线只剩资格闸 `{30, flag_min}`**(centers=None 默认即它)。
+> - 删掉 `autopick_anchors`(写 topic.json + TG 的旧单尺自举)——归一后没人调;faceted 路用 `_pick_anchors` 做 **in-memory 自举**(不碰 topic.json 意图档)。
+> - **老主题行为变化(已跟用户讲、获准)**:rl-general-toolbox / rl-digital-human-interaction 现在走 `_all` facet——分数文件命名变 `_all_batch_*.json`(commit 按 `*.json` glob 读,无影响)、边界复称去留线从"第 target 名"变"资格闸 30/45"、冷启动自举不再回写 topic.json(改 in-memory)。已入库的不动,只影响以后增量怎么算边界。
+> - commit 未动:本来就总按 facet 分组(老主题=1 组 `_all`),auto 选篇是"没给 --keep 的兜底"非重复逻辑。
+> - **实测**:faceted(2 facet)走 `faceted x2`;老主题归一走 `single(_all)`、文件 `_all_batch_0.json`、boundary centers={30,45};commit auto 读新命名文件 OK、--plan/--keep 按 facet 正确;全量 compile、无 autopick/target 残留。
+> - **rl-general-toolbox 拆 facet**:用户说暂不拆,后续自己用对话处理(本次只让它作为 `_all` 走新路,不动它的 topic.json)。
+
+## 2026-06-20 18:20 EDT · 修正:orchestrator `find` 转为 AUTO 默认(不再 opt-in)
+
+> 用户纠正:"现在还在搭建阶段,更喜欢直接用新的"。**把 `run.py` 的 `AUTO` 与 `AUTO_PULL` 里的 `discover, score, commit` 三段换成 `find`(orchestrator)。** 即 `python3 pipeline/run.py <id> auto` 现在 find 部分走 orchestrator,不再是焊死三段。
+> - discover/score/commit 仍保留为独立 stage(调试 + orchestrator 当工具调)。
+> - **撤销 18:08 的「护栏1:find 是 opt-in、AUTO 不动」**——现在 AUTO 默认走 orchestrator,包括老主题 rl-general-toolbox / rl-digital-human-interaction(非 faceted 会被当 1 隐式 facet 由 orchestrator 跑)。搭建阶段优先用新路、不维护新旧双轨。
+> - 唯一在跑的进程是 `tools/verify_daemon.py`(全天候核查,与 find 无关)——**未动**,等用户确认是否要停。
+> - run.py compile OK。
+
+## 2026-06-20 18:08 EDT · TODO-4/5 drive.py orchestrator + TODO-6 验证场就绪(整套落码完)
+
+> 接 18:02。**TODO-4+5(drive.py + prompt)落码完,TODO-6 验证场 topic.json 备好。整套 facet 改写代码全落地。**
+>
+> **TODO-4/5 — `pipeline/find/drive.py`(新 launcher)+ orchestrator prompt**
+> - 拉起一个 agentic `claude -p`(model=opus, timeout=1800, allowedTools=Bash/Read/Write/Edit/Glob/Grep/Task/WebSearch/WebFetch),`os.chdir(ROOT)` 让它的 Bash 从仓库根跑。python 只"拉起+收尾"。
+> - prompt(设计 §5 落地,含 ⭐ 顺引用补漏那句):情况(库现状+facets 概览,注入)+ 工具(discover/seed/score/commit --plan/--keep/Read/Write/Task/notify_cli,**真实命令行**)+ 项目契约 + 通知规则。**不教怎么找**。
+> - `build_situation`:读 topic+state+DB 计数 → 冷启动/增量 + 每 facet queries/seed_ids/anchors/库内/覆盖 概览。`--dry-run` 只打 prompt 不烧 claude。
+> - 新增 `pipeline/tools/notify_cli.py`(给 orchestrator 用 Bash 发 TG)。
+> - `run.py` steps() 加 **`find` 阶段** = `find/drive.py`。**不动 AUTO**(discover/score/commit 仍在 AUTO,gt/dhi 老链路零影响);orchestrator 是 opt-in,跑法 `python3 pipeline/run.py <id> find`。
+> - 实测:drive --dry-run 在 gt(非faceted,显示"已入库100/增量/facets(1)无facets")和 agentic(faceted,显示冷启动/5 facets 概览)都渲染正确;全量 compile OK。
+>
+> **TODO-6 — 验证场 `topics/agentic-knowledge-synthesis/topic.json` 改成 faceted**
+> - 5 facets(cross-doc-synthesis / cross-paper-structure / agentic-retrieval / longctx-vs-retrieval / corpus-qa),15 条 query 分配到各 facet,每 facet 写了 hit_criteria。
+> - **6 个奠基作 seed_ids(arxiv id 全 fetch 核对过标题)**:RAPTOR 2401.18059 / CoA 2406.02818 / OpenScholar 2411.14199 / **GraphRAG 2404.16130(首轮被切的)** / MAST 2503.13657 / PaperQA2 2409.13740。
+> - load_topic 验过:faceted=True、all_queries=15、all_seed_ids=6。
+> - **未做(交用户,billed)**:实际跑 orchestrator(写生产库、重网络、可能卡 Cloudflare)。命令:`python3 pipeline/run.py agentic-knowledge-synthesis find`(或分步 discover→seed→score→commit 调试)。
+>
+> **TODO-7(gt 拆 6 facet)**:按用户决定留给用户后续自己改(老主题 opt-in),本次不动。
+>
+> **整体现状**:find 段 facet 改写 1→5 全部落码+自测;6 验证场就绪待用户 billed 跑;7 用户自理。新增文件:lib/pool.py、lib/topic.py、find/seed.py、find/drive.py、tools/notify_cli.py。改:lib/sources.py、find/{discover,score_auto,commit}.py、run.py。
+
+## 2026-06-20 18:02 EDT · TODO-3 score/commit per-facet 落码 + 实测通过
+
+> 接 17:50。**方案 A 定**（用户拍板）：单 `candidates.json` + 每条候选带 `facet` 标签（被哪个 facet 检索词命中），不拆多文件（子 agent 回总结、orchestrator 单写池，无并行写冲突）。
+>
+> **改了什么**
+> - `lib/pool.py`：`candidate_entry/record_to_candidate` 加 `facet="_all"` 参数 → 候选多一个 `facet` 字段。
+> - `find/discover.py`：接 `lib/topic`；建 query→facet 映射，按 `matched_queries` 给每条候选打 facet 标签；加 `--facet <key>`（只搜该 facet + 已有池**合并**而非覆盖，给 orchestrator 定向补搜）。无 facets → 全 `_all`，行为不变。
+> - `find/score_auto.py`：**非 faceted 走原逻辑(完全不变)、faceted 新分支**。prompt 加 `hit_criteria` 注入；`do_pass` 抽成模块级 `run_pass`（带 file_prefix/clear，per-facet 独立批文件 `{key}_batch_*.json`）；`boundary_rerank` 加 `centers/file_glob/out_name/hit_criteria`（faceted 用资格闸 centers={30,flag_min}、独立 zz 文件）；`autopick` 抽出 `_pick_anchors/_scores_from`，faceted 每 facet 缺 anchors 就**in-memory 自举**（不改 topic.json 意图档）。
+> - `find/commit.py`：加 `--plan`（按 facet 摆分布:eligible/fresh/分档桶/papers,**不写库**,给 orchestrator 读）+ `--keep all|f=N,...`（按 facet 留 top-N 写库）；无 flag = auto（老行为）。selected.json 加 `facet`,日志加 per-facet added。
+>
+> **实测（in-process 假 run_claude + 临时 DB,不烧真 claude/网络）**：
+> - faceted score_auto：facetA 无锚点→自举 `[95,45,10]`→带锚重打;facetB 用给定锚点;批文件 `facetA_batch_0/facetB_batch_0` 命名空间隔离不撞。
+> - commit `--plan`：per-facet 分布桶正确、不写库;`--keep facetA=2,facetB=1`→精确选 2A+1B,DB 3 行,selected.json 带 facet。
+> - **back-compat**：非 faceted+预置锚点→单路、`batch_0.json`(无前缀)、first-run boundary→**与老行为一致**;commit 无 flag=auto。
+>
+> **现状**：find 段「主链工具」全部 facet 化完毕(discover/seed/score/commit + topic/pool 存档层)。**下一步 TODO-4**：`drive.py` 拉起 orchestrator 把这些工具串起来。注:边界复称 faceted 用资格闸 centers(judgment 时代去留线不再是全局 target),与设计"选篇=orchestrator 判断"一致。
+
+## 2026-06-20 17:50 EDT · TODO-2 存档层 `lib/topic.py` 落码 + 实测通过
+
+> 接 17:40。**新建 `pipeline/lib/topic.py`** = 意图(topic.json)+状态(topic_state.json)存档层。
+> - `load_topic(ref)`：把 topic.json **归一成"永远带 facets"**形式——无 facets 自动合成 1 个隐式 facet `_all`（hit_criteria←preferences、queries←顶层 queries、anchors←score_anchors、seed_ids←顶层 seed_ids）。**完全向后兼容**：现有 gt/dhi 不动照跑。
+> - 辅助：`is_faceted / facet_by_key / all_queries(union 去重) / all_seed_ids(union)`。
+> - topic_state：`load_state / save_state / update_facet_state(in_db/coverage/last_run) / add_turning_seed`。空则返 `{facets:{}, turning_seeds:[]}`。
+> - **实测**：gt 退化成 1 隐式 facet（14q/3anchor，all_queries==原 queries）；合成 2-facet topic 解析对（hit_criteria 缺失回退 preferences、union 对）；state 往返对。
+> - **未做**：score/commit 尚未接 topic 层（TODO-3）；discover 仍读 `topic["queries"]`（faceted 接线在 TODO-3 一并做）。
+
+## 2026-06-20 17:40 EDT · TODO-1「按 id 播种」落码 + 实测通过（开始落代码）
+
+> 接 17:14。开始把整套 facet 改写落代码（用户："直接开始全部完成，慢慢来"）。本条 = TODO-1 完成。
+>
+> **改了什么**
+> - `lib/sources.py`：抽出 `_openalex_norm/_ss_norm/_arxiv_norm` 三个 per-record 规范化器（query 与 by-id 共用，零行为变化）；新增 `openalex_by_id / semantic_scholar_by_id / arxiv_by_id` + 统一 `parse_ident(raw)` + `fetch_by_id(raw)`。
+> - **端点定论（实测）**：DOI→OpenAlex `/works/doi:<doi>`（最富，带 refs）；arxiv→arxiv 官方 API `?id_list=`（稳、无需 key；OpenAlex 对纯 arxiv 常 count 0）；SS 无 key 必 429，只当末路兜底（容错返 None）。
+> - `lib/pool.py`（**新，存储层地基，TODO-2 复用**）：`candidate_entry()`（从 discover 抽出）、`record_to_candidate()`（单记录→merge→quality→候选条目）、`candidate_keys()`（去重键=id+doi+arxiv）、`load/save_candidates()`。
+> - `find/discover.py`：改用 `poolmod.candidate_entry`（局部 `pool` 改名 `cands` 避免遮蔽模块）。**输出唯一变化=每条候选多一个 `"seeded": false` 字段**（附加，向后兼容，下游不读不受影响）。
+> - `find/seed.py`（**新 CLI**）：`seed.py <topicId> <id...>` → 逐个 fetch→规范→去重→写 candidates.json，标 `seeded:true`，绕过 prefilter；池里已有则把那篇升 `seeded:true`（防截断）；池不存在则从 topic.json 建骨架；stdout 打 JSON 摘要给 orchestrator 读。block 质量会 WARN（commit 仍不入库，守"block 永不入库"契约）。
+>
+> **实测**：parse_ident 13 例全对（含 url/老式 arxiv/垃圾）；fetch_by_id 三篇真论文 OK（GraphRAG arxiv 带摘要、Deep learning DOI 带 53 引用、Attention url）；seed.py 端到端：3 播入+1 垃圾 DOI 正确失败、重播触发 already+升 seeded、池计数正确。临时 `_seedtest` 已清。
+>
+> **未做/下一步**：TODO-2 存档读写（facets/preferences/web_sources 解析 + topic_state.json + 向后兼容）。注：seed 暂未读 topic.json 的 `seed_ids`（那是 orchestrator/TODO-2 串起来的事；seed.py 当前是"给 id 就播"的纯工具）。
+
+## 2026-06-20 17:14 EDT · 4 个待拍小决定全定 + 讲解中澄清两点（纯设计，未落码）
+
+> 接 16:44。本轮用户过完整套设计，**§7 那 4 个待拍项全定**（回填进设计文档 §7，标 ✅）：
+> - launcher → **新开 `pipeline/find/drive.py`**（不塞 run.py 阶段分发；run.py 的 find 阶段调它）。
+> - prompt（§5）→ 措辞基本认，**【怎么干】加 ⭐"顺引用补漏"那句**（收完翻引用、把高频被引却没收的奠基作按 id 播种捞回）——不点这句播种能力会闲置。细措辞用户后续可再磨。
+> - 防卡死安全网 → **默认不加**（死规则与初心相悖；harness 高位兜底 + 库规模框成本 + TG 可叫停；真空转再补最小护栏，通常封拐弯轮数）。
+> - gt/dhi → **先留 facet=1，opt-in 再补 facets**（无 facets 自动退化、老篇不重评；升级拿 gt 拆 6-facet 当样板）。
+>
+> **讲解中澄清两点（写进 §7 补充）**：① **score_auto.py 打分工具保留**（升级 per-facet），砍的是"机器全局 Top-N 硬选"那个死规则→降级成"分数喂 orchestrator 判断留几篇"；"无人冷启动自举+TG审批"流程不要了，改"讨论当场定"，但"库空怎么起步"状态仍由 Claude 处理（hit_criteria 兜尺子）。② **多开子 agent 设计上不限**（fan-out 甜区），唯一天花板=harness 高位兜底，即"防卡死安全网"管的事（默认不加）。
+>
+> 现状：**设计 + 4 决定全齐，可落代码**。下一步从 §6 TODO-1「按 id 播种」起。
+
+## 2026-06-20 16:44 EDT · 地基②「编排模型」定稿 + 设计成品落档（纯设计，未落码）
+
+> 接 16:30。本轮把地基②（叫醒后的编排逻辑）也敲定，**facet 改写整套设计齐了**。完整成品（存档 schema 说明 + orchestrator prompt 初稿 + 实现 TODO）写进独立文档 **`claude-memory/Prompt-structure-design/find-facet-rewrite-design.md`**——新会话接手直接照那份实现。本条只记要点 + 对 16:30 的修正。
+
+**编排模型（唯一）：拉起一个 claude 全权驱动。**
+- cron 和对话**共用同一套**：launcher 拉起 claude -p（cwd=仓库根，allowedTools Bash/Read/Write/Task），给它工具 + 当前情况(两存档+DB现状) + prompt（情况/工具/项目契约/通知规则）。python 只"拉起+收尾"，中间不插手；discover/score/commit 就是它 Bash 调的 CLI。差别只剩"谁触发"(定时/对话) 和"通知与否"。
+- **每次拉起本身就是一次完整 find 过程**（用户原话），所以全程 claude 驱动，不存在"python 攥流程、claude 只在点上搭手"。
+
+**⚠️ 修正 16:30 写的几条编排细节（经用户纠正,作废）：**
+- ~~单 orchestrator 不 fan-out~~ → **fan-out 在 find 是甜区,鼓励**（facet 是独立搜索线,一 facet 一子 agent 各搜各回小总结;Anthropic 多agent+90.2% 擅长广度优先独立探索）。我把 retrieve 的"合并是雷区"误搬到 find 了——那条只适用"读已有论文答问题",find 是"去搜去发现"。唯一仍单线程=最后跨 facet 合并+定稿(orchestrator 自己收齐小总结再拍,本就不会 spawn 合并 agent,不必写进 prompt)。
+- ~~拐弯有界 2 轮~~ → **撤；拐几轮是它"判够不够"的判断,不设界**。
+- ~~A/B 双驱动(python攥流程+claude检查点)~~ → **作废,永远是"拉起 claude 全权驱动"**。
+- ~~5 段路书~~ → **撤；"怎么找"是它自己的逻辑,prompt 不教,只给它推不出来的(情况/工具/项目契约/通知)**。
+
+**还得真造的前置零件**：「按 id 播种」——`lib/sources` 缺"按 DOI/arxiv id 单查元数据"。seed_ids/add_url/将来 add_paper 共此地基(一鱼三吃)。
+
+**实现 TODO（详见设计文档 §6）**：①按id播种工具(前置) → ②存档读写(facets/state,向后兼容) → ③score/commit 支持 per-facet → ④launcher(run.py find 接管 vs 新 drive.py,待拍) → ⑤prompt 落地(用户最终过目) → ⑥验证场=agentic-knowledge-synthesis 重搜捞回奠基作 → ⑦(可选)gt 拆 6 facet 当样板。
+**仍待拍**：launcher 放哪 / prompt 最终措辞 / 要不要防卡死安全网(默认不加) / gt-dhi 留旧还是 opt-in facets。
+
+## 2026-06-20 16:30 EDT · facet 改写「存档格式」定稿 + 治理/通知模型敲定（纯设计，未落码）
+
+> 接 02:16 顶条挂的「🔶 找段大方向改写」。本轮把卡住一切的地基①「升级版 topic.json 存档」从悬而未决推到**可落代码的定稿**，并敲定配套的治理/通知模型。地基②「叫醒后的编排逻辑」仍未做（见末）。
+
+**治理/通知模型（用户拍板，纠正了我一个走偏）：**
+- 工作流 = **「你出问题 → 我们讨论定方向 → 交给我自主跑」**。facets/命中标准/锚点/种子**都在讨论里当场定**（像本轮），不是 claude 背着用户自举完再回头推 TG 审批。我一度套用旧 `autopick_anchors`「cron 自举→推 TG→过目」那套——那是为**无人在场冷启动**设计的，套到"一起定 topic"场景上多余。**facet 不走自举+通知,讨论里定、我直接写进 topic.json。**
+- **通知三档**（用户定）:①例行判断(每 facet 留几篇/边界取舍/增量 commit)→**只留痕**(log/state/commit 报告)不打断;②**新发现**(讨论时没料到的新维度/值得开新 facet/拐弯种子指向意外方向)→**TG 通知**(默认继续跑不停等审批,但给用户随时叫停/改向的机会;大到改范围则通知里说清由用户定);③commit 回报 + tierb 验证点击→照旧。**「通知」专指 FYI 留痕,不是审批闸。**
+
+**配额改判断(用户拍板)**:删掉 `min_keep` 数字。配额不再 python 按固定 M 切,而是 commit「claude 定稿」那步——pipeline 把候选+打分**按 facet 分好组**摆出来,claude 看分布自己决定每组留几篇(小簇别饿死/富矿别滥收=判断非公式)。存档不存配额数字,顶多 facet 留句软话(如 note:"safety 是重点别饿死")。
+
+**存档格式定稿(拆两文件,用户同意):**
+- **`topic.json`(意图——讨论里定,pipeline 基本不回写)**:`id/title/idea/window_years/target` + `preferences`(全局取舍偏好) + `facets[]` + `web_sources[]`。
+  - `facets[]` 每项:`key`,`title`,`hit_criteria`(⭐一句话命中标准=per-facet 语言尺子,补 anchors 这3个点之间的"规则";冷启动 anchors 没凑齐时先顶上当尺子;discover 判够不够/commit 归类/博客软判命中 facet 都复用它),`queries[]`(per-facet 检索词),`anchors[]?`(per-facet 锚点,从全局挪进 facet——治"一把尺子量五件事"),`seed_ids[]?`(按 DOI/arxiv id 点名必进的奠基作),`note?`(软偏好)。
+  - `web_sources[]`:`{url, facet, note}` 手工策展的博客/X(对接 add_url,见 16:16 条)。
+- **`topic_state.json`(状态——pipeline 每轮自动写,用户一般不碰但可当手动开关)**:`facets:{<key>:{in_db,coverage,last_run}}` + `turning_seeds[]:{hint|id, from, kind}`(拐弯种子=上轮发现的好线索/下轮起点)。想逼某 facet 重搜=清它的 coverage。
+- **优雅退化**:无 `facets` 时 = 现状(facet=1 全局单尺子)。**gt/dhi 不改也照常跑。**
+
+**已有 topic(gt/dhi)怎么办**:①不动=留 facet=1 老模式照跑;②opt-in 补 facets=只惠及**将来增量**(新篇按 facet 分组打分/定稿),**已入库 100/129 篇不自动重评**(去留已定,增量只碰新篇),想重评得显式清 scores 重跑 score。gt 的 idea 本就含 6 facet(reward-design/training-tricks/exploration/algo-zoo/safety-cbf/task-instances),升级近乎把 idea 拆成结构。
+
+**改 topic 的工作流**:编辑 `topic.json`(意图)→重跑受影响阶段,pipeline 增量跟上(同现在改 anchors 重跑 score)。加 facet/词→discover→score→commit(只追新);改命中标准/锚点→score→commit(影响之后的篇,老篇要重评需显式重打分);加 web_sources→add_url→sum。将来地基②做好后改为对话式(跟 claude 说"加个关于X的facet"它自己改存档),但**现在先落"手编意图文件+重跑"这条确定路**。
+
+**仍未做=地基② 叫醒后的编排逻辑**:claude 拿这份存档具体怎么一步步调 discover/score/commit(含拆facet定词/判够不够/按id播种/拐弯再搜/对话式改存档)。存档定了才轮到它。**本轮未碰任何代码。**
+
+## 2026-06-20 16:16 EDT · 博客/网络源扩展（add_url）架构敲定 + 推翻旧 text_path 支点（纯设计，未落码）
+
+> 本轮把 2026-06-19「副轨：add_url」那版计划重新过了一遍，发现旧计划有个**死支点**，并把架构敲定到可落代码的程度。接口统一那步用户说**后面再看**，本轮没碰。
+
+**⚠️ 重大纠正：旧计划的 text_path 支点作废。**
+- 旧计划写「papers 表本就有 text_path、新版 summarize 喂文件路径让 claude Read → 博客直接走现有链」——**基于过时认知，不成立**。
+- 实测：`lib/db.py:38` 明标 `text_path … DEPRECATED(2026-06-16):此列恒为 NULL;留列免动 prod 库`；全库 0 条非空；summarize（`summarize_auto.py`/`build_worklist.py`）**只读 `pdf_path`，从不碰 text_path**。它是当年英文全文索引(`fts_text`，已随 2026-06-16 移除)的遗留死字段。**别再照旧计划救它。**
+
+**敲定的最终架构（end-to-end）：**
+1. **抓取分级**（治旧计划只会 requests/纯 HTTP GET、抓不到 X 的洞）：
+   - 静态博客(Lilian Weng/Anthropic…) → **轻抓**：让 claude 用 **WebFetch** 自己拉，不写独立爬虫（替掉旧计划的 trafilatura/BS4 抽取器——待拍决定#1 作废）。
+   - X / 动态页 / 登录墙 → **opencli 真 Chrome**（`fetch_tierb.py` 已在用的那套 Chrome 桥：独立 user-data-dir + 登录态 + noVNC 手机过 Cloudflare/Duo）。**复用 tierb 设施，不新建**。图多的 X thread 直接**截图**喂 claude（治"纯文字对图表有损"）。⚠️ 前置：那个隔离 profile 现只登 NYU 图书馆，抓 X 要先在里面登一次 X 账号。
+2. **落盘 = 路线B（用户拍板）**：博客 md/截图**占 `pdf_path` 位**，存 `storage/papers/<slug>/`（`source.md` / `screenshot.png`）。**不用 text_path**。理由：summarize 本就是"把文件路径塞 prompt 让 claude `Read`"，Read 一个 .md/图片 跟 Read PDF 没区别——机制天然通。
+   - ⚠️ 旧计划写的落盘路径 `store/web/<slug>.md` 也过时（目录已 `store`→`storage` 且是**每篇一文件夹**，非扁平大目录）。
+3. **质量：砍硬档 → 软约束（用户拍板）**：废掉旧计划的 `url_allowlist.txt` 白名单 + trusted/flag 硬挡（待拍决定#2/#3 作废）。可信度交给 **两道 claude 软判**：①查找阶段 agentic 搜索 claude 决定收不收时顺带判；②summarize 阶段 claude 总结时再判、写进总结。**无硬过滤门**。
+4. **blog 身份标记（三重，全不改库表，合"避免 ALTER"惯例）**：①`id`=规范化 URL（剥 utm/fragment，结构上区别于 DOI/arxiv）；②`sources=["web"]`+域名（主标记+溯源）；③`quality_signals` 加轻量 `web` tag（**不参与过滤**，只为出口/verify 一眼可辨）。
+
+**搁后面（用户明确 defer）：summarize 接口统一。** 现接口从 DB→worklist→prompt 全焊死"PDF"假设（`build_worklist.py:24` status='pdf_downloaded'、字段名 `pdf_path`、`build_prompt` 满篇"从PDF写/pages参数/直读PDF见公式图表"）。统一方案（已想好待落）：抽象成 source——worklist 加 `source_kind`（按扩展名 pdf/markdown/image）、`build_prompt` 按 kind 分支措辞（md/截图换说法 + 软可信度提示）、status 语义拓宽成"source 就绪"（保字符串免迁移）、worklist 层 `pdf_path`→`source_path` 别名。**本轮未动。**
+
+**与按 id 播种共地基**：add_url 和「按 DOI/arXiv id 点名入池」(facet 改写里捞奠基作那条) 是同一块"按外部标识单点入库"地基——一鱼三吃（add_url / 按 id 播种 / 将来 add_paper）。
+
 ## 2026-06-20 02:16 EDT · 重构首条（当前状态快照）
 
 > 文档模块化重构建立本日志。以下为当日现状；以后变化在本条**之上**叠新条。
