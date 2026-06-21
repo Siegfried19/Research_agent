@@ -15,7 +15,7 @@
 
 `config/telegram.json` 是 gitignored（token 是密钥，不随 git 来）。CLI：
 ```bash
-python3 pipeline/tools/notify.py settoken   # 贴 bot token
+python3 pipeline/tools/notify.py settoken <BOT_TOKEN>   # 贴 bot token
 python3 pipeline/tools/notify.py chatid     # 先给 bot 发条消息，再跑此命令抓 chat_id
 python3 pipeline/tools/notify.py test       # 验证能收到
 ```

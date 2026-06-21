@@ -16,11 +16,11 @@
 - 用户定"提供抓取工具、怎么看交给 claude"。抓正文阶段重构：agent 拿 WebFetch + Bash(opencli 真 Chrome：open/screenshot/extract) + Read，自己决定静态 WebFetch 还是动态截图+读图。脚本只管 Chrome 起停+独占锁（`start_chrome()` 复用 fetch_tierb 的 `chrome_lock`/`ensure_chrome`/`close_chrome`，防越开越多），起不来降级纯静态（`WEB_NO_CHROME=1` 亦可强制）。opencli 截图=`browser <session> screenshot <path>`。真跑前置：隔离 profile 登 X 账号。详见 `../../../claude_log.md`（03:02 条）。
 
 ## 2026-06-21 02:26 EDT · web 发现入库落地：discover_web.py（blog/技术报告，kind='web'）
-- 2026-06-20 16:16 敲定的"博客/网络源扩展"落码了（当时纯设计）。新建 `find/discover_web.py`：agent 联网搜（复用 hunt 外壳 `run_claude`+WebSearch/WebFetch）→ prompt 软判①相关性②内容质量 → 抓正文 markdown 落 `storage/papers/<slug>/source.md` → `upsert_paper(kind='web')`+`set_paper_topic` 入库 + URL 规范化去重。**套论文 discover/commit 骨架、不另起炉灶**；跳过 score、不总结（worklist 排除 `kind='web'`）。注册 `run.py <id> web`（opt-in，不进 AUTO）。
+- 2026-06-20 16:16 敲定的"博客/网络源扩展"落码了（当时纯设计）。新建 `find/discover_web.py`：agent 联网搜（复用 hunt 外壳 `run_claude`+WebSearch/WebFetch）→ prompt 软判①相关性②内容质量 → 抓正文 markdown 落 `storage/sources/<slug>/source.md` → `upsert_paper(kind='web')`+`set_paper_topic` 入库 + URL 规范化去重。**套论文 discover/commit 骨架、不另起炉灶**；跳过 score、不总结（worklist 排除 `kind='web'`）。注册 `run.py <id> web`（opt-in，不进 AUTO）。
 - 与旧"add_url"副轨的关系：这就是它的实现，但**改成自动发现（非手动喂 URL）+ 复用 store 入库出口**（`upsert_paper` 的 kind 改成参数）。地基（`source_path`/`kind` 列）见 claude_log 02:14。真跑待用户（billed）。全局账见 `../../../claude_log.md`（02:26 条）。
 
 ## 2026-06-21 00:39 EDT · 指针：facet 现在落盘了（跨模块，详见 claude_log）
-- `commit` 经 `store.set_paper_topic` 把每篇的 facet 写进新列 `paper_topic.facet`（调用处未改，传的 `p` 本就带 facet）。供 retrieve 日后按 facet 过滤用。agentic 旧行已从 candidates.json 回填。全局账见 `../../../claude_log.md`（00:39 条）+ fetch STATE。
+- `commit` 经 `store.set_paper_topic` 把每篇的 facet 写进新列 `source_topic.facet`（调用处未改，传的 `p` 本就带 facet）。供 retrieve 日后按 facet 过滤用。agentic 旧行已从 candidates.json 回填。全局账见 `../../../claude_log.md`（00:39 条）+ fetch STATE。
 
 ## 2026-06-20 22:48 EDT · TODO-6 验证场跑通(真实数据)+ 抓出并修两个 bug
 
@@ -85,7 +85,7 @@
 > - `lib/pool.py`：`candidate_entry/record_to_candidate` 加 `facet="_all"` 参数 → 候选多一个 `facet` 字段。
 > - `find/discover.py`：接 `lib/topic`；建 query→facet 映射，按 `matched_queries` 给每条候选打 facet 标签；加 `--facet <key>`（只搜该 facet + 已有池**合并**而非覆盖，给 orchestrator 定向补搜）。无 facets → 全 `_all`，行为不变。
 > - `find/score_auto.py`：**非 faceted 走原逻辑(完全不变)、faceted 新分支**。prompt 加 `hit_criteria` 注入；`do_pass` 抽成模块级 `run_pass`（带 file_prefix/clear，per-facet 独立批文件 `{key}_batch_*.json`）；`boundary_rerank` 加 `centers/file_glob/out_name/hit_criteria`（faceted 用资格闸 centers={30,flag_min}、独立 zz 文件）；`autopick` 抽出 `_pick_anchors/_scores_from`，faceted 每 facet 缺 anchors 就**in-memory 自举**（不改 topic.json 意图档）。
-> - `find/commit.py`：加 `--plan`（按 facet 摆分布:eligible/fresh/分档桶/papers,**不写库**,给 orchestrator 读）+ `--keep all|f=N,...`（按 facet 留 top-N 写库）；无 flag = auto（老行为）。selected.json 加 `facet`,日志加 per-facet added。
+> - `find/commit.py`：加 `--plan`（按 facet 摆分布:eligible/fresh/分档桶/sources,**不写库**,给 orchestrator 读）+ `--keep all|f=N,...`（按 facet 留 top-N 写库）；无 flag = auto（老行为）。selected.json 加 `facet`,日志加 per-facet added。
 >
 > **实测（in-process 假 run_claude + 临时 DB,不烧真 claude/网络）**：
 > - faceted score_auto：facetA 无锚点→自举 `[95,45,10]`→带锚重打;facetB 用给定锚点;批文件 `facetA_batch_0/facetB_batch_0` 命名空间隔离不撞。
@@ -177,19 +177,19 @@
 > 本轮把 2026-06-19「副轨：add_url」那版计划重新过了一遍，发现旧计划有个**死支点**，并把架构敲定到可落代码的程度。接口统一那步用户说**后面再看**，本轮没碰。
 
 **⚠️ 重大纠正：旧计划的 text_path 支点作废。**
-- 旧计划写「papers 表本就有 text_path、新版 summarize 喂文件路径让 claude Read → 博客直接走现有链」——**基于过时认知，不成立**。
-- 实测：`lib/db.py:38` 明标 `text_path … DEPRECATED(2026-06-16):此列恒为 NULL;留列免动 prod 库`；全库 0 条非空；summarize（`summarize_auto.py`/`build_worklist.py`）**只读 `pdf_path`，从不碰 text_path**。它是当年英文全文索引(`fts_text`，已随 2026-06-16 移除)的遗留死字段。**别再照旧计划救它。**
+- 旧计划写「sources 表本就有 text_path、新版 summarize 喂文件路径让 claude Read → 博客直接走现有链」——**基于过时认知，不成立**。
+- 实测：`lib/db.py:38` 明标 `text_path … DEPRECATED(2026-06-16):此列恒为 NULL;留列免动 prod 库`；全库 0 条非空；summarize（`summarize_auto.py`/`build_worklist.py`）**只读 `source_path`，从不碰 text_path**。它是当年英文全文索引(`fts_text`，已随 2026-06-16 移除)的遗留死字段。**别再照旧计划救它。**
 
 **敲定的最终架构（end-to-end）：**
 1. **抓取分级**（治旧计划只会 requests/纯 HTTP GET、抓不到 X 的洞）：
    - 静态博客(Lilian Weng/Anthropic…) → **轻抓**：让 claude 用 **WebFetch** 自己拉，不写独立爬虫（替掉旧计划的 trafilatura/BS4 抽取器——待拍决定#1 作废）。
    - X / 动态页 / 登录墙 → **opencli 真 Chrome**（`fetch_tierb.py` 已在用的那套 Chrome 桥：独立 user-data-dir + 登录态 + noVNC 手机过 Cloudflare/Duo）。**复用 tierb 设施，不新建**。图多的 X thread 直接**截图**喂 claude（治"纯文字对图表有损"）。⚠️ 前置：那个隔离 profile 现只登 NYU 图书馆，抓 X 要先在里面登一次 X 账号。
-2. **落盘 = 路线B（用户拍板）**：博客 md/截图**占 `pdf_path` 位**，存 `storage/papers/<slug>/`（`source.md` / `screenshot.png`）。**不用 text_path**。理由：summarize 本就是"把文件路径塞 prompt 让 claude `Read`"，Read 一个 .md/图片 跟 Read PDF 没区别——机制天然通。
-   - ⚠️ 旧计划写的落盘路径 `store/web/<slug>.md` 也过时（目录已 `store`→`storage` 且是**每篇一文件夹**，非扁平大目录）。
+2. **落盘 = 路线B（用户拍板）**：博客 md/截图**占 `source_path` 位**，存 `storage/sources/<slug>/`（`source.md` / `screenshot.png`）。**不用 text_path**。理由：summarize 本就是"把文件路径塞 prompt 让 claude `Read`"，Read 一个 .md/图片 跟 Read PDF 没区别——机制天然通。
+   - ⚠️ 旧计划写的落盘路径 `storage/sources/<slug>.md` 也过时（目录已 `store`→`storage` 且是**每篇一文件夹**，非扁平大目录）。
 3. **质量：砍硬档 → 软约束（用户拍板）**：废掉旧计划的 `url_allowlist.txt` 白名单 + trusted/flag 硬挡（待拍决定#2/#3 作废）。可信度交给 **两道 claude 软判**：①查找阶段 agentic 搜索 claude 决定收不收时顺带判；②summarize 阶段 claude 总结时再判、写进总结。**无硬过滤门**。
 4. **blog 身份标记（三重，全不改库表，合"避免 ALTER"惯例）**：①`id`=规范化 URL（剥 utm/fragment，结构上区别于 DOI/arxiv）；②`sources=["web"]`+域名（主标记+溯源）；③`quality_signals` 加轻量 `web` tag（**不参与过滤**，只为出口/verify 一眼可辨）。
 
-**搁后面（用户明确 defer）：summarize 接口统一。** 现接口从 DB→worklist→prompt 全焊死"PDF"假设（`build_worklist.py:24` status='pdf_downloaded'、字段名 `pdf_path`、`build_prompt` 满篇"从PDF写/pages参数/直读PDF见公式图表"）。统一方案（已想好待落）：抽象成 source——worklist 加 `source_kind`（按扩展名 pdf/markdown/image）、`build_prompt` 按 kind 分支措辞（md/截图换说法 + 软可信度提示）、status 语义拓宽成"source 就绪"（保字符串免迁移）、worklist 层 `pdf_path`→`source_path` 别名。**本轮未动。**
+**搁后面（用户明确 defer）：summarize 接口统一。** 现接口从 DB→worklist→prompt 全焊死"PDF"假设（`build_worklist.py:24` status='source_ready'、字段名 `source_path`、`build_prompt` 满篇"从PDF写/pages参数/直读PDF见公式图表"）。统一方案（已想好待落）：抽象成 source——worklist 加 `source_kind`（按扩展名 pdf/markdown/image）、`build_prompt` 按 kind 分支措辞（md/截图换说法 + 软可信度提示）、status 语义拓宽成"source 就绪"（保字符串免迁移）、worklist 层 `pdf_path`→`source_path` 别名。**本轮未动。**
 
 **与按 id 播种共地基**：add_url 和「按 DOI/arXiv id 点名入池」(facet 改写里捞奠基作那条) 是同一块"按外部标识单点入库"地基——一鱼三吃（add_url / 按 id 播种 / 将来 add_paper）。
 
@@ -251,10 +251,10 @@
 **副轨：非论文内容（博客/技术报告）—— `add_url` 工具（计划，未建）** ⚠️ 偏 fetch/ingest 段，记在此处仅因与本主题重搜捆绑：
 - **发现**：agent/长上下文/agentic RAG 这摊，最前沿一大半不在 arXiv，在 Anthropic/OpenAI research blog、Lilian Weng、FutureHouse、distill 等。只搜 arXiv 会系统性漏半个领域。
 - **决定**：暂时方案 A——工具我（Claude）建、博客我策展（锁 2024–2026）。
-- **`tools/add_url.py` 实现计划（已与用户过，待拍 3 决定后建）**：①`lib.http` 拉 HTML → 抽正文为 markdown（抽取器待定：推荐 trafilatura 进 conda 超集，主链仍只 requests）→ 存 `store/web/<slug>.md`，路径写 `papers.text_path`；②**关键利好**：papers 表本就有 `text_path` 字段、新版 summarize 把文件路径喂 claude 让它直接 Read（不止认 PDF）→ 博客不用伪造 PDF、不用改表结构，直接走现有 sum→verify；③身份/去重：`id=规范化URL`（剥 utm/fragment），按 URL+标题归一判重，无 DOI 没关系（papers.id 是 TEXT 主键）；④质量档：新建 `config/quality/url_allowlist.txt`（域名白名单），命中→trusted、否则→flag「非同行评审网络来源」；⑤入库+关联：upsert papers(status=pdf_downloaded, text_path)、paper_topic 强制入选。
+- **`tools/add_url.py` 实现计划（已与用户过，待拍 3 决定后建）**：①`lib.http` 拉 HTML → 抽正文为 markdown（抽取器待定：推荐 trafilatura 进 conda 超集，主链仍只 requests）→ 存 `storage/sources/<slug>.md`，路径写 `sources.text_path`；②**关键利好**：sources 表本就有 `text_path` 字段、新版 summarize 把文件路径喂 claude 让它直接 Read（不止认 PDF）→ 博客不用伪造 PDF、不用改表结构，直接走现有 sum→verify；③身份/去重：`id=规范化URL`（剥 utm/fragment），按 URL+标题归一判重，无 DOI 没关系（sources.id 是 TEXT 主键）；④质量档：新建 `config/quality/url_allowlist.txt`（域名白名单），命中→trusted、否则→flag「非同行评审网络来源」；⑤入库+关联：upsert sources(status=source_ready, text_path)、source_topic 强制入选。
 - **待拍 3 决定**：①抽取器(trafilatura vs BS4)；②质量档命名(复用 trusted+signal 标 web-authoritative vs 独立新档)；③手挑博客是否跳过相关性/质量闸强制入选。
 
-**状态**：主题定义 `topics/agentic-knowledge-synthesis/topic.json` 保留（已清掉自举锚点，待重搜）；首轮 candidates.json/scores/两 .out 日志已删；**生产库未被触碰**（该主题 topics/paper_topic 均 0 行）。
+**状态**：主题定义 `topics/agentic-knowledge-synthesis/topic.json` 保留（已清掉自举锚点，待重搜）；首轮 candidates.json/scores/两 .out 日志已删；**生产库未被触碰**（该主题 topics/source_topic 均 0 行）。
 
 ---
 
@@ -274,7 +274,7 @@
 
 **本会话定的决定**：范围=**(a) 只保截断线去留正确**（内部 rank stakes 低 + 下游评分/核查兜底）；锚点=3 张真论文（高~95/边界~45/低~10，偏经典不易过时）；④ band=±8 / k=5（默认可调）；冷启动=**全自动自举两遍**（裸跑→挑→重打），人工降为"直接改 topic.json"。
 
-**改动文件（均未提交，工作区）**：`pipeline/stages/score_auto.py`（漂移修法 ②①④ + 自举 + autopick_anchors）；`topics/{rl-general-toolbox,rl-digital-human-interaction}/topic.json`（加 score_anchors）；`claude-memory/Prompt-structure-design/score-drift-research-findings.md`（新建）；`CLAUDE.md`（topic.json 字段 + 漂移修法节 + 工具表）；`pipeline/tools/pick_anchors.py`（建后又删，净增 0）。
+**改动文件（均未提交，工作区）**：`pipeline/find/score_auto.py`（漂移修法 ②①④ + 自举 + autopick_anchors）；`topics/{rl-general-toolbox,rl-digital-human-interaction}/topic.json`（加 score_anchors）；`claude-memory/Prompt-structure-design/score-drift-research-findings.md`（新建）；`CLAUDE.md`（topic.json 字段 + 漂移修法节 + 工具表）；`pipeline/tools/pick_anchors.py`（建后又删，净增 0）。
 
 **验证到哪**：编译 ✓；隔离逻辑 ✓（prompt 注入 / anchor_block / 洗牌确定性 / boundary cutoff·band·取均值·zz 覆盖 / 首跑·增量两路）；真实 claude -p 单批烟测 ✓（合法 JSON、reason 真引原文、分 15/56/92）；自举两遍流程 stub 测 ✓。**还没做**：临时库（`RESEARCH_DB=/tmp`）完整端到端（discover→score 带自举→commit，确认 zz_boundary 真被合并覆盖、自举真写 topic.json）。
 
@@ -294,7 +294,7 @@
 **`discover → score → commit` 流程速记**：
 - **discover.py**：4 源（OpenAlex/SemanticScholar/arXiv/PubMed）×多 query 捞 → `merge_all` 去重（规范化 DOI 主键，记 relRankBySource/sources）→ 硬信号质量闸（block 当场丢，suspect 带标记入池）→ `prefilter_rank`（**召回导向：各源最好名次+多源加成，故意不用引用量**）→ 截 `pool_size=min(500,max(target*2,60))` → 写 candidates.json。**不写库。**
 - **score_auto.py**：候选池切批（默认 10），**并发 4** 个 `claude -p`；每批 prompt=idea+该批 title/venue/abstract，按 0-100 打 relevance + edge_insight 布尔；强制纯 JSON → `scores/batch_<start>.json`。幂等（开跑清空 scores/）；可选 Codex 魔鬼代言人（默认关）。
-- **commit.py**：合分 → 选篇闸（block 双保险丢 / rel<30 且非 edge 丢 / flag·suspect 需 rel≥flag_min(45) / Codex 异议合议:边界分<60+异议=挡）→ 选篇（首跑 eligible[:target]；增量只追新、cap=target*3）→ 写 papers+paper_topic → **全主题按 relevance DESC, citation DESC 重算 rank** → 建主题内引用边 → 落 selected.json。
+- **commit.py**：合分 → 选篇闸（block 双保险丢 / rel<30 且非 edge 丢 / flag·suspect 需 rel≥flag_min(45) / Codex 异议合议:边界分<60+异议=挡）→ 选篇（首跑 eligible[:target]；增量只追新、cap=target*3）→ 写 sources+source_topic → **全主题按 relevance DESC, citation DESC 重算 rank** → 建主题内引用边 → 落 selected.json。
 
 **问题：跨批次校准漂移**：
 - **病因**：每批是独立 `claude -p`，批间无共享参照系。现状已被 prompt 里带绝对锚点的 rubric 压成"几分校准噪声"，但几分噪声落在**截断线附近**就翻转去留、打乱 rank。

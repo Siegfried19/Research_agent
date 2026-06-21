@@ -8,7 +8,7 @@
 - `kind='web'` 源不进总结的谓词 `(kind IS NULL OR kind!='web')` 之前只在 `build_worklist`,本轮补到 `register_summaries`(否则 web 恒算"missing")+ `run.py:topic_progress`(否则夜间队列卡死)。三处现已一致。大改名(papers→sources 等)在 summarize 侧已传导完整。详见 `../../../claude_log.md`(03:18 条)。
 
 ## 2026-06-20 04:19 EDT · 指针：存储布局改版（跨模块，详见 claude_log）
-- 总结落点 `store/summaries/<slug>/vN.md` → `store/papers/<slug>/vN.md`。build_worklist/register_summaries/summarize_auto/render_topic + tools/prepare_update 已改走 `lib/store.py:paper_dir/summary_file`。全局账见 `../../../claude_log.md`（04:19 条）。
+- 总结落点 `storage/sources/<slug>/vN.md` → `storage/sources/<slug>/vN.md`。build_worklist/register_summaries/summarize_auto/render_topic + tools/prepare_update 已改走 `lib/store.py:paper_dir/summary_file`。全局账见 `../../../claude_log.md`（04:19 条）。
 
 ## 2026-06-20 02:16 EDT · 重构首条（当前状态快照）
 
@@ -23,7 +23,7 @@
 ### 当前进度（库重建中，会动）
 - 用户正在**按新原则重做总结**（旧 221 篇老总结已备份 `logs/wipe-summaries-20260617/`，留作基线）。
 - **截至 2026-06-20，DB 实测 `status='summarized'` = 60 篇**（version 分布 v1=60 / v2=13 / v3=6 / v4=2，重做版叠加 verify churn 的产物）。
-  - 注：claude_log 早先条目（06-19 04:43）写"库现 20 篇"、交接处写"~39 篇"——都是重建过程中的快照，**现已推进到 ~60**；这是动态数字，跑前以 `sqlite3 db/papers.sqlite "SELECT count(*) FROM papers WHERE status='summarized'"` 为准。
+  - 注：claude_log 早先条目（06-19 04:43）写"库现 20 篇"、交接处写"~39 篇"——都是重建过程中的快照，**现已推进到 ~60**；这是动态数字，跑前以 `sqlite3 data-base/papers.sqlite "SELECT count(*) FROM sources WHERE status='summarized'"` 为准。
 - 重做完后要重跑 `retrieve/index` 让检索层增量跟上（属 retrieve 模块的事）。
 
 ### 未决 / 已知问题

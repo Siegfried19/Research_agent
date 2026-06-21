@@ -1,6 +1,6 @@
 # 问答层设计框架 v1（知识库出口①②的"回答"层）
 
-> **状态：v1 草稿，2026-06-19 与用户多轮讨论收敛而成，待用户诊断，尚未落代码。**
+> **状态：v1 设计（2026-06-19）。部分已落地：方案④「全读」已是默认出口（`pipeline/retrieve/readall.py`），understand/search/rerank/answer 管道均在（降级为大库备用，见 retrieve/README）；⑤合成层/引用图召回仍未建。** 注：retrieve 出口此后（06-21）重构为"库地图 + 消费者拥有调查循环"（`map.py` 为主入口），本文的问答管道设计退居大库备用路线图。
 > **配套三件套**：本文=「该建成什么」(设计) · **`claude-memory/Prompt-structure-design/qa-layer-evidence.md`=「凭什么这么设计」(论文/对比/数字全汇总,一处可查)** · `claude-memory/modules-modification/retrieve/STATE.md` 第五~七段=「怎么想到的」(时间线/讨论全程)。
 > 关联：总结哲学 `claude-memory/Prompt-structure-design/summary-design-principles.md`、蓝图三层 `CLAUDE.md`「总蓝图」节。
 

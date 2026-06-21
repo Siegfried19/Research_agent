@@ -32,7 +32,7 @@
 3. **`npm i -g @openai/codex` + `codex login`** —— verify 阶段 Codex 跨模型核查要它（走 ChatGPT 订阅）。**漏这步 verify 会全跳过/报错。**
 4. **重配 Telegram** —— `config/telegram.json` 是 gitignored（token 是密钥，不随 git 来）。详见 `telegram.md`，最简：
    ```
-   python3 pipeline/tools/notify.py settoken   # 贴 bot token
+   python3 pipeline/tools/notify.py settoken <BOT_TOKEN>   # 贴 bot token
    python3 pipeline/tools/notify.py chatid     # 给 bot 发条消息再跑，抓 chat_id
    python3 pipeline/tools/notify.py test       # 验证能收到
    ```
@@ -92,7 +92,7 @@ PATH=/home/siegfried/.local/bin:/home/siegfried/.nvm/versions/node/v24.16.0/bin:
 1. **白天/会话里**：用户说要跑某主题 → 起 `python3 pipeline/run.py <id> auto-pull`，盯着，到 tierb 时用户点付费墙验证。跑完所有 PDF 就绪、worklist 建好。
 2. **当晚 2:00 / 7:30**：cron 自动 `auto-sum-next` 把新拉到的篇总结，手机收到 ✅。
 3. **每早 9:00**：verify_daemon 拉起，啃当晚总结的核查积压（撞 codex 配额自动睡、续核）。
-4. 付费墙没赶上某篇就停在 `pdf_failed`，等下次 auto-pull 补；sum 幂等，不会重做已总结的。
+4. 付费墙没赶上某篇就停在 `source_failed`，等下次 auto-pull 补；sum 幂等，不会重做已总结的。
 
 ## 相关文件
 

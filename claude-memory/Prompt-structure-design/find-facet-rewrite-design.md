@@ -1,7 +1,8 @@
 # find 段「facet 改写」设计成品（存档格式 + 编排 prompt）
 
-> 状态：**设计定稿，未落代码**（2026-06-20）。新会话接手直接照此实现。
-> 来龙去脉见 `claude-memory/modules-modification/find/STATE.md`（2026-06-20 的几条层积日志）。
+> 状态：**✅ 已落地**（2026-06-21）。本文保留为"设计与为什么"；实现见 `pipeline/find/drive.py`(orchestrator launcher)、`pipeline/find/seed.py`(按 id 播种)、`score_auto.py`/`commit.py` 的 facet/anchor 支持。
+> 现行 orchestrator prompt 原文以 `drive.py` 为准（§5 当时的初稿已删，避免落地后失同步误导）。
+> 来龙去脉见 `claude-memory/modules-modification/find/STATE.md`（2026-06-20~21 的几条层积日志）。
 > 大原则：**Claude 负责判断与编排、管道负责力气与确定性执行；脚本从焊死一条龙变成"agent 手里的工具"**。这是对 2026-06-09「把 Claude 移出 runtime」的**精修**（仅限 find + fetch；summarize/verify 继续无人黑箱）。
 
 ---
@@ -127,63 +128,19 @@ launcher 拉起一个 claude（claude -p，cwd=仓库根，照 bot.py/explore �
 
 ---
 
-## 5. Orchestrator prompt 初稿（待用户最终过目）
+## 5. Orchestrator prompt
 
 > 原则：只给它**推不出来的东西**（情况/工具/项目契约/通知规则），**不教它怎么找**（那是它的逻辑）。
-
-```
-你在为研究主题 <topic_id> 做文献「发现」(find)：把一段研究思路 + 检索词，变成"哪些论文进这个主题"。只决定选篇并写库,不取全文、不写总结(那是后面 fetch/summarize 的事)。
-
-【当前情况】
-- 意图存档 topics/<id>/topic.json,字段含义:
-  · idea=全局总思路;target=目标总篇数;preferences=全局取舍偏好。
-  · facets[]=主题的子方向,每个带:key/title、hit_criteria(这个 facet 的命中标准=你打分判相关的尺子)、queries(该方向检索词)、anchors(已定分参照样本,把打分刻度对齐到它们)、seed_ids(必须收进来的奠基作,按 id 播种)、note(软偏好)。无 facets=当单一主题处理。
-- 状态存档 topics/<id>/topic_state.json:各 facet 覆盖/已入库数、turning_seeds(上轮留的拐弯线索,可作本轮起点)。
-- 库现状:<已入库篇数 + 各 facet 计数>;冷启动(库空)还是增量(每周追新),你据此决定力度。
-
-【你的工具(Bash 调,输出 JSON 你读了再决定下一步)】
-- python3 pipeline/find/discover.py <topic.json>  → 按 queries 四源召回去重成候选池(不写库)
-- 按 id 播种 <id...>  → 把指定 DOI/arxiv 的奠基作直接拉元数据入池
-- python3 pipeline/find/score_auto.py <id>  → 对候选逐批打相关性分(锚点校准)
-- python3 pipeline/find/commit.py topics/<id>  → 选定的篇写库
-- Read/Write  → 读写两个存档(你可更新 queries/turning_seeds/coverage)
-- Task  → 放手开子 agent(facet 是独立搜索线,鼓励一个 facet 一个子 agent 各搜各的、各回小总结)
-- notify  → 给用户发 TG
-
-【怎么干——你自己判断】
-拆/搜/开几个子 agent/拐几轮/每个 facet 留几篇,全凭你判断。覆盖够了就停。preferences 和各 facet 的 note 要认。
-⭐ 收进论文后,翻它们的引用:被反复引、却没在候选池里的奠基作,按 id 播种捞回来——关键词检索常漏这种,这是兜底主力。
-
-【项目契约(你必须遵守,这些不是你能凭空知道的)】
-- 选篇靠你的相关性判断,不靠 API 引用量排序(高引常跑题)。
-- 文件名用 slug 不用 DOI;papers.id 是 TEXT 主键(无 DOI 没关系)。
-- 质量"标记进库、出口认标记":block 永不入库,flag/suspect 带标记入库需更相关。
-- 幂等可重跑(已做的跳过);别 git push(只 commit 由用户 push)。
-- 撞限流就重跑该步;并发别开太猛刷崩学校访问。
-
-【通知规则】
-跑完给 commit 回报(FYI)。撞到"新发现"主动 notify 我:① 想加存档里没有的 facet;② 拐弯线索指向一个新子领域;③ 某 facet 怎么都喂不饱。默认你继续跑,通知只是让我能叫停/改向,不必等我。
-
-开始吧。
-```
+> 当时的初稿已删——**现行 prompt 原文以 `pipeline/find/drive.py` 为准**（落地后内嵌草稿易失同步）。要点保留在上面 §1~§4：facet schema、配额=判断不存数字、fan-out 是甜区、⭐"收完翻引用按 id 播种补漏"是兜底主力。
 
 ---
 
-## 6. 实现 TODO（新会话照此落代码）
+## 6. 落地情况（2026-06-21 已全部实现）
 
-1. **建「按 id 播种」工具**（§4）——前置,seed_ids/add_url 都要它。`lib/sources` 加按 id 单查。
-2. **存档读写**：定义 topic_state.json 的读写;topic.json 加 facets/preferences/web_sources 解析(向后兼容:无 facets 退化现状)。
-3. **score/commit 支持 per-facet**：anchors/hit_criteria 降到 facet 粒度;commit 按 facet 分组摆出来给"定稿"判断;漂移修法(锚点/边界复称)降 per-facet。
-4. **launcher**：`run.py <id> find` 接管(把焊死的 discover→score→commit 换成"拉起 orchestrator claude")——或单开 `pipeline/find/drive.py`。**待用户拍放哪**。
-5. **prompt 落地**(§5,用户最终过目后)。
-6. **验证场**:`agentic-knowledge-synthesis` 重搜——把被切的奠基作(GraphRAG/RAPTOR/PaperQA2/OpenScholar/CoA/MAST)经 seed_ids 捞回,验证新设计第一例。
-7. **gt 升级样板**(可选):把 gt 拆成 6 facet(reward-design/training-tricks/exploration/algo-zoo/safety-cbf/task-instances)填好,当第一个新格式实例 + 验退化兼容。
-
-## 7. 待用户拍的小决定 —— 2026-06-20 对话已定 4/4
-
-- **launcher 放哪 → 新开 `pipeline/find/drive.py`**(✅定)。find 从"焊死链"变"Claude 驱动",性质和其它阶段(fetch/sum/verify 仍老式)不同,塞 run.py 阶段分发别扭;单独驱动脚本更干净,run.py 的 `find` 阶段调它即可。
-- **prompt 初稿(§5)→ 措辞基本认,加一句"顺引用补漏"**(✅定,§5【怎么干】已加 ⭐ 那句;细措辞用户可再磨)。理由:不点这句,「按 id 播种」能力会闲置——Claude 自主播种的主力路径就是"收完翻引用、把高频被引却没收的奠基作捞回"。
-- **防卡死安全网 → 默认不加**(✅定)。它本身是个死规则,与"换掉死规则"初心相悖;harness 自带 agent 总数高位兜底 + 库规模天然框成本 + TG 可随时叫停。真发现爱空转再补一个最小的(通常封拐弯轮数即可)。
-- **gt/dhi → 先留 facet=1 老模式,opt-in 再补 facets**(✅定,先这样;用户后续按对话改)。无 facets 自动退化,老篇不重评;想升级时拿 gt 拆 6-facet 当样板(§6 TODO-7)。
-
-> 补充确认(同次对话):**打分工具 score_auto.py 保留**(升级 per-facet),变的是"机器全局 Top-N 硬选"那个死规则——降级成"分数喂 orchestrator 判断留几篇"。**"无人冷启动自举+TG审批"流程不要了**,改"讨论当场定";但"库空怎么起步"这个状态 Claude 仍处理(hit_criteria 兜尺子)。**多开子 agent 设计上不限**(fan-out 是甜区),唯一天花板=harness 高位兜底,即"防卡死安全网"管的事(默认不加)。
+§6 实现 TODO + §7 待用户拍的 4 个小决定，均已落地，归档为下面这一段：
+- 「按 id 播种」→ `pipeline/find/seed.py`；存档读写（topic.json 加 facets/preferences/web_sources，无 facets 向后兼容退化）+ score/commit 的 per-facet anchors/hit_criteria 分组 → 已实现。
+- launcher → **新开 `pipeline/find/drive.py`**（run.py 的 `find` 阶段调它），不塞进 run.py 阶段分发。
+- 防卡死安全网 → **默认不加**（死规则与"换掉死规则"初心相悖；harness agent 总数兜底 + 库规模天然框成本 + TG 可叫停）。
+- gt/dhi → 先留 facet=1 老模式，opt-in 再补 facets。
+- **score_auto.py 保留**（升级 per-facet），变的只是"机器全局 Top-N 硬选"这条死规则 → 降级成"分数喂 orchestrator 判断留几篇"。"无人冷启动自举+TG审批"流程废弃，改"讨论当场定"。
+- 验证场：`agentic-knowledge-synthesis` 重搜（被切的奠基作经 seed_ids 捞回）= 新设计第一例，已跑通（见 find/STATE.md）。

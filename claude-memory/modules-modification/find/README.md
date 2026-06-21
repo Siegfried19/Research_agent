@@ -1,17 +1,17 @@
 # find — 发现 + 打分 + 入库
 
-> 流水线第 1 段（discover → score → commit）。把"一段研究思路 + 检索词"变成"入库的 paper_topic 关联 + 选篇清单"，**只决定哪些论文进这个主题，不取全文、不写总结**。
+> 流水线第 1 段（discover → score → commit）。把"一段研究思路 + 检索词"变成"入库的 source_topic 关联 + 选篇清单"，**只决定哪些论文进这个主题，不取全文、不写总结**。
 > 代码：`pipeline/find/{discover,score_auto,commit}.py`。质量闸调横切子系统 `lib/quality`（设计见 `../../design/quality.md`）。
 
 ## 边界（这段管什么 / 不管什么）
-- 管：多源召回 → claude -p 相关性打分 → 选篇写库（papers / paper_topic / citations 表）。产物：`topics/<id>/{candidates.json, scores/, selected.json}` + DB 行。
+- 管：多源召回 → claude -p 相关性打分 → 选篇写库（sources / source_topic / citations 表）。产物：`topics/<id>/{candidates.json, scores/, selected.json}` + DB 行。
 - 不管：取 PDF（→ fetch 段）、写总结（→ summarize 段）、核查（→ verify 段）。
 - 入口：`run.py <id> {discover,score,commit}`，或 `run auto` 串起。
 
 ## 三步与关键脚本
 1. **discover.py**（`topic.json` → `candidates.json`，**不写库**）：四源并发召回（OpenAlex / Semantic Scholar / arXiv / PubMed，按 `config.sources` 开关）→ `merge_all` 去重 → 语言过滤 → **block 级质量直接丢弃**（撤稿/水刊，不浪费打分 token，suspect 入池带标记）→ `prefilter_rank` 召回向预排序 → 截池 `pool_size = min(500, max(target*2, 60))`。
 2. **score_auto.py**（`candidates.json` → `scores/batch_*.json`）：逐批 `claude -p` 打 0–100 相关分。核心是**跨批次校准漂移修法**（见下）。可选 Codex 魔鬼代言人（`quality.codex_panel`，默认关）。
-3. **commit.py**（`scores/` + `candidates.json` → DB + `selected.json`）：合并分数 → 过质量闸 + 相关性门槛 → 选篇 → upsert papers/paper_topic → 重算全主题 rank → 重建主题内引用边。
+3. **commit.py**（`scores/` + `candidates.json` → DB + `selected.json`）：合并分数 → 过质量闸 + 相关性门槛 → 选篇 → upsert sources/source_topic → 重算全主题 rank → 重建主题内引用边。
 
 > **web 源旁路（2026-06-21）**：非论文的优质 blog/技术报告走 `discover_web.py`（agent 联网搜 → prompt 软判①相关性②内容质量 → 抓正文：**工具箱交给 agent 自己挑**——静态页 WebFetch / 动态·X·登录墙用真 Chrome（opencli `open`+`screenshot`，再 Read 截图）/ `extract` 抓 DOM → `upsert_paper(kind='web')`+`set_paper_topic`）。套**同一入库出口**、URL 规范化去重、跳过打分、不进总结（worklist 排除 `kind='web'`）。Chrome 起停/锁归脚本（复用 fetch_tierb），起不来降级纯静态。opt-in：`run.py <id> web`。详见 STATE（2026-06-21 条）。
 

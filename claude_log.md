@@ -4,6 +4,14 @@
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `claude_memory/modules-modification/<x>/STATE.md`（各模块层积日志，取代旧 logs/SESSION-*.md）；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
 
+## 2026-06-21 19:27 EDT — ★ 记忆精简：全库文档对齐当前命名 + 蒸馏已落地的过程设计文档
+- **缘由**：版本暂定型，做一轮记忆精简——把过期没跟上的旧名统一到当前命名，并蒸馏老的历史设计资料（只留"设计逻辑 + 为什么"，砍已落地的过程细节）。用户拍板：历史日志里的旧名也一起改。
+- **(A) 全库机械改名**（claude-memory 全部 + 本 `claude_log.md`，分 3 个 agent 并行 + 收尾）。旧→新：表 `papers`→`sources`、`paper_topic`→`source_topic`；列 `pdf_path`→`source_path`；状态 `pdf_downloaded`→`source_ready` / `pdf_failed`→`source_failed`；路径 `storage/papers/`→`storage/sources/`、旧布局 `store/{pdfs,papers,summaries,web}`→`storage/sources/`、`db/`→`data-base/`（仅目录）、`pipeline/stages/`→`pipeline/find/`、`pipeline/retrieve/models/`→`dependencies/models/`、`ref/papers/`→`reference/papers/`（核实该目录确存在）；CLI flag `--max-papers`→`--max-sources`；stage `run <id> index`→`reindex`；`notify.py settoken`→`settoken <BOT_TOKEN>`。
+- **保护串一字未动**（核对 lib/db.py、lib/store.py）：FK 列 `paper_id`/`src_paper_id`/`dst_paper_id`、文件名 `paper.pdf`、DB 文件名 `papers.sqlite`（只改前面目录）、函数名 `set_paper_topic`、索引名 `idx_papers_*`/`vec_papers`、泛指"论文/paper(s)"。验证：全库 grep 0 残留 in-scope 旧名（仅剩合法的"X→Y 改名叙述句"），0 误伤（无 set_source_topic/sources.sqlite/source.pdf）。
+- **(B) 蒸馏 `Prompt-structure-design/` 已落地的过程文档**（保留"为什么"、砍过期内嵌 prompt 草稿 + 已解决 TODO/未决项）：`summary-prompt-rewrite-plan.md`（删过期 prompt 全文，留拍板决定+去 note_plan 证据）、`summary-design-principles.md`（删 §七已解决"未决"、标 §四/§六为过程态）、`find-facet-rewrite-design.md`（状态"未落代码"→已落地，§5 prompt 初稿+§6/§7 TODO 收成"已落地"指针）、`score-drift`/`qa-layer-design` 改失效状态行。
+- **(C) 内容订正**：ARCHITECTURE §7 出口蓝图 + retrieve/README + qa-layer-design 的 `ask.py` 主入口 → 改为 `map.py` 库地图 + 消费者拥有调查循环（对齐 06-21 出口重构）；summarize/README 补 worklist 排除 `kind='web'` 谓词。
+- **文件**：`claude-memory/` 下 README/STATE/Prompt-structure-design 多文件 + `claude_log.md`。仅文档，无代码/DB 改动。
+
 ## 2026-06-21 18:44 EDT — 重写 README（双语 + todo 路线图，准备挂 GitHub）
 - 旧 README 已严重过期（还在写 node `--experimental-sqlite` 脚本、旧表名 `papers`/`paper_topic`、旧 workflow 流程、未接付费墙）。按当前架构整体重写 `README.md`：
 - 顶部加居中标题/badge + **English short version**（给 GitHub 国际读者）；正文中文优先（项目工作语言）。
@@ -119,12 +127,12 @@
 ## 2026-06-21 02:14 EDT — pdf→source 命名统一 + 加 kind 类型列（批1-B，动生产库）
 - **缘由**：blog/web 源要入库，但系统命名全焊死 PDF。与用户敲定：统称改 `source`、给每篇加**显式类型标记**。**分两批**：本条=批1-B（字段级改名 + kind，blog 地基）；批2（表名 `papers`→`sources` / 目录大重命名）单独开分支后做。
 - **改了什么**：
-  - `lib/db.py`：papers 列 `pdf_path`→`source_path`、加 `kind` 列（paper/web；进 SCHEMA + `ADD_COLUMNS` 自动迁移）。
+  - `lib/db.py`：sources 列 `pdf_path`→`source_path`、加 `kind` 列（paper/web；进 SCHEMA + `ADD_COLUMNS` 自动迁移）。
   - `lib/store.py`：加 `web_source_file()`（web 落 `source.md`）；`upsert_paper` INSERT 设 `kind='paper'`（论文入库默认）。
   - **生产库迁移**（备份 `logs/temporary-log/papers.bak-before-source-rename.sqlite`）：`RENAME COLUMN pdf_path→source_path`；status `pdf_downloaded`→`source_ready`（121 行）/`pdf_failed`→`source_failed`（0）；加 `kind` 回填 `paper`（261 行）。
   - **17 文件批量**：`pdf_path`→`source_path`、status 值→`source_*`（sed，排除 `migrate_*` 历史脚本）；**保留**真·PDF 函数（download_pdf/find_pdf_url/grab_pdf/verify_pdf/pdf_text/沙箱 paper.pdf）。
   - `summarize/build_worklist.py`：查询加 `kind!='web'` 过滤 → web 先不总结（用户定 blog 暂不总结）。
-- **没动**：表名 `papers`/`paper_topic`、目录 `storage/papers`（批2）；`pdf_fetched_at` 列名（暂留，收尾再议）。
+- **没动**：表名 `sources`/`source_topic`、目录 `storage/sources`（批2）；`pdf_fetched_at` 列名（暂留，收尾再议）。
 - **验证**：全量 py_compile；临时库（新库列对 / 论文 upsert=paper / worklist 排除 web）；`fetch_oa` 烟测；生产库自洽（source_path✓ kind✓ 无 pdf_path / status 40+121+100 / kind paper 261）。**未 push。**
 - **剩**：批1-A（`add_url` 抓取入库 `kind='web'` + web 自动发现）、批1 文档收尾、批2 表名大重命名。
 
@@ -137,20 +145,20 @@
 - **现状**：crontab 空、无相关进程、无 pidfile。代码一行没动，纯运维开关；恢复见上面备份。
 
 ## 2026-06-21 01:11 EDT — 撤回 facet 入库（回到"主题状态档单一真相源"）+ 定四类数据命名
-- **缘由**：接上一条。和用户对齐数据分层后他拍板——**信息在主题状态档（`topics/<id>/` 的 json）存好就够，不必复制进数据库；数据库由用户自己主导**。facet 本已在 `topic.json`（facets）+ `candidates.json`（每篇 facet）里，00:39 条又复制进 `paper_topic.facet` 属冗余 → 全部撤回。
+- **缘由**：接上一条。和用户对齐数据分层后他拍板——**信息在主题状态档（`topics/<id>/` 的 json）存好就够，不必复制进数据库；数据库由用户自己主导**。facet 本已在 `topic.json`（facets）+ `candidates.json`（每篇 facet）里，00:39 条又复制进 `source_topic.facet` 属冗余 → 全部撤回。
 - **撤回的三处**（对应 00:39 条）：
-  - `lib/db.py`：删 SCHEMA 里 `paper_topic.facet` 列 + `ADD_COLUMNS` 的 facet 条目（还原 priority 行尾）。
+  - `lib/db.py`：删 SCHEMA 里 `source_topic.facet` 列 + `ADD_COLUMNS` 的 facet 条目（还原 priority 行尾）。
   - `lib/store.py`：`set_paper_topic` 改回不写 facet。
-  - 生产库 `data-base/papers.sqlite`：`ALTER TABLE paper_topic DROP COLUMN facet`（SQLite 3.51 支持），清掉 267 行冗余副本；源头 json 不动，可随时重建。备份 `/tmp/papers.bak-before-facet-drop.sqlite`。
+  - 生产库 `data-base/papers.sqlite`：`ALTER TABLE source_topic DROP COLUMN facet`（SQLite 3.51 支持），清掉 267 行冗余副本；源头 json 不动，可随时重建。备份 `/tmp/papers.bak-before-facet-drop.sqlite`。
 - **保留**：`run.py` 的 `failed` 子命令（与数据库 schema 无关，不受影响）。
 - **命名约定落档**：`ARCHITECTURE.md` §5 加"四类数据落点"术语表——**数据库 / 主题状态档 / 原件库 / 日志**，别再混叫。
 - **验证**：py_compile（db/store）过；生产库删列后行数仍 267；临时库 `open_db` 无 facet 列、`set_paper_topic` 能写。**未 push（待用户）。**
 - **文件**：`pipeline/lib/{db,store}.py`、`data-base/papers.sqlite`、`claude-memory/ARCHITECTURE.md`、fetch README/STATE 指针。
 
 ## 2026-06-21 00:39 EDT — fetch 失败兜底定稿 + facet 入库（跨 db/find/fetch/retrieve）
-- **缘由**：和用户逐步对齐 fetch 失败处理。先评估出 **fetch 几乎不失败**（生产库 `pdf_failed=0`，历史只 PPG/Lazy Agents 1 次已修），于是把早先设想的"diagnose 失败分类 agent"整个砍掉，只留极简兜底；另按用户要求把 facet 落库供 retrieve 用。
+- **缘由**：和用户逐步对齐 fetch 失败处理。先评估出 **fetch 几乎不失败**（生产库 `source_failed=0`，历史只 PPG/Lazy Agents 1 次已修），于是把早先设想的"diagnose 失败分类 agent"整个砍掉，只留极简兜底；另按用户要求把 facet 落库供 retrieve 用。
 - **做了什么**：
-  - `lib/db.py`：`paper_topic` 加 `facet TEXT`（写进 CREATE TABLE + `ADD_COLUMNS`，`open_db` 自动迁移生产库，无需手敲 ALTER）。
+  - `lib/db.py`：`source_topic` 加 `facet TEXT`（写进 CREATE TABLE + `ADD_COLUMNS`，`open_db` 自动迁移生产库，无需手敲 ALTER）。
   - `lib/store.py`：`set_paper_topic` 从 `p.get('facet') or '_all'` 落 facet + ON CONFLICT 更新。`commit.py` 调用处未改（传的 `p` 本就带 discover 标的 facet）。
   - `pipeline/run.py`：加 `failed` 子命令（`report_failed`）——SQL 列出没拿到全文的篇（标题/id/slug/DOI/落地页），只报"是哪篇"，全拿到输出 ✅。
   - **手动挂 PDF（⑥）不写工具**：失败篇的库行已在，挂载=拷文件+翻 status，需要时叫 agent 用 SQL 现办。
@@ -169,7 +177,7 @@
 ## 2026-06-20 19:54 EDT — find 实跑:主题 agentic-knowledge-synthesis 冷启动选篇入库 41 篇
 - **做了什么**:作为 orchestrator 跑完整 find 一轮(discover→seed→score_auto→commit --plan→--keep)。discover 四源召回 2476 去重→候选池 75(+seed);score_auto faceted×5 自举锚点打分;首轮 --keep 写库 39,增量补 longctx 2 篇 → **库内 41 篇**(target 35)。
 - **关键判断**:① 6 个 facet seed 全入,含特意保的 MAST(rel=24 facet 垫底,`--keep` 是纯 top-N 不豁免 seed → 只能 agentic-retrieval=16 全留兑现 MUST-include,代价 3 个偏题 Ego-R1/Generative Agents/Securing-the-Agent 入库待删);② longctx-vs-retrieval 关键词只召回 3 篇(饿),按 id 补播 arxiv:2310.03025 / 2409.01666(命中后 rel 95/92),发现二者被 discover 误标 `_all` → 手改 candidates.json 的 facet 再重打分入库;③ cross-paper-structure 偏生物医学 LBD。
-- **文件**:写 `topics/agentic-knowledge-synthesis/{candidates.json,scores/,selected.json,topic_state.json}` + 生产库 `data-base/papers.sqlite`(paper_topic +41)。**未改 find 模块代码**(纯实跑+一次性 candidates 数据纠偏)。下轮起点见 topic_state.json 的 turning_seeds。
+- **文件**:写 `topics/agentic-knowledge-synthesis/{candidates.json,scores/,selected.json,topic_state.json}` + 生产库 `data-base/papers.sqlite`(source_topic +41)。**未改 find 模块代码**(纯实跑+一次性 candidates 数据纠偏)。下轮起点见 topic_state.json 的 turning_seeds。
 
 ## 2026-06-20 18:48 EDT — 收尾:去新旧并行(全主题归一走新路)+ orchestrator 转 AUTO 默认 + 停 verify_daemon
 - **做了什么**:按用户"都用新的、不要新旧并行"收口。① `run.py` AUTO/AUTO_PULL 的 discover+score+commit → 换成 `find`(orchestrator 转默认);② `score_auto` 删掉非-faceted 单尺分支 + `autopick_anchors`,**永远走 facet 路**(无 facets 的老主题=1 隐式 `_all`),`boundary_rerank` 去留线只剩资格闸 {30,flag_min}(删 target 线);③ 应用户要求 `kill` 了 `tools/verify_daemon.py`(全天候核查守护,与 find 无关)——**核查暂停,需手动 `python3 pipeline/tools/verify_daemon.py` 重启**。
@@ -196,19 +204,19 @@
 
 ## 2026-06-20 16:16 EDT — 博客/网络源扩展(add_url)架构敲定 + 推翻旧 text_path 支点(纯设计,未落码)
 - **做了什么**:把 2026-06-19「add_url 副轨」计划重审一遍,敲定可落代码的最终架构,并揪出旧计划一个**死支点**。跨 find/fetch/summarize 三段设计,详记 `claude-memory/modules-modification/find/STATE.md` 顶条(2026-06-20 16:16)。
-- **⚠️ 旧计划 text_path 支点作废**:`lib/db.py:38` text_path 已 DEPRECATED(2026-06-16,恒 NULL,留列免动 prod),summarize 只读 pdf_path——「写 text_path 自动流过 summarize」不成立。
-- **敲定**:①抓取分级=静态博客 claude WebFetch 自抓(替 trafilatura) / X·硬页 opencli 真 Chrome(复用 fetch_tierb 那套,图多截图喂 claude);②落盘路线B(用户拍板)=博客 md/截图占 `pdf_path` 位、存 `storage/papers/<slug>/`;③质量砍硬档(废 url_allowlist 白名单)→软约束=查找+总结两道 claude 判可信度;④blog 标记三重(id=URL / sources=web+域名 / quality_signals 加不参与过滤的 web tag),全不改库表。
+- **⚠️ 旧计划 text_path 支点作废**:`lib/db.py:38` text_path 已 DEPRECATED(2026-06-16,恒 NULL,留列免动 prod),summarize 只读 source_path——「写 text_path 自动流过 summarize」不成立。
+- **敲定**:①抓取分级=静态博客 claude WebFetch 自抓(替 trafilatura) / X·硬页 opencli 真 Chrome(复用 fetch_tierb 那套,图多截图喂 claude);②落盘路线B(用户拍板)=博客 md/截图占 `source_path` 位、存 `storage/sources/<slug>/`;③质量砍硬档(废 url_allowlist 白名单)→软约束=查找+总结两道 claude 判可信度;④blog 标记三重(id=URL / sources=web+域名 / quality_signals 加不参与过滤的 web tag),全不改库表。
 - **defer(用户)**:summarize 接口统一(DB→worklist→prompt 焊死 PDF 假设,方案已想好:抽象成 source_kind 分支,本轮未动)。
 - **为什么**:agent/长上下文前沿一大半不在 arXiv(在 Anthropic/Lilian Weng/X 等),只搜 arXiv 系统性漏半领域;且与 facet 改写「按 id 播种捞奠基作」共「按外部标识入库」地基。
 
 ## 2026-06-20 05:25 EDT — 顶层目录大改名全链路收口(用户改名,代码/DB/gitignore/文档全跟上)
 - **用户把顶层目录改名(保留)**:`db`→`data-base`、`store`→`storage`、`ref`→`reference`、`review`→`for-human-review`、`docs/claude_memory`→`claude-memory`、`vendor`→`dependencies`(后两个本会话早先已处理)。其中 **`db`/`store` 是代码+DB 硬编码依赖**,改名一度让整套跑挂——本次全链路改对。
 - **代码(功能性)**:`ROOT/"db"`→`"data-base"`(lib/db.py DB_PATH、retrieve/index.py VEC_PATH、search.py FTS_PATH);`ROOT/"store"`→`"storage"`(lib/store.py paper_dir、fetch_tierb DL_DIR、cross_topic、prepare_update、register_updates、update_auto、export_corpus、eval_retrieval、init.py DIRS、render_topic、ask 提示)。**关键纰漏**:export_corpus.py:72 是**单引号** `ROOT/'store'/'summaries'`,首轮双引号扫描漏掉,二次单+双引号穷扫才揪出修掉。
-- **数据库**:`data-base/papers.sqlite` 里 322 条路径 `store/papers/`→`storage/papers/`(papers.pdf_path 221 + summary_versions.path 101),0 悬空。
+- **数据库**:`data-base/papers.sqlite` 里 322 条路径 `store/papers/`→`storage/papers/`(sources.source_path 221 + summary_versions.path 101),0 悬空。
 - **gitignore**:store→storage、db→data-base、`For-human-review/`→`for-human-review/`(大小写);折叠后 `git add --dry-run` 零吞 pdf/索引/大依赖。
 - **文档**:`claude_memory/`→`claude-memory/` 全仓 19 文件;当前设计文档(CLAUDE.md/README/ARCHITECTURE/ops/模块README)23 个的 db/store 路径更新;代码注释同步。**STATE.md append-only 历史正文不改写**(只修死链接 claude_memory→claude-memory)。`ref/academic`→`reference/academic`。
 - **区分(没误改)**:`lib/db.py`/`lib/store.py` 是**模块名**(不动)、`from lib.db`/`from lib.store` 不动、ARCHITECTURE 列的 lib 模块 `db`/`store` 不动。migrate_store_layout.py 是历史一次性脚本(已跑完不会再跑)留原样。
-- **验证(全过)**:25 模块导入 OK;`open_db` 读 data-base 真库 221 篇;`ask.py` 真检索端到端通(读 data-base + 建 data-base/{fts,vec}.sqlite + GPU 嵌入 dependencies/models + 命中显示 storage/papers/ 路径);全程无误建空 db//store/。
+- **验证(全过)**:25 模块导入 OK;`open_db` 读 data-base 真库 221 篇;`ask.py` 真检索端到端通(读 data-base + 建 data-base/{fts,vec}.sqlite + GPU 嵌入 dependencies/models + 命中显示 storage/sources/ 路径);全程无误建空 db//store/。
 - **daemon**:改前先 kill(旧 PID 3462179),改完+验证后**已重启**(新 PID 4064361,日志确认读到真库 100 papers、正常起核查批;codex 额度窗口外它会自己睡)。
 
 ## 2026-06-20 04:57 EDT — logs/ 大扫除 + 临时日志归 temporary-log/ + gitignore 折叠
@@ -222,22 +230,22 @@
 - 用户定:比较大的外部依赖统一放仓库根 `dependencies/`,不再散在模块内。搬:`vendor/novnc` → `dependencies/novnc`(删空 `vendor/`);`pipeline/retrieve/models`(Qwen 嵌入缓存 ~1.2G,HF `hub/` 结构) → `dependencies/models`。
 - 配套改路径:`lib/embed.py`(`_MODELS_DIR` → `parents[2]/"dependencies"/"models"`,即 HF_HOME)、`pipeline/remote_view.sh`(`NOVNC_WEB` → `dependencies/novnc`)。
 - `.gitignore`:`vendor/` + `pipeline/retrieve/models/*` 段 → 合并成 `dependencies/*` 忽略 + `!dependencies/README.md` 保留;新建 `dependencies/README.md`(说明里面该有啥/怎么重建)。docs 同步:migration.md(迁移表+clone-misses 清单+封存件)、remote-access.md、retrieve/README.md(retrieve/STATE 是 append-only 历史,不改)。
-- **验证**:`conda run -n research-agent` 跑 `embed_query` —— `HF_HOME=dependencies/models`,模型从新位置加载、出 1024 维、**不重下**;`git add --dry-run` 确认 `dependencies/` 只进 README、`store/papers/` 0 个 paper.pdf。
+- **验证**:`conda run -n research-agent` 跑 `embed_query` —— `HF_HOME=dependencies/models`,模型从新位置加载、出 1024 维、**不重下**;`git add --dry-run` 确认 `dependencies/` 只进 README、`storage/sources/` 0 个 paper.pdf。
 - 另:用户手动删了空目录 `runs/`(死目录,只有 init.py 建、无人写);已从 `pipeline/tools/init.py` 的 `DIRS` 去掉 `"runs"`(免得 init 重建)。
 
-## 2026-06-20 04:19 EDT — 文件结构重构【落地完成】:论文一篇一个家 store/papers/<slug>/
-- **搬运已 apply**:`migrate_store_layout.py --apply` 执行。221 篇 PDF+总结迁入 `store/papers/<slug>/`(`paper.pdf` + `vN.md`);旧 `store/pdfs`/`store/summaries` 清空删除;DB `papers.pdf_path`+`summary_versions.path` 共 322 行改写;一致性 0 悬空(221 pdf + 101 总结全部落地)。**备份**:整盘 db+store+topics 冷拷在 `logs/redo-store-migrate-20260620-041623/`(1.3G,gitignore)。
+## 2026-06-20 04:19 EDT — 文件结构重构【落地完成】:论文一篇一个家 storage/sources/<slug>/
+- **搬运已 apply**:`migrate_store_layout.py --apply` 执行。221 篇 PDF+总结迁入 `storage/sources/<slug>/`(`paper.pdf` + `vN.md`);旧 `store/pdfs`/`store/summaries` 清空删除;DB `sources.source_path`+`summary_versions.path` 共 322 行改写;一致性 0 悬空(221 pdf + 101 总结全部落地)。**备份**:整盘 db+store+topics 冷拷在 `logs/redo-store-migrate-20260620-041623/`(1.3G,gitignore)。
 - **代码读写口全部改到新布局**,收口到 `lib/store.py` 的 `paper_dir/pdf_file/summary_file/verify_file`(唯一路径出口,以后别再写死旧路径):fetch_oa/recover_oa/recover_agent/fetch_tierb(下 PDF)、build_worklist/register_summaries/summarize_auto/render_topic(总结)、prepare_update/export_corpus/ask/init.py、config.json `paths`。14 个改过的模块真导入冒烟全过。
-- **verify 新能力**:核完每篇把 codex 详情**按版本累积**写 `store/papers/<slug>/verify.json`(`{versions:{N:{verdict,issues,checked_at,backend}}}`,永不覆盖旧版,留全程问题历史);`verify_summaries.record_verify_detail` + `escalate_verify` 都接上。**不动** verify 状态文件(verified/verify_status/verify_skip)与 daemon——状态/详情彻底分家(状态在 `topics/<id>/` 喂 daemon,详情在论文文件夹)。历史详情已丢失、不回填(原因见 03:51 条)。
-- **验证**:render_topic(读 100 篇/已总结 80)、build_worklist(summary_dir 指向 store/papers)、record_verify_detail(v2→v3 累积不覆盖)全过。
+- **verify 新能力**:核完每篇把 codex 详情**按版本累积**写 `storage/sources/<slug>/verify.json`(`{versions:{N:{verdict,issues,checked_at,backend}}}`,永不覆盖旧版,留全程问题历史);`verify_summaries.record_verify_detail` + `escalate_verify` 都接上。**不动** verify 状态文件(verified/verify_status/verify_skip)与 daemon——状态/详情彻底分家(状态在 `topics/<id>/` 喂 daemon,详情在论文文件夹)。历史详情已丢失、不回填(原因见 03:51 条)。
+- **验证**:render_topic(读 100 篇/已总结 80)、build_worklist(summary_dir 指向 storage/sources)、record_verify_detail(v2→v3 累积不覆盖)全过。
 - **`.gitignore` 已补**(防 `git add` 误吞版权 PDF):`store/pdfs/` → `store/papers/*/paper.pdf`(同目录 .md/verify.json 仍可入库);用户改名连带修 `ref/`→`reference/`、新增 `For-human-review/`(原 review/,含版权 PDF)。删掉搬空的 `store/pdfs`、`store/summaries` 空目录。
 - **未做(待用户单独发话)**:git 把 `db/store/topics` 移出追踪 + 清历史(`git filter-repo`)+ `force-push`(push 由用户)。改名连带的 **CLAUDE.md 12 处 `claude_memory/`→`claude-memory/` 断链 + claude-memory 内部交叉链接**由用户处理(我未碰)。
 
 ## 2026-06-20 03:51 EDT — 文件结构重构·第1步:论文 PDF+总结归并脚本(dry-run 就绪,未 apply)
-- 新增 `pipeline/tools/migrate_store_layout.py`(默认 dry-run，`--apply` 才动盘）。目标布局：一篇一个家 `store/papers/<slug>/`，内含 `paper.pdf`(原 `store/pdfs/<slug>.pdf`) + `v*.md`(原 `store/summaries/<slug>/`)。
-- 改写 DB 路径列 `papers.pdf_path`、`summary_versions.path`；幂等。dry-run 实测：221 论文夹 / 搬 221 PDF + 101 总结 / 改 322 DB 行。
-- **范围澄清(重要)**:脚本【只搬 PDF+总结、改 DB】，**完全不碰 verify**——用户明确不动 verify 全局状态(`topics/*/verified.json`/`verify_status.json`/`verify_skip.json`、daemon、续核一律原样)。用户对 verify 的真实诉求仅是"把 codex 判断的文字也存进论文文件夹"——这是 verify 代码往后跑时**额外写一份** `store/papers/<slug>/verify.json`(verdict+issues)的小新增,与状态模型无关,**另行实现,不在本脚本**。(我一度把方案做大到"拆 verify 状态进每篇/或进 DB",已纠回。)
-- 待办:① 改写死旧路径的写入点(fetch_oa/recover_agent 下 PDF、summarize_auto/build_worklist/register_summaries/render_topic 写读总结、ask/init)+ `lib/store.py` 加 `paper_dir(slug)` 统一出口;② **新增能力**:verify 核完每篇时把 codex 详情按版本累积写进 `store/papers/<slug>/verify.json`(形如 `{versions:{"1":{verdict,issues,checked_at,backend},...}}`,永不覆盖旧版,留全程问题历史);不动 `verify_status.json`/daemon。
+- 新增 `pipeline/tools/migrate_store_layout.py`(默认 dry-run，`--apply` 才动盘）。目标布局：一篇一个家 `storage/sources/<slug>/`，内含 `paper.pdf`(原 `store/pdfs/<slug>.pdf`) + `v*.md`(原 `store/summaries/<slug>/`)。
+- 改写 DB 路径列 `sources.source_path`、`summary_versions.path`；幂等。dry-run 实测：221 论文夹 / 搬 221 PDF + 101 总结 / 改 322 DB 行。
+- **范围澄清(重要)**:脚本【只搬 PDF+总结、改 DB】，**完全不碰 verify**——用户明确不动 verify 全局状态(`topics/*/verified.json`/`verify_status.json`/`verify_skip.json`、daemon、续核一律原样)。用户对 verify 的真实诉求仅是"把 codex 判断的文字也存进论文文件夹"——这是 verify 代码往后跑时**额外写一份** `storage/sources/<slug>/verify.json`(verdict+issues)的小新增,与状态模型无关,**另行实现,不在本脚本**。(我一度把方案做大到"拆 verify 状态进每篇/或进 DB",已纠回。)
+- 待办:① 改写死旧路径的写入点(fetch_oa/recover_agent 下 PDF、summarize_auto/build_worklist/register_summaries/render_topic 写读总结、ask/init)+ `lib/store.py` 加 `paper_dir(slug)` 统一出口;② **新增能力**:verify 核完每篇时把 codex 详情按版本累积写进 `storage/sources/<slug>/verify.json`(形如 `{versions:{"1":{verdict,issues,checked_at,backend},...}}`,永不覆盖旧版,留全程问题历史);不动 `verify_status.json`/daemon。
 - 历史核查详情:**确认已丢失、不回填**。原因:issues 仅渲染进 `summary_verification.md` 且每轮整file覆盖,当前两 topic 的报告都是失败轮(checked 0)产物,旧详情已被盖;git 历史里虽有成功轮(如 `8ee86bb` topic2 100/100),但其后有过"清空总结层重做"(`0cd67bf`),旧 issues 对应的是重做前的总结版本,贴回当前版本会张冠李戴。故历史详情作废,待 ② 落地后重核生成与当前版本匹配的新详情。
 - 背景决策(本次会话定)：git 只入库"流程骨架"(代码+claude_memory+config/quality)，db/store/topics 等数据不入库、换机器走硬盘拷贝；旧数据待从 git 历史清理(git filter-repo，后续单独做、force-push 由用户)。store 采"论文全局平铺 + topic 只当名单/检索配方"，不按 topic 套论文(避免跨主题重复/漂移)。
 
@@ -270,7 +278,7 @@
 - 文件：`docs/modules/retrieve/STATE.md`（追加一条）。SESSION 原文件由用户统一删（我没删）。
 
 ## 2026-06-20 02:07 EDT — 写 docs/design/quality.md（质量四档横切子系统设计）
-- 做了什么：新建 `docs/design/quality.md`，中文设计长文。覆盖设计哲学（能标记就不删/verdict 持久化在 papers.quality_tier，各出口都认）、四档（block/suspect/trusted/flag + ok）命中与处置、名单来源（Beall's 衍生停更名单 + local/doi_prefix/venue 白名单 + DOAJ）、各出口认标记表、audit_quality 回溯审计、关键文件。
+- 做了什么：新建 `docs/design/quality.md`，中文设计长文。覆盖设计哲学（能标记就不删/verdict 持久化在 sources.quality_tier，各出口都认）、四档（block/suspect/trusted/flag + ok）命中与处置、名单来源（Beall's 衍生停更名单 + local/doi_prefix/venue 白名单 + DOAJ）、各出口认标记表、audit_quality 回溯审计、关键文件。
 - 为什么：把横切质量体系从 CLAUDE.md 抽成独立设计文档（文档模块化重构的一环）。
 - 怎么写：逐字核对了 `pipeline/lib/quality.py` 与各出口（discover/commit/summarize/render/ask/answer），不照抄 CLAUDE.md。
 - 发现的过期/矛盾：① CLAUDE.md 说 retrieve「默认过滤/降权」，实际 `retrieve/answer.py` 是**只标注不过滤**——doc 以代码为准并注明。② tier 实为五值（含 `ok`），CLAUDE.md 只列四档。③ 名单为停更（2017）的 Beall's 衍生，无独立 DOAJ 本地文件（DOAJ 走 OpenAlex `is_in_doaj`）。
@@ -317,7 +325,7 @@
 ## 2026-06-19 23:50 EDT — 新主题 `agentic-knowledge-synthesis` 定稿入库 + 首轮搜索废弃重来
 - **做了什么**：与用户讨论收敛出一个新研究主题"Agent 消费知识库与跨论文综合（长上下文时代）"，建 `topics/agentic-knowledge-synthesis/topic.json`（15 检索词/2023起/target35）。跑了 discover(池70)+score(冷启动自举)。
 - **为什么废弃首轮**：score 后发现 discover 的 `prefilter_rank` 纯词法取前 70，把领域奠基作（GraphRAG/RAPTOR/PaperQA2/OpenScholar/Chain-of-Agents/MAST，全在我们自己 evidence 文档里）全切掉了 → 召回不足；外加生物医学 bleed。用户拍：删本轮全部产物、先把讨论入库。
-- **删了**：`topics/agentic-knowledge-synthesis/{candidates.json,scores/}`、`logs/{discover,score}-aks.out`；topic.json 清掉自举的 score_anchors（来自坏池）。**生产库未触碰**（该主题 topics/paper_topic 均 0 行，discover/score 本就不写库、commit 没跑）。
+- **删了**：`topics/agentic-knowledge-synthesis/{candidates.json,scores/}`、`logs/{discover,score}-aks.out`；topic.json 清掉自举的 score_anchors（来自坏池）。**生产库未触碰**（该主题 topics/source_topic 均 0 行，discover/score 本就不写库、commit 没跑）。
 - **入库的讨论**：主题边界/前提/`add_url` 博客工具计划/召回漏洞教训 → 全文记入 `logs/SESSION-2026-06-19-agentic-knowledge-synthesis.md`；主题定义保留在 topic.json 待补召回后重搜。
 - **下次接**：补 ~7 条精准检索词(+可选"按id播种"原语) → 重搜 → commit；建 add_url。
 
@@ -331,7 +339,7 @@
 - **机制验证**(动代码前先验,headless 真跑):`claude -p --allowedTools "Read,Task"` **能 spawn 子 agent、且子 agent 能 Read 开 PDF**(让它读 MARL 综述 PDF 回出标题/页眉/页码,num_turns:2)。**不用 `--dangerously-skip-permissions`**。
 - **🆕 `pipeline/retrieve/readall.py`** = 方案④全读(清单版/方案B):`load_papers`(默认全库跨主题/`--topic`)→`build_catalog`(每篇一行=[n]标题+⚠️质量&核查标记+slug+总结路径+pdf路径,**总结正文不进prompt**)→`run_claude(tools=["Read","Task"])`(Opus自己把总结读全=召回地板、相关再Read PDF、多了可Task并发、合并单线程)→`_extract_json`→cited[n/slug]回填。**模型只吐`{answerable,cited}`,DOI/路径由python据DB回填=零DOI幻觉**;解析失败机械兜底、空范围哨兵。
 - **🔧 `ask.py`**:加 `--mode {readall(默认),pipeline}`+`--topic`;`--answer/--json` 默认走全读、**不碰索引**;pipeline=老检索路保留;understand/rerank/search/index 从默认退役留盘当大库工具。**🔧 `answer.py`**:抽 `make_source()` 共享契约助手(readall/pipeline 共用,标记/DOI回填口径统一)。
-- **为什么"清单+按需Read"不是"总结全文贴进prompt"**:prompt短(不每次重发几十万字)+不稀释注意力;代价=召回靠模型读全(现20篇能读全不漏,库大了再上检索筛)。清单带⚠️标记+DOI(只在DB里)=为何要python拼而非直接丢store/summaries文件夹。
+- **为什么"清单+按需Read"不是"总结全文贴进prompt"**:prompt短(不每次重发几十万字)+不稀释注意力;代价=召回靠模型读全(现20篇能读全不漏,库大了再上检索筛)。清单带⚠️标记+DOI(只在DB里)=为何要python拼而非直接丢storage/sources文件夹。
 - **自测全过**(monkeypatch run_claude不烧配额):真库20篇拼清单→解析→回填(tier/verify/无DOI篇都对)→slug防串号→兜底→哨兵→ask.py接线。**未做真端到端**(慢+烧配额,库重建中,等用户要再跑)。
 - **📋 五方案速查表**(用户校准)拢进 `docs/qa-layer-design.md` **§10**;金字塔主干在 §9;讨论全程→SESSION 第九段。**代码未提交(等用户 push)**;库现20篇有总结(cron重建中)。
 
@@ -347,7 +355,7 @@
 - 下一步(新会话接)：敲定全读 prompt 终版给用户过目 → 写 `retrieve/readall.py` + ask.py 改模式分发 + answer.py 抽共享契约层 → 单元自测 → log/commit。**约束**:库现 0 篇总结，搭好只能自测，真答案等总结回来。
 
 ## 2026-06-19 03:19 EDT — 问答框架实证深挖第三批 → 汇总进 qa-layer-evidence.md §7
-- 做了什么：用户好奇"合成层/全读 vs 检索 哪个质量好、有无直接对比研究"。派 3 个 agent 把 `ref/papers/` 6 篇逐节精读（RAG综述2507.18910 / Agentic综述2501.09136 / PaperQA2 / OpenScholar / RAPTOR / GraphRAG）+ web 扒 2 篇 2026 新论文（SIGIR'26 Text Ranking in Deep Research 2602.21456 / lost-in-middle 2026）。发现+出处+可信度汇总进 `docs/qa-layer-evidence.md` 新增 §7（含新链接）。
+- 做了什么：用户好奇"合成层/全读 vs 检索 哪个质量好、有无直接对比研究"。派 3 个 agent 把 `reference/` 6 篇逐节精读（RAG综述2507.18910 / Agentic综述2501.09136 / PaperQA2 / OpenScholar / RAPTOR / GraphRAG）+ web 扒 2 篇 2026 新论文（SIGIR'26 Text Ranking in Deep Research 2602.21456 / lost-in-middle 2026）。发现+出处+可信度汇总进 `docs/qa-layer-evidence.md` 新增 §7（含新链接）。
 - 关键结论：①"小库全读 vs 选择性检索"**直接对比不存在**（领域都在百万篇区间）；②最接近的真数据=GraphRAG **C0(预蒸馏层) vs TS(临时全摘)：质量打平、合成层赢成本省97%** → 合成层是"省/快/覆盖全"工具非"更准"；③多篇一致印证"顶层导航+下钻原文"（RAPTOR 必须保叶层、GraphRAG 细节被稀释）；④领域真建议="先把检索质量做好，agentic 救不了烂检索"（撞上我们6/17"召回是地基"）；⑤增量更新是所有论文的真空（GraphRAG 全量建图281min/1M token）。
 - 只动文档（evidence.md + 本 log），无代码改动。框架仍 v1 草稿待用户诊断。
 
@@ -358,7 +366,7 @@
 
 ## 2026-06-19 03:00 EDT — 清库残留视图修正：重渲染 topic.md + 删陈旧 ARS 导出
 - 问题：用户发现其他 agent 仍看到"已总结文章"。排查=DB/总结文件/索引都真清了（0/0/0），但**渲染产物**没更新——`topics/*/topic.md`（旧总结表，43 处引用）和 `literature_corpus.yaml` 是清库遗留（只在 finalize/verify 跑时才重渲染，清库后没跑过）。
-- 修：`render_topic.py` 重渲染两主题 topic.md（现 `已总结：0`、0 个 store/summaries 链接）；删 `topics/*/literature_corpus.yaml`（要用时重导）。
+- 修：`render_topic.py` 重渲染两主题 topic.md（现 `已总结：0`、0 个 storage/sources 链接）；删 `topics/*/literature_corpus.yaml`（要用时重导）。
 - 教训：以后清库要连派生产物（topic.md / literature_corpus.yaml）一起处理，别只清源数据。
 
 ## 2026-06-19 02:54 EDT — 实装 crontab：夜间 sum 两批 + 上午 verify_daemon（用户拍板挂上）
@@ -373,7 +381,7 @@
 - 为什么：用户反映框架的对比/论文证据被劈成两批夹在叙事里、不好找,要"放一起好找一点"。
 - 接线：`docs/qa-layer-design.md` 顶部改"配套三件套"(设计/证据/时间线)+§3 实证支撑指向 evidence 文档;SESSION 第七段末加指针。SESSION 第五/七段保留当"怎么想到的"时间线,不删。
 - 全是文档,无代码。⚠️ 领域迁移保留已写进 evidence 文档头(基准多为生物/通用 QA,非我们 RL 库,只定方向)。
-- 做了什么：①完整备份到 `logs/summaries-wipe-20260619-0206/`（整库 papers.sqlite + 41 篇 store/summaries + 11 个标记文件，3.2M）。②DB：`DELETE FROM summary_versions`（84→0）、`status='summarized'→'pdf_downloaded'`（41→0，221 篇全回可重做、PDF 0 丢失）、`summarized_at=NULL`。③文件：删 store/summaries/*、删所有标记（verified*.json / verify_status*.json / summary_verification*.md / summarize_worklist.json 含 .old 变体）、删失效索引 db/vec.sqlite + db/fts.sqlite（重做后重建）。
+- 做了什么：①完整备份到 `logs/summaries-wipe-20260619-0206/`（整库 papers.sqlite + 41 篇 storage/sources + 11 个标记文件，3.2M）。②DB：`DELETE FROM summary_versions`（84→0）、`status='summarized'→'source_ready'`（41→0，221 篇全回可重做、PDF 0 丢失）、`summarized_at=NULL`。③文件：删 storage/sources/*、删所有标记（verified*.json / verify_status*.json / summary_verification*.md / summarize_worklist.json 含 .old 变体）、删失效索引 data-base/vec.sqlite + data-base/fts.sqlite（重做后重建）。
 - 保留未动：**quality_tier/quality_signals**（来源质量，flag47/ok117/trusted57，与总结无关、重做复用）；topics/*/topic.md 与 literature_corpus.yaml（派生产物，重做后自动重渲染/重导）。
 - 为什么：用户要用新流程重写总结。⚠️ 我已核实并指出这 41 篇其实是 2026-06-18 新流程产物（新模板含「适用边界」、经 report-only 核查+整篇重做到 v2-v4），用户看过证据后仍决定清。
 - 未挂起：cron + verify_daemon 都没启，等用户先复查总结流程/prompt。
@@ -449,7 +457,7 @@
 
 ## 2026-06-18 22:43 EDT — 新 summarize/verify 流程小批试跑(2篇)+ 旧总结全量备份
 - **背景**：summarize/verify 层 06-18 大改后(d5b58a7：边读边写去 note_plan、核查 report-only、major→整篇重做)，首次拿真实库端到端试跑。用户定：全库 221 篇都用新流程重做，但先小批试 2-3 篇验证。
-- **备份(回滚锚点)** → `logs/summaries-baseline-20260618/`：`store/summaries` 全量(77 md)+ `db/papers.sqlite` 快照 + 两主题 verify/worklist 产物。
+- **备份(回滚锚点)** → `logs/summaries-baseline-20260618/`：`storage/sources` 全量(77 md)+ `data-base/papers.sqlite` 快照 + 两主题 verify/worklist 产物。
 - **试跑** `run rl-general-toolbox auto-sum 2`：2 篇净新论文写出新流程 v1(Augmented PPO / Safe RL w/ Probabilistic CBF)，质量符合设计(原子句+内联 strength、讲直觉、数字让位 PDF、新增"适用边界"段、不脑补附录)。
 - **意外**：auto-sum 的 verify = `escalate_verify --start-pct 100` **核查全主题、非只新篇**——扫了 40 篇旧总结，揪出 5 篇 MAJOR(GAE 数字+张冠李戴、Penalized PPO 残留"伪造核对背书"、End-to-End Safe RL 定理条件写窄、What-Matters V-trace 设定写错、Tiered Reward 过度声称)，**已就地整篇重做成 v4/v2**。原件在备份里可对比。新核查抓得准、且根治了旧 correct_summaries 伪造背书 bug。
 - **已知坑**：verify round2(剩 19 篇)codex 全失败(限流/用量到顶)，脚本干净中止、进度按轮落盘。r1 的 26 篇核查有效。
@@ -518,16 +526,16 @@
 
 ## 2026-06-10 · 质量线 — 质量评价体系（硬信号+标记优先）诞生 + Codex 跨模型评审团上线
 - ① 硬信号质量体系上线（`lib/quality.py` + `config/quality/`）：抓 Beall's 衍生黑名单（stop-predatory-journals，**1309 期刊 + 1161 出版商**）加工成规范化 txt；发现 IJISRT 不在名单（2017 停更）→ 建 `local_blocklist.txt` + `doi_prefix_blocklist.txt`（IJISRT=10.38124，前缀挡法改名躲不掉）+ `venue_whitelist.txt`（38 个顶会顶刊免疫误杀）。OpenAlex 补采 `is_retracted/is_in_doaj/publisher`。修一类误标：OpenAlex 常把已发表论文 venue 标 arXiv → 改"有正式 DOI（非 10.48550）的不算预印本"，flag 46→34。
-- ② **设计转向：用户拍板"标记优先，不一刀切 ban"**——核心论点（用户认可）：**污染不发生在存进去，发生在用的时候忘了它是什么**。block 只留死刑信号（撤稿 + DOI 前缀黑名单）；名单命中降为 **suspect**（照常入库但标记持久化到 `papers.quality_tier/quality_signals`，每个下游出口认标记：summarize 注入质疑模式、render 标 ⚠️+低可信节、未来 RAG 必过滤/降权）。commit 闸：block 拒、suspect/flag 需 relevance≥45。`audit_quality.py` 回溯审计 + verdict 回写 DB（--apply 只删 block）；对 129 篇实跑 block0/suspect0/flag34（全真预印本）/trusted36/ok59。
+- ② **设计转向：用户拍板"标记优先，不一刀切 ban"**——核心论点（用户认可）：**污染不发生在存进去，发生在用的时候忘了它是什么**。block 只留死刑信号（撤稿 + DOI 前缀黑名单）；名单命中降为 **suspect**（照常入库但标记持久化到 `sources.quality_tier/quality_signals`，每个下游出口认标记：summarize 注入质疑模式、render 标 ⚠️+低可信节、未来 RAG 必过滤/降权）。commit 闸：block 拒、suspect/flag 需 relevance≥45。`audit_quality.py` 回溯审计 + verdict 回写 DB（--apply 只删 block）；对 129 篇实跑 block0/suspect0/flag34（全真预印本）/trusted36/ok59。
 - ③ Codex 跨模型评审团上线（ChatGPT 订阅零 API 费）：`lib/codex.py`=`codex exec --output-last-message`，镜像 lib/claude.py。**打分魔鬼代言人**（score_auto，`quality.codex_panel` 默认 false 没开）：Codex 同批找"该拒"理由→`panel_objection`；commit 合议=边界分(<60)+异议→挡，Codex 无否决权；试金石 3 篇全对。**总结核查** `verify_summaries.py`：suspect 必核 + 抽 10%，Codex 对照原文核数字/论断只出报告；首测 2 篇即抓 1 个 major 幻觉（把"行为变化未被预先指定"写成"面对训练中未见的下坡"）。
 - ④ 顺带：确认 `fetch_tierb` Python 版首次端到端实跑通过（4/4，待办#1 关闭，另一实例触发）；score_auto 打分 prompt 带 venue 了。
 
 ## 2026-06-09 — Tier B 准备 + 库清洗（删 6 篇垃圾/跑题）
-- 库清洗（用户拍板全删 6 篇）：#29 IJISRT 掠夺水刊（相关性被标题骗到 55）、#36 AI 与动物常识（跑题）、#33 VR 社交态度检测（跑题）、#38 虚拟驾驶员认知 RL（发 RFID 刊错配）、#32 2014 行人群体仿真（旧+偏题）、#39 下肢外骨骼增强（擦边）。事务内删 citations/paper_topic/papers，按 relevance 重算 rank（剩 34 篇）。这是 06-10 质量体系（硬信号自动挡掉掠夺刊）的直接动因。
-- 免费捞 recover_oa：剩 4 篇全失败（ASE/AMP unpaywall 403；Walk This Way 等无免费源）→ 全确认走 Tier B。现状 34 篇=30 summarized / 3 pdf_failed / 1 discovered。
+- 库清洗（用户拍板全删 6 篇）：#29 IJISRT 掠夺水刊（相关性被标题骗到 55）、#36 AI 与动物常识（跑题）、#33 VR 社交态度检测（跑题）、#38 虚拟驾驶员认知 RL（发 RFID 刊错配）、#32 2014 行人群体仿真（旧+偏题）、#39 下肢外骨骼增强（擦边）。事务内删 citations/source_topic/sources，按 relevance 重算 rank（剩 34 篇）。这是 06-10 质量体系（硬信号自动挡掉掠夺刊）的直接动因。
+- 免费捞 recover_oa：剩 4 篇全失败（ASE/AMP unpaywall 403；Walk This Way 等无免费源）→ 全确认走 Tier B。现状 34 篇=30 summarized / 3 source_failed / 1 discovered。
 - Tier B 设计（已与用户确认、待实现）：opencli 用常驻 profile 开代理 URL→探到登录/Duo 页→Telegram 喊用户过 Duo→会话活着一口气抓完。**取 PDF 不碰 cookie**（httpOnly）让 Chrome 自己下（两路：network 抠响应体 / wait download 搬下载目录）。跑通后固化为 fetch_tierb，复用 slug+pdftotext+落库。卡点=等用户给真实 NYU 代理 URL 反推改写格式。
 
 ## 2026-06-08 — 流水线初建（Node/JS）+ 首测 target=40
-- 主题 `rl-digital-human-interaction`。从零搭起整条流水线（当时是 Node/JS，后于 06-09 整套迁 Python）：5 表 SQLite（papers/topics/paper_topic/summary_versions/citations）；多源发现 discover（OpenAlex/Semantic Scholar/arXiv/PubMed）+ 去重 merge；相关性打分关卡 score（agent fan-out，按摘要打分滤掉高引但跑题论文）；fetch_oa 下 OA 全文 + arXiv 回退 + pdftotext；summarize（每篇一 agent → 中文 v1.md）+ register/render；commit 追加式（增量跑）；prepare/update/register_updates（手动版本化更新）+ suggest_updates；cross_topic（跨主题共享 + 引用桥）；文件名重构为标题 slug（migrate_slugs，81 文件重命名）；一键编排 run.sh。
+- 主题 `rl-digital-human-interaction`。从零搭起整条流水线（当时是 Node/JS，后于 06-09 整套迁 Python）：5 表 SQLite（sources/topics/source_topic/summary_versions/citations）；多源发现 discover（OpenAlex/Semantic Scholar/arXiv/PubMed）+ 去重 merge；相关性打分关卡 score（agent fan-out，按摘要打分滤掉高引但跑题论文）；fetch_oa 下 OA 全文 + arXiv 回退 + pdftotext；summarize（每篇一 agent → 中文 v1.md）+ register/render；commit 追加式（增量跑）；prepare/update/register_updates（手动版本化更新）+ suggest_updates；cross_topic（跨主题共享 + 引用桥）；文件名重构为标题 slug（migrate_slugs，81 文件重命名）；一键编排 run.sh。
 - 首测漏斗（target=40）：discover 原始 1760→去重 1328→候选池 80（69 有摘要/64 OA）；score 80 篇（8 agent/121k token/44s）；commit eligible 59→选 40（相关性 38–96，32 OA，13 引用边）；fetch_oa 第一轮 21 ok/11 fail，arXiv 回退 +6=27 篇全文（5 篇 403、8 篇非 OA 归 Tier B）；summarize 27 篇（首轮 19 ok+8 限流→重建 worklist 补跑→最终 27 全总结）；对 1 篇做了 v2 版本化更新。
 - 当时库状态：1 主题/40 命中/27 已总结/13 引用边。教训/验证：总结质量验证 OK（PADL 读了全文、批判紧扣主题）；Semantic Scholar 无 key 多次 429（已降级）；summarize 遇 API 限流可重跑补齐（幂等）。

@@ -46,8 +46,8 @@
   - **上游粗筛门**：领域做大后某周 query 可能匹配 >500 篇，谁进 500 靠 `prefilter_rank`（各源名次+多源加成，**无语义**）。若长期顶到 cap，风险是**召回**（相关篇在 LLM 看到前被笨过滤器砍）→ 那时上**便宜的语义粗筛**挑对 500 篇（"挑谁去打分"，非"打分时重排"）。
   - **下游检索层**：自然语言问题查几万篇总结，cross-encoder reranker 的主场，属检索层那条线（出口②）。
 
-## ★ 落码状态（2026-06-17）
-**第一步（核心修法）已实现 + 三层验证通过**，改的是 `pipeline/stages/score_auto.py`（**未提交，在工作区**；备份 `/tmp/score_auto.py.bak`）：
+## ★ 落码状态（2026-06-17，✅ 已提交落地）
+**第一步（核心修法）已实现 + 三层验证通过 + 已提交**，落在 `pipeline/find/score_auto.py`（后续 facet 改写又升级为 per-facet，见 `find-facet-rewrite-design.md`）：
 - ② `prompt()` 重写：`GENERIC_BANDS`（主题无关骨架，替掉硬编码的 digital-human 例子）+ `anchor_block()`（注入 `topic.json.score_anchors`，空则退回纯骨架=冷启动裸跑）+ 证据接地（reason 必须引原文片段）。
 - ① `batch_size` 默认 10→20；`worker()` 批内按 `Random(start)` 洗牌（幂等）对冲位置偏置。
 - ④ `boundary_rerank()`（scope a）：截断线 ±8 分窄带 → 同一次调用 ×5 次采样取均值 → 写 `scores/zz_boundary.json`（文件名排 batch_* 之后，commit 的 sorted-glob 合并按 id 覆盖，**commit.py 没动**）；scored<target 自动 SKIP（增量跑无明确截断线）。

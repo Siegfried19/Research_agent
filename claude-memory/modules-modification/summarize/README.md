@@ -4,13 +4,13 @@
 > 代码：`pipeline/summarize/`；上游原则长文 `claude-memory/Prompt-structure-design/summary-design-principles.md`（§八定稿）、`claude-memory/Prompt-structure-design/prompts.md`（现行 prompt 总账）。
 
 ## 这个模块干什么 / 边界
-- **输入**：库里 `status='pdf_downloaded'` 的论文（fetch 段已把 PDF 落到 `storage/papers/<slug>/paper.pdf`）。
-- **干的事**：claude 直读 PDF（Read 工具，看得到公式/图/表）→ 写中文总结 → 存 `storage/papers/<slug>/vN.md` → 注册版本、置 `status='summarized'` → 渲染主题视图 `topics/<id>/topic.md`。
+- **输入**：库里 `status='source_ready'` 的论文（fetch 段已把 PDF 落到 `storage/sources/<slug>/paper.pdf`）。
+- **干的事**：claude 直读 PDF（Read 工具，看得到公式/图/表）→ 写中文总结 → 存 `storage/sources/<slug>/vN.md` → 注册版本、置 `status='summarized'` → 渲染主题视图 `topics/<id>/topic.md`。
 - **不管**：取 PDF（fetch 段）、核查幻觉（verify 段，Codex）。本模块**不做事实核查**——只在 verify 判出 major 后被回调做「整篇重做」（见下）。
 - **首要消费者是别的 AI agent**（其次研究者本人）：它检索到一篇时靠这份总结判断"方法是什么、值不值得打开 PDF 深读"。判断轴：**正确性 > 可提取性 > 文笔**。
 
 ## 关键脚本（run auto 里的 worklist / sum / finalize 三步）
-- `build_worklist.py <id>` — 查 `pdf_downloaded` 篇（按 rank）→ `topics/<id>/summarize_worklist.json`。
+- `build_worklist.py <id>` — 查 `source_ready` 篇（按 rank，**排除 `kind='web'` 的 source——web 正文不进总结**）→ `topics/<id>/summarize_worklist.json`。
 - `summarize_auto.py <id> [并发] [--limit N]` — 每篇一次 `claude -p`（默认并发 2，PDF 模式重）。幂等：`summary_path` 已存在则跳过。`--limit N` 取 rank 前 N 篇未做的（夜间 cron 用来按 token 窗口封批）。无 PDF 不回退纯文本，记 `summarize_no_pdf.log` 跳过。**含 `resummarize()`**（见下，被 verify 段回调）。
 - `register_summaries.py <id|all>` — 把 v1.md 注册进 `summary_versions`、置 `status='summarized'`。
 - `render_topic.py <id>` — 渲染 `topics/<id>/topic.md`（排名表 + 相关性理由 + 库内引用边 + suspect 单列"低可信来源"节）。
@@ -29,7 +29,7 @@
    - 根治旧 `correct_summaries` 那个"反向裁决核查员 + 伪造核对背书"的致命 bug（见 `logs/SESSION-2026-06-17-summary-version-comparison.md`）。
 
 ## 接口 / 落盘约定
-- 文件名用 `papers.slug`（不是 DOI）；DOI 仍是 `papers.id` 主键。
+- 文件名用 `sources.slug`（不是 DOI）；DOI 仍是 `sources.id` 主键。
 - 总结 markdown 以 YAML front matter 开头（`paper_id/version/based_on/created_at/note`）；export/更新流程要解析这段头，`clean_output()` 砍掉 front matter 之前的寒暄。
 - 输出校验：必须以 `---` 开头、含 `## 一句话`、长度 ≥200 字符，否则判 bad output 重试。
 

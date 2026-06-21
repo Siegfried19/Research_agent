@@ -15,7 +15,7 @@
 
 ```
 主力机(客户端) ──ssh──▶ siegfried-laptop-server(服务机)
-  Claude/agent          data-base/papers.sqlite + storage/papers/
+  Claude/agent          data-base/papers.sqlite + storage/sources/
   卡住来查    ◀─stdout─  GPU 嵌入 + vec.sqlite + ask.py←真正在这跑
 ```
 
@@ -30,7 +30,7 @@ ssh research-kb 'cd ~/Projects/Research_agent && python3 pipeline/ask.py "你的
 # 人看的综合回答
 ssh research-kb 'cd ~/Projects/Research_agent && python3 pipeline/ask.py "你的问题" --answer'
 
-# 深读某篇：--json 里的 summary_path / pdf_path 是服务机上的路径，再 ssh 读
+# 深读某篇：--json 里的 summary_path / source_path 是服务机上的路径，再 ssh 读
 ssh research-kb 'cat <summary_path>'
 ```
 
@@ -80,7 +80,7 @@ ssh "$host" "cd ~/Projects/Research_agent && python3 pipeline/ask.py $(printf '%
 ```bash
 ssh research-kb 'cd ~/Projects/Research_agent && python3 pipeline/ask.py "<问题>" --json -n 5'
 ```
-- 返回 JSON：`answerable` + `sources[]`，每条带 `summary_path`（中文总结，先读）和 `pdf_path`（全文，要细节再读）。
+- 返回 JSON：`answerable` + `sources[]`，每条带 `summary_path`（中文总结，先读）和 `source_path`（全文，要细节再读）。
 - `quality_tier`：`suspect`=来源可疑慎引、`flag`=预印本未经同行评审。
 - `answerable=false` 就是库里没有，别硬编，换关键词或上网搜。
 （同机的别的 project 不用 SSH，把 `ssh research-kb '...'` 换成本地 `python3 ~/Projects/Research_agent/pipeline/ask.py "<问题>" --json -n 5`。）
@@ -92,7 +92,7 @@ ssh research-kb 'cd ~/Projects/Research_agent && python3 pipeline/ask.py "<问�
 ## 当前状态：已备好、尚未启用
 
 启用所需的 wrapper 脚本 / 全局 snippet 都已内联在上面（原 `remote-access/` 目录在 2026-06-20 文档重构时移除，内容并入本文）。建议**等库填实再启用**：
-- 库目前**只有 ~39 篇有总结**（库共 221 篇），用户打算重做总结；重做完、`run <id> index` 跟上后再对外开放更划算。
+- 库目前**只有 ~39 篇有总结**（库共 221 篇），用户打算重做总结；重做完、`run <id> reindex` 跟上后再对外开放更划算。
 - 全局指针节 2026-06-16 曾因 `ask.py` 没做好被撤回；现 6-18 检索层升级完毕（混合召回 + rerank + 闭集回答），这次是稳妥重新放出。
 
 ### 排错速查

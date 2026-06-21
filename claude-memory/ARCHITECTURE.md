@@ -35,18 +35,18 @@ run auto = discover → score → commit → fetch → recover → hunt → tier
 ## 4. ★ 模块间连接 / 数据流（接缝）
 > 模块间靠 **DB 状态机 + 文件产物**解耦，不直接互调——唯一例外是 verify→summarize 的回路（见下）。
 
-- **find → fetch → summarize 靠 `papers.status` 推进**：
-  `discovered`（find commit 入库）→ fetch 取到 PDF 置 `pdf_downloaded` → summarize 写完总结置 `summarized`。
-  每段只认上一段留下的 status：fetch 处理 `discovered`、summarize 的 `build_worklist` 只挑 `pdf_downloaded`、verify 只核 `summarized`。中间产物落 `topics/<id>/`（candidates/scores/selected/worklist + verify 状态文件 verified/verify_status/verify_skip）；论文实体落 `storage/papers/<slug>/`（**一篇一个家**：`paper.pdf` + `vN.md` 各版本总结 + `verify.json` 核查详情）。路径由 `lib/store.py` 的 `paper_dir/pdf_file/summary_file/verify_file` 统一构造（2026-06-20 起，原 `store/pdfs` + `storage/papers` 两处分离布局已合并）。
+- **find → fetch → summarize 靠 `sources.status` 推进**：
+  `discovered`（find commit 入库）→ fetch 取到 PDF 置 `source_ready` → summarize 写完总结置 `summarized`。
+  每段只认上一段留下的 status：fetch 处理 `discovered`、summarize 的 `build_worklist` 只挑 `source_ready`、verify 只核 `summarized`。中间产物落 `topics/<id>/`（candidates/scores/selected/worklist + verify 状态文件 verified/verify_status/verify_skip）；论文实体落 `storage/sources/<slug>/`（**一篇一个家**：`paper.pdf` + `vN.md` 各版本总结 + `verify.json` 核查详情）。路径由 `lib/store.py` 的 `paper_dir/pdf_file/summary_file/verify_file` 统一构造（2026-06-20 起，原 `storage/sources/` + `storage/sources/` 两处分离布局已合并）。
 - **verify ↔ summarize 回路（唯一跨段 import）**：verify 判出 **major** → `escalate_verify.py` 调 `from summarize.summarize_auto import resummarize` → **从 PDF 整篇重新总结**出 vN+1（不是打补丁）。核查清单只当"避坑提示"喂进去，重做端**无裁决权**（不许据清单反推原文、不许照搬旧版、不许伪造"已核对"背书）。verify 本身 report-only，只写报告/状态文件。
-- **quality 横切三段**：discover/commit 打质量标（block 永不入库；suspect/flag 入库带标记，写 `papers.quality_tier`）→ summarize 见 suspect 切**质疑模式**（批判指令、strength 封顶）→ retrieve **出口认标记**（suspect 降权+⚠️、flag 注"未同行评审"）。设计哲学：**污染不发生在存进去、发生在用的时候忘了它是什么**，所以标记持久化、每个下游出口都认它。
-- **retrieve 是旁路出口层（2026-06-21 重构）**：现行设计 = **消费者(一个 agent)拥有调查循环**。库经 SSH 挂载到主力机 → agent 看到的是**本地文件**（不需远程 API）。库这边只交付：①现拼的**库地图** `retrieve/map.py`（读 `papers.sqlite` + `topics/*/verify_status.json` + `topics/*/selected.json`，按 主题→facet 分组带标记 → stdout + `data-base/INDEX.md`，**纯 stdlib、不碰 conda、访问前现拼**）②整齐原件 `storage/sources/` ③调查指南 `instruction-for-other-agent.md`(项目根,对外前门)。agent 读地图→自读总结/原件→得结论；纪律由用户写进记忆。**不写生产库。** 旧问答引擎（`ask.py` 理解→召回→精排→回答 + `db/{fts,vec}.sqlite` 索引）**降级为大库备用工具**，留盘不删。
+- **quality 横切三段**：discover/commit 打质量标（block 永不入库；suspect/flag 入库带标记，写 `sources.quality_tier`）→ summarize 见 suspect 切**质疑模式**（批判指令、strength 封顶）→ retrieve **出口认标记**（suspect 降权+⚠️、flag 注"未同行评审"）。设计哲学：**污染不发生在存进去、发生在用的时候忘了它是什么**，所以标记持久化、每个下游出口都认它。
+- **retrieve 是旁路出口层（2026-06-21 重构）**：现行设计 = **消费者(一个 agent)拥有调查循环**。库经 SSH 挂载到主力机 → agent 看到的是**本地文件**（不需远程 API）。库这边只交付：①现拼的**库地图** `retrieve/map.py`（读 `papers.sqlite` + `topics/*/verify_status.json` + `topics/*/selected.json`，按 主题→facet 分组带标记 → stdout + `data-base/INDEX.md`，**纯 stdlib、不碰 conda、访问前现拼**）②整齐原件 `storage/sources/` ③调查指南 `instruction-for-other-agent.md`(项目根,对外前门)。agent 读地图→自读总结/原件→得结论；纪律由用户写进记忆。**不写生产库。** 旧问答引擎（`ask.py` 理解→召回→精排→回答 + `data-base/{fts,vec}.sqlite` 索引）**降级为大库备用工具**，留盘不删。
 
 ## 5. 数据模型（data-base/papers.sqlite，5 表）
 
 > **四类数据落点（命名约定，别混着叫，2026-06-21 定）**
 > - **数据库 / 库** = `data-base/*.sqlite`（papers/fts/vec）——可查询的结构化账本，存**指针和关系**（谁是谁、在哪、什么状态），很多字段就是指向磁盘文件的路径。
-> - **主题状态档** = `topics/<id>/`（topic.json + candidates/selected/worklist/verify 状态 json）——每主题跑流水线的中间产物 + 进度。**它是单一真相源；在这存好的信息不必再复制进数据库**（facet 即一例，2026-06-21 撤回了它的 paper_topic 列，见 claude_log）。
+> - **主题状态档** = `topics/<id>/`（topic.json + candidates/selected/worklist/verify 状态 json）——每主题跑流水线的中间产物 + 进度。**它是单一真相源；在这存好的信息不必再复制进数据库**（facet 即一例，2026-06-21 撤回了它的 source_topic 列，见 claude_log）。
 > - **原件库** = `storage/sources/<slug>/`（paper.pdf 或 web 的 source.md + v*.md 总结 + verify.json）——每篇的实际正文/原件（一篇一个家）。
 > - **日志** = `logs/`——机器跑的流水，可删、不入库。
 > 口诀：**数据库存"指针和关系"，主题状态档和原件库存"实际内容"。**
@@ -93,8 +93,7 @@ pipeline/
 1. **论文自动下载+总结流水线**（已建成）：每周 `run auto`——发现→打分→四级取全文→中文总结→质量标记→Codex 核查重做。
 2. **相互关联、有方便接口的知识库**（建设中）：SQLite 库 + 引用图 + 检索接口（FTS5 + 向量混合召回已有；合成知识层/引用图扩展按需再上）。
 3. **知识库的三个出口（按近→远）**：
-   - ① **用户本人查** —— `ask.py "<问题>" --answer`（带引用中文回答）。
-   - ② **别项目里的 agent 卡住来查** —— `ask.py --json`（机器可读，给绝对路径自己深读 PDF）。**主用户就是它**；全局发现机制指针待 ask.py 完全就绪后加回 `~/.claude/CLAUDE.md`。
+   - ①② **消费者（永远是 agent）来查** —— 人查 / 别项目里卡住的 agent 来查其实是同一件事（消费者永远是 agent）。库经 SSH 挂载成本地文件，agent 读 `pipeline/retrieve/map.py` **现拼的库地图** + 项目根 `instruction-for-other-agent.md` 调查指南，**自驱调查**（读总结→下钻 PDF→得有据结论），我们不写问答管道替它决定（2026-06-21 出口重构）。旧问答引擎 `ask.py`（理解→召回→精排→答）降级为**大库备用**。
    - ③ **idea→论文流水线（ARS 桥）** —— `tools/export_corpus.py` 导 ARS Material-Passport YAML，喂 academic-research-skills 从 idea 走到论文稿。**还没跑过一次真实 idea 全流程**（终极验收，待与用户一起试）。
 
 ---

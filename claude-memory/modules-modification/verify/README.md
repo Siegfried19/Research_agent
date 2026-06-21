@@ -21,7 +21,7 @@
 - verdict 取全篇最严：有 major→major；否则有 minor→minor；否则有 unverifiable→unverifiable；都没→pass。
 
 ## 核查上限与配额熔断
-- **每次硬上限 `--max-papers M`**：封顶本次核查总篇数（含 major 复核），主动停在 codex 一个配额窗口以内（此 ChatGPT 订阅一窗口 ~20 次重型核查、小时级重置）。`run.py` 的 `verify` 阶段默认 `--max-papers VERIFY_MAX_PER_RUN`（=**15**，定在 `run.py` 顶部常量）。超出的报为"待核"、留下次续（断点续核）。
+- **每次硬上限 `--max-sources M`**：封顶本次核查总篇数（含 major 复核），主动停在 codex 一个配额窗口以内（此 ChatGPT 订阅一窗口 ~20 次重型核查、小时级重置）。`run.py` 的 `verify` 阶段默认 `--max-sources VERIFY_MAX_PER_RUN`（=**15**，定在 `run.py` 顶部常量）。超出的报为"待核"、留下次续（断点续核）。
 - **篇序：最近总结的优先**（夜间先核当晚那批，旧积压留后）；取代随机抽样，配合上限确定性收口。
 - **失败分类不靠关键词，交 LLM 判**（`lib/error_classify`，2026-06-20 重构）。一批失败 → 分类 → `classify_and_signal` 决定停轮还是逐篇跳过，并写信号文件 `logs/codex_quota.json` 给 daemon：
   - `quota_exhausted` → 写 until，daemon 睡到窗口恢复（解不出睡默认 ~2h）。
@@ -33,8 +33,8 @@
 ## 两个驱动 + 两个模式
 - `verify_summaries.py <id> [pct] [并发] [--limit N]`：单批核查器（必核=suspect + 重做过的 v≥2 未复核，其余按 pct 抽；默认 pct=100=不抽样）。report-only。
 - `escalate_verify.py <id> [...]`：驱动器，两个模式——
-  - **capped**（传 `--max-papers`，= `run auto` 的 verify 阶段 / daemon 走这条）：不抽样、不翻倍；所有未核都合格、最近总结的优先；`--max-papers` 定本轮核几篇；跨轮只复核重做出的新版；`--start-pct` 被忽略。让总结一进库就已核。
-  - **sampling**（手动/调试，不传 `--max-papers`）：抽 `--start-pct%`；fresh-sample major 率 ≥ `--threshold` 则下轮**抽样翻倍**扩面（"escalate"本名由来）。`pct`/`threshold` 仅此模式有意义。
+  - **capped**（传 `--max-sources`，= `run auto` 的 verify 阶段 / daemon 走这条）：不抽样、不翻倍；所有未核都合格、最近总结的优先；`--max-sources` 定本轮核几篇；跨轮只复核重做出的新版；`--start-pct` 被忽略。让总结一进库就已核。
+  - **sampling**（手动/调试，不传 `--max-sources`）：抽 `--start-pct%`；fresh-sample major 率 ≥ `--threshold` 则下轮**抽样翻倍**扩面（"escalate"本名由来）。`pct`/`threshold` 仅此模式有意义。
   - 每篇重做次数本进程内封顶 `--max-attempts`（默认 2）；仍 major 标"需人工分诊"，不无限循环。建议性，exit code 恒 0。
 
 ## verify_daemon（全天候排空）

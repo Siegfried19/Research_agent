@@ -9,11 +9,11 @@
 
 核心哲学（用户定）：**能标记就不一刀切删**——污染不发生在「存进去」，而发生在「用的时候忘了它是什么」。
 所以除最确凿的死刑信号外，一律**带标记入库**；verdict 持久化在
-`papers.quality_tier` / `papers.quality_signals`，**每个下游出口都认这个标记**。
+`sources.quality_tier` / `sources.quality_signals`，**每个下游出口都认这个标记**。
 
 入口：`quality.assess(paper) -> {"tier": ..., "signals": [...]}`。
 `paper` 是 dict，认 `doi / venue / publisher / is_retracted / is_in_doaj / sources`
-任意子集（candidates.json 条目和 papers 表行都能喂；缺键=未知）。
+任意子集（candidates.json 条目和 sources 表行都能喂；缺键=未知）。
 档位：`block` / `suspect` / `trusted` / `flag` / `ok`（五值，`ok`=啥信号都没命中）。
 
 ## 四档（命中什么 + 怎么处置）

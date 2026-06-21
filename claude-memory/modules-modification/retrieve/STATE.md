@@ -34,7 +34,7 @@
 - 代码未提交（等用户 push）。
 
 ## 2026-06-21 00:39 EDT · 指针：可按 facet 过滤了（新维度，详见 claude_log）
-- `paper_topic` 新增 `facet` 列（find 子方向，非-faceted/旧行=`_all`，全库已无 NULL）。**给 retrieve 备的料**——日后检索可按 facet 过滤/分组（当前 ask/search 尚未用，待要做时接）。全局账见 `../../../claude_log.md`（00:39 条）。
+- `source_topic` 新增 `facet` 列（find 子方向，非-faceted/旧行=`_all`，全库已无 NULL）。**给 retrieve 备的料**——日后检索可按 facet 过滤/分组（当前 ask/search 尚未用，待要做时接）。全局账见 `../../../claude_log.md`（00:39 条）。
 
 ## 2026-06-20 02:16 EDT · 重构首条（当前状态快照）
 
@@ -42,7 +42,7 @@
 
 ### 已落地
 - **①FTS5 全文搜 + `ask.py` 入口**（2026-06-10）。
-- **②③ 检索管道**（2026-06-18，`8b6c0de`）：理解层(understand) → 混合召回(FTS5+Qwen向量 RRF, search) → RCS 精挑(rerank) → 闭集引用/会说不知道(answer)。坐标库 `db/vec.sqlite` + 嵌入引擎 `lib/embed.py`（fp32 满精度/不截断/GPU batch=1）。
+- **②③ 检索管道**（2026-06-18，`8b6c0de`）：理解层(understand) → 混合召回(FTS5+Qwen向量 RRF, search) → RCS 精挑(rerank) → 闭集引用/会说不知道(answer)。坐标库 `data-base/vec.sqlite` + 嵌入引擎 `lib/embed.py`（fp32 满精度/不截断/GPU batch=1）。
   - 实测：GPU 215ms/篇（CPU 慢 ~100×，必须 GPU）；种子 gold 纯 FTS Recall@10 0.67 → 混合 1.00；cannot-answer 哨兵生效。
 - **理解层**（2026-06-18，`14fa88f`/`a48b24a`）：claude 展开缩写+中英双语+HyDE，治机械分词 P-A/P-B bug；失败直接报错（不静默回退）。
 - **④全读模式 readall.py**（2026-06-19，`--mode readall` 成 `--answer/--json` 默认；现规模库小，唯一料薄也能跑的路）：清单+按需 Read/Task，DOI 程序回填零幻觉。`ask.py` 模式分发器 + `answer.py` 共享契约层（readall/pipeline 共用质量态/DOI 回填口径）；检索路（understand/search/rerank/index）退役留盘当大库工具。
@@ -68,7 +68,7 @@
 
 > 来源：旧 `logs/SESSION-2026-06-18-kb-retrieval.md`（一个文件含九段，时间跨 06-18→06-19，忠实迁入）。
 > 目标起点：把出口 `ask.py` 从"纯关键词、对字不对意思"升级到"语义召回 + 精排 + 会说不知道"。
-> 方案依据：`ref/papers/` 那批 RAG 论文综合调研（RAPTOR/PaperQA2/GraphRAG/LightRAG/HippoRAG/Self-RAG/CRAG/HyDE/OpenScholar）。
+> 方案依据：`reference/papers/` 那批 RAG 论文综合调研（RAPTOR/PaperQA2/GraphRAG/LightRAG/HippoRAG/Self-RAG/CRAG/HyDE/OpenScholar）。
 > 用户决定：上嵌入（本地小模型，非 LLM）；分簇用 claude -p；先做第一步（任务 #1–#9）。
 
 ### 第一段（06-18）：第一步「找得准」全部落地并跑通
@@ -77,7 +77,7 @@
 - 出口检索层独立成段文件夹 `pipeline/retrieve/`（不在 run auto 主链上）：index/search/rerank/answer。
 - `ask.py` 留根（公共 API 路径冻结），瘦身成入口/总指挥，内脏搬进 retrieve/。
 - 嵌入引擎 `lib/embed.py`（跟 claude.py/codex.py 并列的第三个引擎，但不是 LLM）。
-- 模型缓存 `pipeline/retrieve/models/`（gitignored，HF_HOME 指向）；坐标库 `db/vec.sqlite`（gitignored，可重建）。
+- 模型缓存 `dependencies/models/`（gitignored，HF_HOME 指向）；坐标库 `data-base/vec.sqlite`（gitignored，可重建）。
 
 **环境（方便迁移）**
 - 新建 conda 环境 `research-agent`（conda-forge 渠道 + python 3.12）——顺带根治 anaconda base 的 libstdc++ CXXABI 报错。
@@ -93,11 +93,11 @@
 
 **进度——第一步（任务 #1–9）全部完成，端到端跑通**
 - #1 装嵌入+计时（见上）。
-- #2 坐标索引 db/vec.sqlite（retrieve/index.py）：全库 221 篇量坐标（没总结的用标题+摘要），增量靠 body md5，OOM 自动减半重试。
+- #2 坐标索引 data-base/vec.sqlite（retrieve/index.py）：全库 221 篇量坐标（没总结的用标题+摘要），增量靠 body md5，OOM 自动减半重试。
 - #3/#4 混合召回（retrieve/search.py）：FTS5（对字）+ 向量（对意思）RRF 融合。中文概念问题混合比纯 FTS 多召回相关篇。
 - #5 RCS 精挑（retrieve/rerank.py）：claude -p 逐候选按问题打分（0 丢）+ 抽证据，实测打分准、证据对题。
 - #6 --answer（retrieve/answer.py）：闭集引用 [n] + quality_tier 透传 + **会说不知道**（量子纠错问题→"库里没有相关内容"哨兵，确定性短路）。实测跨 4 篇综合 + 自列局限，质量高。
-- #7 --json：`{answerable, answer, sources[{doi,quality_tier,rcs_score,summary_path,pdf_path}]}`，纯 stdout 干净 JSON（日志走 stderr）。
+- #7 --json：`{answerable, answer, sources[{doi,quality_tier,rcs_score,summary_path,source_path}]}`，纯 stdout 干净 JSON（日志走 stderr）。
 - #8 验收 harness（tools/eval_retrieval.py）+ 种子 gold（store/eval_gold.json）：**纯 FTS Recall@10=0.67/MRR=0.500 → 混合=1.00/0.548**，向量把 FTS 漏的捞回。⚠️ 真 30–50 条 gold 待用户手标，且最好总结重做定稿后再跑。
 - #9 找相似/揪重复（tools/similar.py，读坐标不调 GPU）：dup **实战抓出已知重复入库**（RL Robust Parameterized Locomotion 以 10.48550/.. 和 arxiv:.. 两 id 入库，余弦 1.000）。
 
@@ -218,7 +218,7 @@
 > 接第六段。用户没让动代码，而是逐层追问把方案 B 的实证地基夯实，过程中我犯了几个含糊/过度推销，被用户一一抓出纠正。这段记**讨论结论 + 我纠了哪几条**，比记"搭了什么"更有用。
 
 **先定的实现岔路：方案 B 用"claude 真·自驱(A)"不用"python 编排 fan-out(B)"**
-- 用户拍板 A：ask.py 起 claude -p（开文件权限、cwd=仓库根，照 bot.py 路子），给它库地图（store/summaries 地图 / store/pdfs 实地 / db 元数据）+ 工具（search.hybrid 可调）+ 纪律（多看/顺引用/深读 PDF/闭集引用/诚实哨兵/蒸馏），让它自己决定读哪些。理由：摩擦最小，最贴"让它自己探索"。代价：输出松，闭集引用/哨兵/--json 格式要在 prompt 里硬钉。
+- 用户拍板 A：ask.py 起 claude -p（开文件权限、cwd=仓库根，照 bot.py 路子），给它库地图（storage/sources/ 地图 / storage/sources/ 实地 / db 元数据）+ 工具（search.hybrid 可调）+ 纪律（多看/顺引用/深读 PDF/闭集引用/诚实哨兵/蒸馏），让它自己决定读哪些。理由：摩擦最小，最贴"让它自己探索"。代价：输出松，闭集引用/哨兵/--json 格式要在 prompt 里硬钉。
 - 用户要求：prompt 最后写时给他过目；**诚实哨兵**这次靠"它真探索过才说没有"，不再是"候选空了机械短路"——agentic 之后哨兵才真正有分量。
 - 新文件（待写）：`pipeline/retrieve/explore.py`（agentic 探索引擎）+ ask.py 加模式开关（默认 agentic，大库回退方案 A 管道）。复用①理解层/②search 当工具/⑦answer 的 quality_tier+verify_status 透传+闭集引用。
 
@@ -245,7 +245,7 @@
 ### 第八段（06-19）：实证深挖第三批 + 出口落地计划收敛（全读模式，待开工）
 
 **实证深挖第三批（已汇总进 `claude-memory/Prompt-structure-design/qa-layer-evidence.md` §7，这里只记结论）**
-派 3 个 agent 精读本地 ref/papers/ 6 篇（RAG 综述 2507.18910/Agentic 综述 2501.09136/PaperQA2/OpenScholar/RAPTOR/GraphRAG）+web 扒 2 篇 2026 新论文。核心：
+派 3 个 agent 精读本地 reference/papers/ 6 篇（RAG 综述 2507.18910/Agentic 综述 2501.09136/PaperQA2/OpenScholar/RAPTOR/GraphRAG）+web 扒 2 篇 2026 新论文。核心：
 - "小库全读 vs 选择性检索"直接对比不存在（领域都在百万篇区间）。最接近=GraphRAG **C0(预蒸馏层) vs TS(临时全摘)：质量打平、合成层赢成本省 97%** → 合成层是"省/快/覆盖全"工具，非"更准"。
 - 多篇一致印证"顶层导航+下钻原文"（RAPTOR 必须保叶层；GraphRAG 细节被稀释）。RAPTOR 赢的是扁平分块检索，**不是读全文**——别拿它当"合成层赢过读原文"的证据。
 - 领域真建议=**"先把检索质量做好，agentic 救不了烂检索"**（Agentic 综述§10.3，撞上我们 6/17"召回是地基"）。
@@ -254,9 +254,9 @@
 **出口实现方案：收敛成「纯全读 + 模式分发」（用户拍板，本段最重要）**
 逐步澄清后定下（覆盖了第七段的"claude 真自驱"——自驱是为用工具，现在不用工具就退成更简单的全读）：
 - 现规模（库小）默认=「全读」模式：python 把**全部论文总结塞进一个 prompt**（召回地板：一篇都不漏），一个 Opus 答。
-  - 唯一工具=Read：总结塞 context 保召回；**给 Read 权限能开 store/pdfs/ 按需读 PDF 一手**（精度）。不给 search/Task/自主搜索——论文全列在 context 里，不需要"找"。
+  - 唯一工具=Read：总结塞 context 保召回；**给 Read 权限能开 storage/sources/ 按需读 PDF 一手**（精度）。不给 search/Task/自主搜索——论文全列在 context 里，不需要"找"。
   - ⚠️ PDF 必须可读（用户明确纠正我一版过度限制）："不用工具"指不给 search/Task/自主发现，**不是禁读 PDF**。读（总结+PDF）本就不是工具。
-  - 答案纪律：闭集引用 [n]、诚实哨兵（撑不起就"库里没有"）、quality_tier/verify_status 标记透传、蒸馏+给 pdf_path 让来问的 agent 自己深钻。
+  - 答案纪律：闭集引用 [n]、诚实哨兵（撑不起就"库里没有"）、quality_tier/verify_status 标记透传、蒸馏+给 source_path 让来问的 agent 自己深钻。
 - 代码结构=「ask.py 模式分发器 + answer.py 共享契约层 + 每方案一个模块」（用户要求：其他方案也要写进去别写死；沿用 retrieve/ 段文件夹+path shim+ask.py 留根约定）：
   - `ask.py` 出口总指挥，按【模式】分发（像 run.py 之于主链）；可按库大小自动选+--mode 覆盖。
   - `retrieve/readall.py` 🆕 模式①全读（现在默认）：塞全总结+能读 PDF，一个 Opus。
@@ -265,10 +265,10 @@
   - `retrieve/（将来）agentic.py / synthesis.py` ← 大库 agentic / 合成层，留好槽。
   - 模式：readall（默认）/ pipeline（方案 A，保留）/ 将来 agentic（大库，带 search/Task）/ synthesis（合成层）。
   - 退役不硬删（用户选）：rerank 退出默认但留盘；understand 默认不跑（全喂就不用路由），留大库用；search/index 留作工具/找重复。
-- 交互（出口②契约）：别的 agent 调 `ask.py "<q>" --json`（本机或经 remote-access/ SSH wrapper）→拿 `{answerable,answer(带[n]),sources:[{doi,quality_tier,verify_status,summary_path,pdf_path}]}`→它读蒸馏答案、要精确自己拿 pdf_path 深读；answerable=false=诚实"库里没有"。一问一答、非实时对话。
+- 交互（出口②契约）：别的 agent 调 `ask.py "<q>" --json`（本机或经 remote-access/ SSH wrapper）→拿 `{answerable,answer(带[n]),sources:[{doi,quality_tier,verify_status,summary_path,source_path}]}`→它读蒸馏答案、要精确自己拿 source_path 深读；answerable=false=诚实"库里没有"。一问一答、非实时对话。
 
 **prompt 草稿（已给用户看过两版，最终版待写）**
-全读模式 prompt 要点（写时给用户过目）：①只用下面给的总结答、每句末标 [n]；②闭集引用绝不编库外 DOI；③诚实哨兵；④**总结=地图有意略数字，要精确就自己开 [n] 的 PDF 读一手 + 把 pdf_path 给来问的人**；⑤suspect/flag/major/stale 源 ⚠️ 标注；⑥蒸馏交付别倒原文。末尾输出可解析 JSON 块（answerable/sources/），ask.py 解析失败→机械兜底"无法确定"不瞎编。
+全读模式 prompt 要点（写时给用户过目）：①只用下面给的总结答、每句末标 [n]；②闭集引用绝不编库外 DOI；③诚实哨兵；④**总结=地图有意略数字，要精确就自己开 [n] 的 PDF 读一手 + 把 source_path 给来问的人**；⑤suspect/flag/major/stale 源 ⚠️ 标注；⑥蒸馏交付别倒原文。末尾输出可解析 JSON 块（answerable/sources/），ask.py 解析失败→机械兜底"无法确定"不瞎编。
 - 状态：未落任何代码。现实约束没变：库现在 0 篇总结（用户在重做），这套搭好只能单元自测，真答案等总结回来几篇。
 
 ### 第九段（06-19）：金字塔架构收口 + 五方案校准 + 方案④全读已落代码
@@ -284,7 +284,7 @@
 - `claude -p --allowedTools "Read,Task"` 能 spawn 子 agent + 子 agent 能 Read 开 PDF——实测让子 agent 读 MARL 综述 PDF，回出标题/作者/页眉/页码，`num_turns:2 is_error:False`。**不需要 `--dangerously-skip-permissions`**，Read 权限传到了子 agent。底层支持坐实。
 
 **实现（清单版全读）**
-- 设计选择（逐步讨论定的）：清单进 prompt（短）、**总结正文不进**——给 Read+Task 让 Opus 自己把总结读全（召回地板：篇数少能读全=不漏）、相关再 Read PDF、多了可 Task 并发。比"总结全文贴进 prompt"省（prompt 不每次重发几十万字）+不稀释注意力；代价=召回靠模型读全（库大了变只挑读，那时再上检索筛）。清单**带 ⚠️ 质量/核查标记+DOI**（只在 DB 里，不在总结文件夹/那几个残缺 json 里）=为什么要 python 拼而非直接丢 store/summaries 文件夹。
+- 设计选择（逐步讨论定的）：清单进 prompt（短）、**总结正文不进**——给 Read+Task 让 Opus 自己把总结读全（召回地板：篇数少能读全=不漏）、相关再 Read PDF、多了可 Task 并发。比"总结全文贴进 prompt"省（prompt 不每次重发几十万字）+不稀释注意力；代价=召回靠模型读全（库大了变只挑读，那时再上检索筛）。清单**带 ⚠️ 质量/核查标记+DOI**（只在 DB 里，不在总结文件夹/那几个残缺 json 里）=为什么要 python 拼而非直接丢 storage/sources/ 文件夹。
 - 🆕 `pipeline/retrieve/readall.py`：`load_papers`（默认全库跨主题/`--topic` 限定）→`build_catalog`（每篇=[n] 标题+⚠️ 标记+slug+总结路径+pdf 路径，正文不放）→`run_claude(tools=["Read","Task"])`→`_extract_json`（围栏+平衡括号兜底）→cited[n/slug]→`answer.make_source` 回填。**模型只吐 `{answerable,cited:[{n,slug}]}`，DOI/路径 python 据 n 回填=零 DOI 幻觉**；解析失败→机械兜底 answerable=false 不瞎编；空范围→哨兵。
 - 🔧 `ask.py`：加 `--mode {readall,pipeline}`（默认 readall）+`--topic`；deep（--answer/--json）走 readall 分支、**不碰 fts/vec 索引**（全读不检索）；pipeline=老路（理解→混合召回→精排）留着；非 deep 命中列表仍走 search。understand/rerank/search/index 从默认路退役，留盘当大库/agentic 工具。
 - 🔧 `answer.py`：抽出 `make_source(main,status_map,paper,rcs=None)` 共享契约助手（readall/pipeline 共用，⚠️ 标记+verify 态+DOI/路径回填口径统一）。
@@ -301,11 +301,11 @@
 
 ### 一、本会话产出（都在 gitignored 的 ref/）
 - 代码库（clone）：`ref/paper-qa`（早先已有）、`ref/HippoRAG`、`ref/LightRAG`、`ref/OpenScholar`。
-- 论文 13 篇 `ref/papers/`：PaperQA2/PaperQA_v1/RAPTOR/GraphRAG/HippoRAG/HippoRAG2/LightRAG/Self-RAG/CRAG/Agentic_RAG_survey + 第二批 OpenScholar/HyDE/RAG_systems_review。均核过首页标题无张冠李戴。
-- 索引 `ref/papers/INDEX.md`（什么/为什么下/重复项）。
+- 论文 13 篇 `reference/papers/`：PaperQA2/PaperQA_v1/RAPTOR/GraphRAG/HippoRAG/HippoRAG2/LightRAG/Self-RAG/CRAG/Agentic_RAG_survey + 第二批 OpenScholar/HyDE/RAG_systems_review。均核过首页标题无张冠李戴。
+- 索引 `reference/papers/INDEX.md`（什么/为什么下/重复项）。
 
 ### 二、关键结论（讨论中达成的共识）
-1. **数据来源澄清**：生产库 `db/papers.sqlite`（5 表，元数据+引用图+路径）是流水线**边跑边写**的、和总结**耦合**；正文（PDF/总结）是磁盘文件，库里只存路径。检索层（fts.sqlite / 未来 index）是**事后扫描、解耦、可重建**的旁路。
+1. **数据来源澄清**：生产库 `data-base/papers.sqlite`（5 表，元数据+引用图+路径）是流水线**边跑边写**的、和总结**耦合**；正文（PDF/总结）是磁盘文件，库里只存路径。检索层（fts.sqlite / 未来 index）是**事后扫描、解耦、可重建**的旁路。
 2. **清库重跑 summary 不影响检索层方案**——因为它解耦可重建；只影响"实现时机"（重跑稳定后再索引，且切片对齐新总结结构）。
 3. **地基是召回（对意思），不是提炼（RCS）**——消费者是会读的 agent，RCS 可降级；召回（语义）无人能兜底，必须先做。
 4. **⚠️ 必须为规模设计**（用户强调）：20 篇/天→两年几万篇/几十万片段。reranker/ANN/图/RAPTOR 在那量级都是刚需，不能因现在 221 篇就砍。
@@ -330,9 +330,9 @@
 > 这是出口①「用户本人来查答案」+ 知识库 RAG 的最早一版落地，后续 06-17 方案调研、06-18 混合召回/理解层、06-19 金字塔/全读都建在它之上。
 
 ### ④ RAG 第一步落地：`ask.py`（FTS5 库内问答）
-- **索引** = 独立 `db/fts.sqlite`（gitignored、可重建，不碰生产库）：
+- **索引** = 独立 `data-base/fts.sqlite`（gitignored、可重建，不碰生产库）：
   - `fts_sum`（trigram，索引 标题+摘要+中文总结）
-  - `fts_text`（porter，英文全文）⚠️ **当时的 fts_text 英文全文索引后于 2026-06-16 移除**（总结都从 PDF 写、英文全文不再维护；检索只覆盖标题/摘要/中文总结，要原文细节直读 store/pdfs 的 PDF）——此处保留是历史记录，别按它现状理解。
+  - `fts_text`（porter，英文全文）⚠️ **当时的 fts_text 英文全文索引后于 2026-06-16 移除**（总结都从 PDF 写、英文全文不再维护；检索只覆盖标题/摘要/中文总结，要原文细节直读 storage/sources/ 的 PDF）——此处保留是历史记录，别按它现状理解。
   - mtime 增量；当时 221 篇唯一论文。
 - **查询切词**：英文取词；中文按停用词切段——≤4 字精确短语、长段拆滑窗 trigram、2 字词 instr 全扫兜底。
   - ⚠️ **踩的坑：FTS5 虚拟表上 LIKE 静默返回 0 行，必须用 `instr()`**。（这条坑后续 06-18 审查时又牵出 parse_query 机械分词的 P-A/P-B bug，治法见上方 06-18 第三/四段的理解层。）

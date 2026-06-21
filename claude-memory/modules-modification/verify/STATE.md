@@ -24,14 +24,14 @@
 - 同会话顺带确认（无改动）：早 9:00 cron 即便 daemon 已在跑也不会重复——`acquire_singleton()` 见活 pidfile 直接拒启自退。
 
 ## 2026-06-20 04:19 EDT · 指针：新增按版本核查详情 verify.json（跨模块，详见 claude_log）
-- 新能力：核完每篇把 codex 详情**按版本累积**写 `store/papers/<slug>/verify.json`（`record_verify_detail`，verify_summaries + escalate_verify 都接）。**状态文件 verified/verify_status/verify_skip 与 daemon 不变**——状态在 `topics/<id>/` 喂 daemon，详情在论文文件夹，彻底分家。全局账见 `../../../claude_log.md`（04:19 条）。
+- 新能力：核完每篇把 codex 详情**按版本累积**写 `storage/sources/<slug>/verify.json`（`record_verify_detail`，verify_summaries + escalate_verify 都接）。**状态文件 verified/verify_status/verify_skip 与 daemon 不变**——状态在 `topics/<id>/` 喂 daemon，详情在论文文件夹，彻底分家。全局账见 `../../../claude_log.md`（04:19 条）。
 
 ## 2026-06-20 02:16 EDT · 重构首条（当前状态快照）
 
 > 文档模块化重构建立本日志。以下为当日现状；以后变化在本条**之上**叠新条。
 
 ### 现在能跑的
-- 核查链 capped 模式（`escalate_verify --max-papers`）端到端可用：report-only + Codex medium self-render claim 级核查 + major 触发整篇 `resummarize` + 断点续核。
+- 核查链 capped 模式（`escalate_verify --max-sources`）端到端可用：report-only + Codex medium self-render claim 级核查 + major 触发整篇 `resummarize` + 断点续核。
 - **verify_daemon 全天候在跑**：codex 闲就啃积压，撞配额睡到窗口恢复自动续。verify 已从夜间 cron 摘出（2026-06-19），cron 只 `sum+finalize`，避免与 daemon 抢配额。
 - **LLM 失败分类器已上线并实测跑通**（2026-06-20，`lib/error_classify`）：取代旧的关键词猜测；2026-06-20 凌晨一次真·额度耗尽事件中正确判 `quota_exhausted` 并长睡到窗口恢复，端到端验证过。
 - 配额现实：此 ChatGPT 订阅一个窗口约 **20 次**重型核查、小时级重置。`VERIFY_MAX_PER_RUN=15`（run.py 顶部常量），留 margin。
@@ -42,7 +42,7 @@
 - 上述病例当前已人工处置：删损坏 v5 回退 v4、`record_skip` 钉版 v4 标"【待用户手动修改】"，daemon 不再碰；审阅副本在 `review/Input_to_State_Safety_for_RL/`（含 PDF 副本，本地审阅，勿提交/外发）。系统性补丁仍欠。
 
 ### 上次卡在哪 / 注意
-- **库刚被清空重做中**（2026-06-19 02:06，用户要用新流程重写全部总结）：`summary_versions` 清零、221 篇全回 `pdf_downloaded`、verified*/verify_status*/verify_skip* 标记全删、索引删。`quality_tier/quality_signals` 保留。
+- **库刚被清空重做中**（2026-06-19 02:06，用户要用新流程重写全部总结）：`summary_versions` 清零、221 篇全回 `source_ready`、verified*/verify_status*/verify_skip* 标记全删、索引删。`quality_tier/quality_signals` 保留。
 - 因此当前**待核积压随夜间 sum 重建在动态变化**，不是稳定数字；daemon 起来后会逐步啃。库重新长出总结后无需手动干预，daemon 自然跟上。
 - `VERIFY_BACKEND=claude` 应急档存在但默认不用（同模型自查，强度弱）；写独立 `_claude` 文件，仅 codex 配额枯竭时应急。
 - 代码近期改动（LLM 分类器等）多为**未提交**状态（用户负责 push）。
@@ -113,7 +113,7 @@
 - ⬜（独立）版本通胀：escalate 对"非 pass 全重写"（含 minor）+ verify 几乎不发 pass（大量"note_plan 无锚点"minor，其实原文支持）→ v2/v3 暴涨但多非真修；修向：这类"原文支持仅未登记锚点"的 minor 不触发重写。
 
 ### 五、当时数据状态
-- summarized=39 / pdf_downloaded=182；版本 v1=39 / v2=20 / v3=18。
+- summarized=39 / source_ready=182；版本 v1=39 / v2=20 / v3=18。
 - 4 个真 major（数字张冠李戴/符号写反/论断说反）已改到 v3，但 **v3 从未被 codex 复核确认**（每次复核都撞挂）。
 
 ---

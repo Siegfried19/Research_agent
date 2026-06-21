@@ -21,15 +21,15 @@
 | harness agent 记忆 | `~/.claude/projects/-home-siegfried-Projects-Research-agent/memory/` | ❌ 不同步 | 只管"怎么跟用户协作"（工作风格/评审节奏）。机器本地、可重建，**不再在仓库存快照**（项目知识已全在 `claude-memory/`）|
 | 全局 agent 提示 | `~/.claude/CLAUDE.md` | ❌ 不同步 | 知识库发现机制（让别的项目/机器的 agent 知道 ask.py）。当前用户选择**不弄**（见远程访问 `remote-access.md`） |
 | 元数据/引用图 | `data-base/papers.sqlite` | ✅ 随 git（已跟踪） | 论文元数据/状态/引用图。换机器前 commit 才带最新 |
-| 论文实体（一篇一个家） | `storage/papers/<slug>/`（~1.3GB，含 `paper.pdf` + `vN.md` 各版本总结 + `verify.json` 核查详情） | ❌ 大头 PDF gitignored（版权） | 不随 git。整目录拷（cp -a / tar）会带全部；clone 式只拿代码骨架，全文要对缺 PDF 论文重跑 `fetch/recover/hunt/tierb` 按 DB 元数据重建 |
-| 检索索引 | `data-base/fts.sqlite` + `data-base/vec.sqlite` | ❌ gitignored | 可重建：`python3 pipeline/ask.py --reindex`（FTS）/ `run <id> index`（向量增量） |
+| 论文实体（一篇一个家） | `storage/sources/<slug>/`（~1.3GB，含 `paper.pdf` + `vN.md` 各版本总结 + `verify.json` 核查详情） | ❌ 大头 PDF gitignored（版权） | 不随 git。整目录拷（cp -a / tar）会带全部；clone 式只拿代码骨架，全文要对缺 PDF 论文重跑 `fetch/recover/hunt/tierb` 按 DB 元数据重建 |
+| 检索索引 | `data-base/fts.sqlite` + `data-base/vec.sqlite` | ❌ gitignored | 可重建：`python3 pipeline/ask.py --reindex`（FTS）/ `run <id> reindex`（向量增量） |
 | 大依赖 | `dependencies/`（模型 ~1.2GB + noVNC） | ❌ gitignored | `models/` 嵌入模型缓存（`lib/embed.py` 经 HF_HOME 钉好，首次自动下载）；`novnc/` 远程看屏前端 |
 
 > ⚠️ 实际记忆目录的 slug 是 `-home-siegfried-Projects-Research-agent`（`/` 和 `_` 都换成 `-`）。
 
 ## ⚠️ 三条铁律（整目录搬）
 
-1. **整目录拷，别 `git clone`。** clone 会漏掉所有 gitignore 的东西：`storage/papers/`（PDF 全文）、`data-base/fts.sqlite`/`data-base/vec.sqlite`（索引）、`dependencies/`（嵌入模型 + noVNC）、`ref/`、`config/*.json`（密钥）。整目录 `cp -a` / `tar` 不会漏。
+1. **整目录拷，别 `git clone`。** clone 会漏掉所有 gitignore 的东西：`storage/sources/`（PDF 全文）、`data-base/fts.sqlite`/`data-base/vec.sqlite`（索引）、`dependencies/`（嵌入模型 + noVNC）、`ref/`、`config/*.json`（密钥）。整目录 `cp -a` / `tar` 不会漏。
 2. **新机器文件系统用 ext4**（别用 exFAT/NTFS）：项目重度用 SQLite+WAL，非 Linux 文件系统上会锁不住、写坏库；密钥的 `-rw-------` 权限也会丢。
 3. **拷之前确认没人在写**（cron 没在跑、没有正在跑的总结/核查、verify_daemon 已停），否则 SQLite 拷到一半会坏。
 
@@ -78,7 +78,7 @@
 
 ```bash
 python3 pipeline/ask.py "测试一个关键词" --json -n 3   # 知识库能查 = 库+索引+环境 OK
-# 抽查一篇总结能打开；storage/papers/*/paper.pdf 的数量与 db 元数据大致对得上
+# 抽查一篇总结能打开；storage/sources/*/paper.pdf 的数量与 db 元数据大致对得上
 ```
 
 ## 相关文件

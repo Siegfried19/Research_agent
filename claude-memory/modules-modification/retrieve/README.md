@@ -31,7 +31,7 @@
 
 ## 它服务谁（蓝图三出口，按近→远）
 - **① 用户本人查** —— `ask.py "<问题>" --answer`，带引用的中文回答。
-- **② 别项目里的 agent 卡住来查** —— `ask.py "<问题>" --json`，机器可读 `{answerable, answer, sources:[{doi,quality_tier,verify_status,summary_path,pdf_path,...}]}`，agent 拿绝对路径自己深读 PDF。**主用户就是它**（用户定）。
+- **② 别项目里的 agent 卡住来查** —— `ask.py "<问题>" --json`，机器可读 `{answerable, answer, sources:[{doi,quality_tier,verify_status,summary_path,source_path,...}]}`，agent 拿绝对路径自己深读 PDF。**主用户就是它**（用户定）。
 - **③ idea→论文流水线（ARS 桥）** —— `tools/export_corpus.py` 导出 ARS Material-Passport `literature_corpus[]` YAML，喂 academic-research-skills 从 idea 走到论文稿。
 
 ## 两种回答模式（`--answer/--json` 时，2026-06-19）
@@ -64,7 +64,7 @@
 跟 claude.py/codex.py 并列的第三引擎，但**只把文字变坐标、不生成文字**。模型 **Qwen/Qwen3-Embedding-0.6B**（多语言中英都强，1024维）。**质量优先**（用户定）：fp32 满精度、`max_seq=24576`（实质不截断，真实总结才 ~7k token）、GPU batch=1；OOM 自动减半→单篇仍爆退 CPU（必完成不降精度）。查询侧带 instruct 前缀。模型缓存钉在 `dependencies/models/`（HF_HOME，gitignored，不污染家目录；2026-06-20 从 `pipeline/retrieve/models/` 移入大依赖统一目录）。
 
 ## 关键脚本 / 坐标库
-- 入口：`ask.py`（总指挥，模式分发）。
+- 入口：`ask.py`（**降级备用**总指挥，模式分发；现行主入口是 `map.py`，见顶部★节）。
 - 管道：`retrieve/{understand,search,rerank,answer,readall,index,freshness}.py`。
 - 旁路工具（归本模块）：`tools/similar.py`（找相似/揪重复，读坐标 numpy 余弦不调 GPU）、`tools/eval_retrieval.py`（A/B 验收 Recall@k/MRR，确定性零 LLM）、`tools/cross_topic.py`（跨主题共享篇+引用桥，自带全库引用边重建）、`tools/export_corpus.py`（出口③ 导 ARS YAML）。
 - 索引库（均 **gitignored、可重建、不碰生产 `data-base/papers.sqlite`**）：`data-base/fts.sqlite`（FTS5）、`data-base/vec.sqlite`（sqlite-vec 坐标）。增量靠 `freshness.py` 两段钥匙（便宜指纹 stale_key 不读文件 → 变了再读全文算 body_hash 精确确认才重嵌）；含孤儿回收。没总结的论文也嵌（用标题+摘要），所以 similar/dup 对全库生效。
