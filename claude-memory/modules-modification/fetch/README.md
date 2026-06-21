@@ -37,6 +37,15 @@
 - **flock 独占**（锁=`<UDD>/scrape.lock`）+ **finally 无条件 pkill** `-f "user-data-dir=<UDD>"` 整关：按独立目录匹配绝不误伤日常 Chrome，复用来的实例也关。副产物=每次 fresh launch → PDF pref 必生效 → 方法 B 始终可用。
 - **profile 别名**靠 `detect_alias()` 自动认（从 `opencli profile list`），**别写死**（随机器变）。
 
+## 失败兜底：报失败 + 手动挂 PDF（定稿 2026-06-21）
+fetch 几乎不失败（生产库常年 `pdf_failed=0`），所以**不建诊断/分类 agent**，只留极简两步：
+- **⑤ 报失败** `python3 pipeline/run.py <id> failed`：列出本主题没拿到全文的篇（`pdf_path IS NULL AND status IN ('pdf_failed','discovered')`），打印 `标题/id/slug/DOI/落地页`。只报"是哪篇"——失败类型不展示不入库（要查时由处理的 agent 临场看日志/元数据判）。全拿到则输出 ✅，平时零噪音。
+- **⑥ 手动挂回库**（不写工具）：失败篇在 `papers`/`paper_topic` 的行 find 阶段已 commit，所以"入库"只是拷 PDF 到 `storage/papers/<slug>/paper.pdf` + `UPDATE papers SET status='pdf_downloaded', pdf_path=...`（即 `fetch_oa.py` 末尾三行）。用户自己下好 PDF，叫 agent 现场用 SQL 挂上，再走 worklist→sum。
+- 红线不变：**不接盗版源**；付费墙只走 NYU 合法订阅。
+
+## facet 入库（给 retrieve 备料）
+`paper_topic.facet` 记每篇在本主题下的 find 子方向（非-faceted 主题/旧行=`_all`）。find 的 `commit` 经 `store.set_paper_topic` 落盘，**fetch 本身 facet 无感**（仍按主题+rank 取 PDF）；这列是留给 retrieve 日后按 facet 过滤/分组用。详见 `../find/README.md`。
+
 ## 边界（不属于本模块）
 - 选哪些篇下载（打分/选篇/资格闸）= **find** 模块；本模块只对已选中的篇取 PDF。
 - 下载下来后写总结/核查 = **summarize / verify** 模块。

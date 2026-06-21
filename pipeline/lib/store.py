@@ -79,12 +79,12 @@ def upsert_topic(conn, topic, target):
 
 def set_paper_topic(conn, topic_id, p, rank):
     conn.execute(
-        """INSERT INTO paper_topic (topic_id,paper_id,relevance,relevance_reason,matched_queries,rank,added_at)
-           VALUES (?,?,?,?,?,?,?)
+        """INSERT INTO paper_topic (topic_id,paper_id,relevance,relevance_reason,matched_queries,rank,facet,added_at)
+           VALUES (?,?,?,?,?,?,?,?)
            ON CONFLICT(topic_id,paper_id) DO UPDATE SET relevance=excluded.relevance,
-             relevance_reason=excluded.relevance_reason, rank=excluded.rank""",
+             relevance_reason=excluded.relevance_reason, rank=excluded.rank, facet=excluded.facet""",
         (topic_id, p["id"], p.get("relevance"), p.get("relevance_reason"),
-         _j(p.get("matched_queries") or []), rank, now_iso()))
+         _j(p.get("matched_queries") or []), rank, p.get("facet") or "_all", now_iso()))
 
 
 def build_citations(conn, papers):

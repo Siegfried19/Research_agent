@@ -4,6 +4,9 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账（含旧 SESSION 的"为什么"）。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-21 00:39 EDT · 指针：facet 现在落盘了（跨模块，详见 claude_log）
+- `commit` 经 `store.set_paper_topic` 把每篇的 facet 写进新列 `paper_topic.facet`（调用处未改，传的 `p` 本就带 facet）。供 retrieve 日后按 facet 过滤用。agentic 旧行已从 candidates.json 回填。全局账见 `../../../claude_log.md`（00:39 条）+ fetch STATE。
+
 ## 2026-06-20 22:48 EDT · TODO-6 验证场跑通(真实数据)+ 抓出并修两个 bug
 
 > 拉起 orchestrator 真跑 agentic-knowledge-synthesis(冷启动,生产库)。**验证成功:端到端跑通、6 奠基作全回库。** 过程抓出两个 bug,都已修。

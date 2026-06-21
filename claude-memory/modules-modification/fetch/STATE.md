@@ -4,6 +4,19 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-21 00:39 EDT · fetch 失败兜底定稿落地：`failed` 报失败 + facet 入库（跨模块）
+
+> 与用户逐步敲定 fetch 失败处理并落码。**结论：fetch 几乎不失败（生产库当前 `pdf_failed=0`，历史仅 PPG/Lazy Agents 那 1 次已修），不值当建诊断/分类 agent。** 砍掉早先设想的"diagnose 失败分类层"，只留两件极小的事 + 为 retrieve 备料的 facet 入库。
+
+**做了什么（代码）：**
+- **⑤ 报失败** — `run.py` 加 `failed` 子命令（`report_failed(tid)`）：一句 SQL 查本主题 `pdf_path IS NULL AND status IN ('pdf_failed','discovered')`，打印 `标题/id/slug/DOI/落地页`。**只报"是哪篇"**，失败类型不展示不入库（需要时处理的 agent 临场判）。全拿到则输出 `✅`，平时零噪音。实测：agentic（38 篇无全文）正确列出、rl-general-toolbox 输出 ✅。
+- **⑥ 手动挂回库** — **不写工具**（用户决定）。失败篇的 `papers`/`paper_topic` 行 find 阶段已 commit，挂载=拷 PDF 到 `storage/papers/<slug>/paper.pdf` + `UPDATE status='pdf_downloaded'`（即 `fetch_oa.py` 末尾三行）。需要时叫 agent 现场用 SQL 办。
+- **facet 入库**（跨 find/retrieve，用户："先加进来，可能和后面查询有关"）：`paper_topic` 加 `facet TEXT`（经 `lib/db.py` 的 `ADD_COLUMNS` 自动迁移，无需手敲 ALTER）；`lib/store.py:set_paper_topic` 从 `p.get('facet') or '_all'` 落盘 + ON CONFLICT 更新；`commit.py` 调用处无需改（传的 `p` 本就带 discover 打的 facet）。**回填**：agentic 38 行从 `candidates.json`（77 候选全带 facet、orchestrator 修正过）回填、全 38 匹配；两个老非-faceted 主题 229 行归一 `_all`。**全库 267 行无 NULL facet**。
+
+**红线（沿用）**：不接盗版源；付费墙只走 NYU 合法订阅；orchestrator 永不直接开浏览器（Chrome 生命周期锁死 tierb 内）。
+
+**验证**：py_compile（db/store/run）过；临时库端到端（facet 写入 / 缺省 `_all` / ON CONFLICT 更新）过；`failed` 双场景实测过。**未 push（待用户）。** 跨模块账见 `../../../claude_log.md`（00:39 条），find/retrieve STATE 各留指针。
+
 ## 2026-06-20 04:19 EDT · 指针：存储布局改版（跨模块，详见 claude_log）
 - PDF 落点 `store/pdfs/<slug>.pdf` → `store/papers/<slug>/paper.pdf`（一篇一个家）。fetch_oa/recover_oa/recover_agent/fetch_tierb 已改走 `lib/store.py:pdf_file(slug)` 统一出口，不再用 `config.paths.pdfs`/`PDF_DIR`。全局账见 `../../../claude_log.md`（04:19 条）。
 

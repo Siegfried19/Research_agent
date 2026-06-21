@@ -246,6 +246,29 @@ def refresh_index(tid="-"):
     return rc
 
 
+def report_failed(tid):
+    """⑤ 报失败:列出本主题没拿到全文的篇(跑完 fetch 链后用)。只报"是哪篇"——
+    标题/id/slug/DOI/落地页,够你去手动下;失败"类型"不展示也不入库,需要时由处理的
+    agent 看日志/元数据临场判。平时(全拿到)输出一行 ✅,零噪音。"""
+    conn = open_db()
+    rows = conn.execute(
+        """SELECT p.id, p.slug, p.title, p.doi, p.landing_url, p.status, pt.rank
+             FROM papers p JOIN paper_topic pt ON pt.paper_id=p.id
+            WHERE pt.topic_id=? AND p.pdf_path IS NULL
+              AND p.status IN ('pdf_failed','discovered')
+            ORDER BY pt.rank""", (tid,)).fetchall()
+    conn.close()
+    if not rows:
+        print(f"✅ {tid}: 全部已取到全文,无失败篇。")
+        return 0
+    print(f"📄 {tid}: {len(rows)} 篇没拿到全文(自己下好发我,我用 SQL 挂回库):\n")
+    for r in rows:
+        print(f"  [rank {r['rank']}] {(r['title'] or '')}")
+        print(f"      id={r['id']}  slug={r['slug'] or '-'}  status={r['status']}")
+        print(f"      DOI={r['doi'] or '-'}  落地页={r['landing_url'] or '-'}")
+    return 0
+
+
 def run_stage(stage, tid):
     st = steps(stage, tid)
     if st is None:
@@ -265,7 +288,7 @@ def run_stage(stage, tid):
 def main():
     if len(sys.argv) < 3:
         print("usage: run.py <topicId> <stage>\n"
-              "stages: discover|score|commit|fetch|recover|hunt|tierb|worklist|sum|finalize|verify|reindex\n"
+              "stages: discover|score|commit|fetch|recover|hunt|tierb|worklist|sum|finalize|verify|reindex|failed\n"
               "        auto (all) | auto-pull (attended half) | auto-sum [N] (nightly, single topic)\n"
               "        auto-sum-next [N] (nightly queue: picks top-priority topic with work;\n"
               "                           <topicId> ignored — reads topics table)", file=sys.stderr)
@@ -273,6 +296,8 @@ def main():
     tid, stage = sys.argv[1], sys.argv[2]
     if stage == "reindex":  # 手动重建向量索引(topic 无关,读全库)
         sys.exit(refresh_index(tid))
+    if stage == "failed":  # ⑤ 报失败:列出没拿到全文的篇(手动下载用)
+        sys.exit(report_failed(tid))
     if stage == "auto":
         rc = run_chain(AUTO, tid)
         refresh_index(tid)  # 收尾刷新语义索引(A2)

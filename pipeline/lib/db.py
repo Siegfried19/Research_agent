@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS paper_topic (
   relevance_reason TEXT,
   matched_queries  TEXT,
   rank             INTEGER,
+  facet            TEXT,  -- 该篇在本主题下的子方向(find 阶段定;非 faceted 主题/旧行=NULL,读时当 '_all');留给 retrieve 按 facet 过滤
   added_at         TEXT,
   PRIMARY KEY (topic_id, paper_id)
 );
@@ -91,7 +92,8 @@ CREATE INDEX IF NOT EXISTS idx_cit_dst       ON citations(dst_paper_id);
 ADD_COLUMNS = [("papers", "slug", "TEXT"),
                ("papers", "quality_tier", "TEXT"),      # block/suspect/flag/ok/trusted (lib/quality.py)
                ("papers", "quality_signals", "TEXT"),    # 逗号分隔的命中信号
-               ("topics", "priority", "INTEGER DEFAULT 0")]  # auto-sum-next 队列排序
+               ("topics", "priority", "INTEGER DEFAULT 0"),  # auto-sum-next 队列排序
+               ("paper_topic", "facet", "TEXT")]  # find 子方向落盘,供 retrieve 用(2026-06-21)
 
 
 def _ensure_columns(conn):

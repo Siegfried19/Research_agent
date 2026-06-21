@@ -4,6 +4,17 @@
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `claude_memory/modules-modification/<x>/STATE.md`（各模块层积日志，取代旧 logs/SESSION-*.md）；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
 
+## 2026-06-21 00:39 EDT — fetch 失败兜底定稿 + facet 入库（跨 db/find/fetch/retrieve）
+- **缘由**：和用户逐步对齐 fetch 失败处理。先评估出 **fetch 几乎不失败**（生产库 `pdf_failed=0`，历史只 PPG/Lazy Agents 1 次已修），于是把早先设想的"diagnose 失败分类 agent"整个砍掉，只留极简兜底；另按用户要求把 facet 落库供 retrieve 用。
+- **做了什么**：
+  - `lib/db.py`：`paper_topic` 加 `facet TEXT`（写进 CREATE TABLE + `ADD_COLUMNS`，`open_db` 自动迁移生产库，无需手敲 ALTER）。
+  - `lib/store.py`：`set_paper_topic` 从 `p.get('facet') or '_all'` 落 facet + ON CONFLICT 更新。`commit.py` 调用处未改（传的 `p` 本就带 discover 标的 facet）。
+  - `pipeline/run.py`：加 `failed` 子命令（`report_failed`）——SQL 列出没拿到全文的篇（标题/id/slug/DOI/落地页），只报"是哪篇"，全拿到输出 ✅。
+  - **手动挂 PDF（⑥）不写工具**：失败篇的库行已在，挂载=拷文件+翻 status，需要时叫 agent 用 SQL 现办。
+  - **回填**：agentic-knowledge-synthesis 38 行从 `candidates.json` 回填 facet（全匹配，5 facet 分布）；两老主题 229 行归一 `_all`；全库 267 行无 NULL。
+- **验证**：py_compile（db/store/run）过；临时库端到端（facet 写/缺省/ON CONFLICT）过；`failed` 双场景实测过。
+- **文件**：`pipeline/lib/{db,store}.py`、`pipeline/run.py`、生产库 `data-base/papers.sqlite`（迁移+回填）；文档 fetch README/STATE、find/retrieve STATE 指针。**未 push（待用户）。**
+
 ## 2026-06-20 22:48 EDT — TODO-6 验证收口:修两个 bug(orchestrator挂后台 / commit不豁免seed)+ 清 3 偏题
 - 接上一条(orchestrator 自报的 19:54 实跑)。验证**成功**——6 奠基作全回库(GraphRAG 首轮被切、这次 rel=95 回来),但抓出两个 bug,均已修。
 - **Bug 1(orchestrator 行为)**:首次拉起时 orchestrator 把 score_auto 挂后台 +"等唤醒"就停了,无头 `claude -p` 没唤醒机制→commit 没跑、库 0 篇。**修**:`drive.py` prompt 加【无头运行】铁条(前台同步、绝不挂后台、走完 discover→score→commit 再回报)。重跑即 41 篇入库。
