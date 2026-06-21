@@ -1,4 +1,13 @@
-"""Ask the paper library a question — 出口①② 公共API(路径冻结,勿移)。
+"""Ask the paper library a question.
+
+⚠️ 降级说明(2026-06-21):知识库出口已重构为「**消费者拥有调查循环**」——来查的 agent
+   先跑 `pipeline/retrieve/map.py` 拿库地图,自己决定读哪些总结/原件、自己得结论(库经
+   SSH 挂载到主力机,全是本地文件读,不需要远程 API)。**`map.py` 是现在的主入口。**
+   本文件(问答引擎:理解→召回→精排→生成答案)**降级为大库备用工具**——库大到 agent
+   一个上下文读不完地图/总结时才用,留盘不删,不再是默认路径。详见
+   claude-memory/modules-modification/retrieve/STATE.md。
+
+—— 出口①② 公共API(路径冻结,勿移)。
 
   python3 pipeline/ask.py "<问题>" [-n N] [--json] [--answer] [--mode M] [--topic T] [--reindex] [--no-rerank]
 

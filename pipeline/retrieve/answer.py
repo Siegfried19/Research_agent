@@ -12,11 +12,10 @@
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 
-import json
-
 from lib.db import open_db, ROOT
 from lib.claude import run_claude
 from lib.log import get_logger
+from lib.verify_status import load_verify_status, resolve_verify  # 单一真相源,与 map.py 共用
 
 log = get_logger("answer")
 CANNOT = "库里没有相关内容。"
@@ -49,34 +48,6 @@ def _latest_version(main, paper_id):
     r = main.execute("SELECT version, path FROM summary_versions WHERE paper_id=? "
                      "ORDER BY version DESC LIMIT 1", (paper_id,)).fetchone()
     return (r["version"], r["path"]) if r else (None, None)
-
-
-def load_verify_status():
-    """汇总全库各 topic 的 verify_status.json → {paper_id: {verdict, version}},
-    同篇多 topic 取最高 version(最近一次核查)。verify 阶段(write_report)落的结构化态。"""
-    agg = {}
-    for sp in (ROOT / "topics").glob("*/verify_status.json"):
-        try:
-            for pid, st in json.loads(sp.read_text(encoding="utf-8")).items():
-                cur = agg.get(pid)
-                if not cur or (st.get("version") or 0) > (cur.get("version") or 0):
-                    agg[pid] = st
-        except Exception:
-            continue
-    return agg
-
-
-def resolve_verify(status_map, paper_id, cur_version):
-    """把"核查记录 vs 当前最高版"解析成出口用的态:
-    无记录→unverified;记录版本<当前→stale(新版没核);否则=记录的 verdict。"""
-    if cur_version is None:
-        return None
-    st = status_map.get(paper_id)
-    if not st:
-        return "unverified"
-    if (st.get("version") or 0) < cur_version:
-        return "stale"
-    return st.get("verdict")
 
 
 def make_source(main, status_map, paper, rcs=None):

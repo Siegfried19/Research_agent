@@ -48,6 +48,8 @@ data-base/fts.sqlite
 
 # 知识库检索升级(2026-06-18):坐标索引(可重建)。嵌入模型缓存已移至 dependencies/(见上)
 data-base/vec.sqlite
+# 库地图(2026-06-21):retrieve/map.py 现拼的派生快照,可重建,与 fts/vec 同类
+data-base/INDEX.md
 topics/*/literature_corpus.yaml
 storage/literature_corpus_all.yaml
 

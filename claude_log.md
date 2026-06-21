@@ -4,6 +4,19 @@
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `claude_memory/modules-modification/<x>/STATE.md`（各模块层积日志，取代旧 logs/SESSION-*.md）；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
 
+## 2026-06-21 17:46 EDT — ★ retrieve 出口重构：从"问答引擎"翻成"库地图 + 消费者拥有调查循环"
+- **从需求重谈**(非改 bug,是设计推倒重来):与用户从需求捋出几条 → ①出口"人查/agent 查"其实是同一件事(消费者永远是 agent);②**消费者拥有调查循环**(agent 自驱,我们别写死问答管道替它决定);③纪律=质量优先/别图省 token/别过度依赖工具;④接入=项目 SSH 挂载主力机=本地文件(砍掉远程 API/`--json` 契约);⑤运维只手动跑 sum+verify→地图**访问前现拼**、不挂 pipeline。
+- **落代码(实测过,未提交)**:🆕 `pipeline/retrieve/map.py` **库地图生成器=新主入口**(纯 stdlib,不碰 conda,挂载点裸 python3 可跑;3 数据源 join/merge:papers.sqlite + topics/*/verify_status.json + topics/*/selected.json(facet);两级分组 topic→facet、组内年份降序;收"有料可读"=有总结或原件;大白话标记+头部图例,核查 6 态收成`重大存疑`/`未充分核查`两类;输出 stdout + `data-base/INDEX.md`)。实测 319 篇/3 主题、137 有总结/190 仅 PDF,跑在 /usr/bin/python3 exit 0。🆕 `lib/verify_status.py`(抽 answer.py 的 load/resolve_verify 成 stdlib 共享,单一真相源)。🆕 `instruction-for-other-agent.md`(项目根,对外调查指南;调查纪律 v1 已起草=召回优先/质量优先/总结主力+原件下钻/认标记/闭集引用/诚实/交付可用 7 条)。
+- **降级**:`ask.py` 问答引擎(理解→召回→精排→生成答案)+ fts/vec 索引 **→ 大库备用工具**,留盘不删、不再默认;ask.py 顶部加降级说明、路径仍冻结。
+- **体量**(用户问"会不会太长 agent 看不过来"):319 篇≈~39k token,做了**路径去重**(家目录给一次,省 ~13%),现给 agent **整张**地图。曾加切片(`--index`/`--topic`)+ "grep 文件不整吞" 姿势,**用户不喜欢、已撤回**——体量天花板的更好办法**待用户思考**,先别再自作主张加切片。
+- **gitignore**:`data-base/INDEX.md`(派生快照,与 fts/vec 同类)。
+- **指针**:详见 `claude-memory/modules-modification/retrieve/STATE.md`(17:46 条) + README 改版 + ARCHITECTURE §3/§4 retrieve 行已更新。**未提交,等用户 push。**
+
+## 2026-06-21 14:40 EDT — verify daemon 唤醒/停机 + tnnls 卡死篇回滚 v1 + 揪出"14 篇 major 悄悄标已核"
+- **daemon 长睡误判**:用户问"codex 自动验证不是关了吗"。查实——daemon 进程活着但**空睡到 06-24**(早前撞配额、error_classify 解析出远期重试时刻就照睡)。实测 `codex exec` exit 0、配额早恢复 → kill 旧 daemon + 清 stop/quota 信号 + 重启,新进程立刻续核(出真判决 MAJOR Self-supervised...)。**随后用户要切 codex 账号 → 再次停机**:停 daemon + 杀干净在飞的 escalate 批次及其 codex 子进程 + 清 /tmp/vfy_cdx_* 沙箱(pts 上用户自己的 codex 交互会话保留没动)。**重启 daemon 前需先 `rm logs/verify_daemon.stop`**。
+- **tnnls 回滚**:用户令把审查卡死的 `10.1109/tnnls.2026.3688045`(Input-to-State Safety)回滚 v1+清审查状态。DB 删 v2/v3/v4、磁盘删 v2-v4.md、verified/verify_status/verify_skip 三档移除本篇。备份 `logs/temporary-log/tnnls-reset-20260621-1440/`。现=v1 summarized 零核查记录,待重核。
+- **系统问题(已记 verify STATE,用户暂"先不动")**:rl-general-toolbox 84 篇已核里 ≈37 pass/33 minor/**14 major 未解决**。根因 `escalate` 的 `record_verified(ok)` 在 quota 中止判断**之前**跑 → "核出 major+同批撞配额"的篇被标已核、重做被 break 跳过、daemon 再不碰。13 篇(除 tnnls)清单:`10.1016/j.neunet.2024.107052`、`10.1016/j.neunet.2026.108693`、`10.1088/1748-3190/ae4930`、`10.1109/tnnls.2023.3250269`、`10.1109/tpami.2026.3674995`、`10.1109/tsg.2019.2962625`、`10.15607/rss.2018.xiv.010`、`10.48550/arxiv.1506.02438`(GAE)、`10.48550/arxiv.2211.15205`、`10.48550/arxiv.2310.03718`、`10.48550/arxiv.2509.24892`、`arxiv:1905.06893`、`arxiv:2602.12375`。修向建议:record_verified 只记 pass/minor。
+
 ## 2026-06-21 14:32 EDT — tierb 抓完最后 8 篇付费墙(Python e2e 首验通过)→ 该主题 98/98 全有全文
 - 用户回来后走 tierb 抓那 8 篇没免费源的。**8 抓到 / 0 失败**:Oxford/IEEE/Elsevier/MDPI 跨出版商 find_pdf_url 全中,NYU OpenAthens(Profile 2 已登)直过;FoodAtlas 撞 Elsevier Cloudflare → wait_human 停下、用户点掉、自动续成功。
 - **意义**:fetch_tierb Python 版自 2026-06-09 迁移起就挂着"未 e2e 验证"(前两主题无付费墙待抓篇),本次首次完整跑通——find_pdf_url 跨商、challenge 检测、混合 B 下载+%PDF 校验、Chrome 生命周期(0 残留)全验证。详见 fetch STATE(14:32 条)。

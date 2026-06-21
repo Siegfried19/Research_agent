@@ -29,7 +29,7 @@ run auto = discover → score → commit → fetch → recover → hunt → tier
 | **fetch** 📥 | 四级降级取全文 PDF（OA→规则兜底→agent 猎源→付费墙 Tier B；撞墙就固化新渠道） | `modules/fetch/README.md` |
 | **summarize** ✍️ | claude 直读 PDF 写中文结构化总结，落盘 + 注册版本 + 渲染主题视图 | `modules/summarize/README.md` |
 | **verify** ✅ | Codex 跨模型核查幻觉（report-only，无否决权）；major 回 summarize 整篇重做 | `modules/verify/README.md` |
-| **retrieve** 🔎 | 知识库检索/RAG（**旁路查询层，不在主链**）；混合召回→精挑→闭集引用回答 | `modules/retrieve/README.md` |
+| **retrieve** 🔎 | 知识库出口（**旁路，不在主链**）；现行=**库地图 `map.py` + 消费者(agent)拥有调查循环**；旧问答引擎(召回→精挑→回答)已降级为大库备用 | `modules/retrieve/README.md` |
 横切子系统 **quality**（硬信号质量四档，非模块）见 `design/quality.md`。
 
 ## 4. ★ 模块间连接 / 数据流（接缝）
@@ -40,7 +40,7 @@ run auto = discover → score → commit → fetch → recover → hunt → tier
   每段只认上一段留下的 status：fetch 处理 `discovered`、summarize 的 `build_worklist` 只挑 `pdf_downloaded`、verify 只核 `summarized`。中间产物落 `topics/<id>/`（candidates/scores/selected/worklist + verify 状态文件 verified/verify_status/verify_skip）；论文实体落 `storage/papers/<slug>/`（**一篇一个家**：`paper.pdf` + `vN.md` 各版本总结 + `verify.json` 核查详情）。路径由 `lib/store.py` 的 `paper_dir/pdf_file/summary_file/verify_file` 统一构造（2026-06-20 起，原 `store/pdfs` + `storage/papers` 两处分离布局已合并）。
 - **verify ↔ summarize 回路（唯一跨段 import）**：verify 判出 **major** → `escalate_verify.py` 调 `from summarize.summarize_auto import resummarize` → **从 PDF 整篇重新总结**出 vN+1（不是打补丁）。核查清单只当"避坑提示"喂进去，重做端**无裁决权**（不许据清单反推原文、不许照搬旧版、不许伪造"已核对"背书）。verify 本身 report-only，只写报告/状态文件。
 - **quality 横切三段**：discover/commit 打质量标（block 永不入库；suspect/flag 入库带标记，写 `papers.quality_tier`）→ summarize 见 suspect 切**质疑模式**（批判指令、strength 封顶）→ retrieve **出口认标记**（suspect 降权+⚠️、flag 注"未同行评审"）。设计哲学：**污染不发生在存进去、发生在用的时候忘了它是什么**，所以标记持久化、每个下游出口都认它。
-- **retrieve 是旁路查询层**：读 `data-base/papers.sqlite` + `store/` + verify 的 `verify_status.json`，**不写生产库、不在 run auto 上**。索引库 `db/{fts,vec}.sqlite` gitignored、可重建。总结/PDF 更新后跑 `ask.py --reindex`（或 `retrieve/index`）增量跟上。
+- **retrieve 是旁路出口层（2026-06-21 重构）**：现行设计 = **消费者(一个 agent)拥有调查循环**。库经 SSH 挂载到主力机 → agent 看到的是**本地文件**（不需远程 API）。库这边只交付：①现拼的**库地图** `retrieve/map.py`（读 `papers.sqlite` + `topics/*/verify_status.json` + `topics/*/selected.json`，按 主题→facet 分组带标记 → stdout + `data-base/INDEX.md`，**纯 stdlib、不碰 conda、访问前现拼**）②整齐原件 `storage/sources/` ③调查指南 `instruction-for-other-agent.md`(项目根,对外前门)。agent 读地图→自读总结/原件→得结论；纪律由用户写进记忆。**不写生产库。** 旧问答引擎（`ask.py` 理解→召回→精排→回答 + `db/{fts,vec}.sqlite` 索引）**降级为大库备用工具**，留盘不删。
 
 ## 5. 数据模型（data-base/papers.sqlite，5 表）
 
