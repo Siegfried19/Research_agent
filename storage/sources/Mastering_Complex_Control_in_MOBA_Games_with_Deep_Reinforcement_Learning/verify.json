@@ -1,0 +1,25 @@
+{
+  "paper_id": "10.1609/aaai.v34i04.6144",
+  "slug": "Mastering_Complex_Control_in_MOBA_Games_with_Deep_Reinforcement_Learning",
+  "title": "Mastering Complex Control in MOBA Games with Deep Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "只能用「击败同一弱基线（可被内置 DiRenJie AI 打败的六小兵）所需时间」间接比较",
+          "problem": "原文说该基线对手由六个可被内置 DiRenJie AI 击败的 Marksman heroes 组成，不是“六小兵”；把英雄基线写成小兵，属于对象张冠李戴并削弱了基线含义。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T19:14:43.281Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:28:20.829Z",
+      "backend": "codex"
+    }
+  }
+}

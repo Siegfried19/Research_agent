@@ -1,0 +1,43 @@
+{
+  "paper_id": "10.48550/arxiv.2509.26633",
+  "slug": "OmniRetarget_Interaction_Preserving_Data_Generation_for_Humanoid_Whole_Body_Loco",
+  "title": "OmniRetarget: Interaction-Preserving Data Generation for Humanoid Whole-Body Loco-Manipulation and Scene Interaction",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "接触保持与穿透 ↔ 成功率正相关",
+          "problem": "原文说地形交互中接触保持与成功率成正比，并强调“减少穿透”对泛化关键；总结把“穿透”本身写成与成功率正相关，方向相反。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T19:47:39.938Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "GMR 在 robot-object 上接触保持分最高...地形任务接触保持骤降近一半。",
+          "problem": "原文中“接触保持下降近一半”指的是 PHC 从 object 到 terrain 的表现下降，不是 GMR；GMR 的接触保持从 0.99 到 0.67，并非近一半，属于结果对象张冠李戴。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.132Z",
+      "backend": "codex"
+    },
+    "3": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "搬 4.6 kg 椅子→踩上→爬 0.9 m(机器人身高 70%)平台→跃下→翻滚的 30 秒长程 parkour",
+          "problem": "原文明确把 4.6 kg 椅子和 30 秒 parkour 绑定到 Fig.1 的长程序列，但 0.9 m/70% 平台高度是在 Fig.5 的平台攀爬演示中单独陈述，未明确说明属于这条 30 秒 chair parkour 序列。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.811Z",
+      "backend": "codex"
+    }
+  }
+}

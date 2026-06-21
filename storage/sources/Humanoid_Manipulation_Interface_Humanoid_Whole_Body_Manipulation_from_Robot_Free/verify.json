@@ -1,0 +1,13 @@
+{
+  "paper_id": "arxiv:2602.06643",
+  "slug": "Humanoid_Manipulation_Interface_Humanoid_Whole_Body_Manipulation_from_Robot_Free",
+  "title": "Humanoid Manipulation Interface: Humanoid Whole-Body Manipulation from Robot-Free Demonstrations",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T20:14:45.812Z",
+      "backend": "codex"
+    }
+  }
+}

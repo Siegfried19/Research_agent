@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.15607/rss.2018.xiv.049",
+  "slug": "Learning_Complex_Dexterous_Manipulation_with_Deep_Reinforcement_Learning_and",
+  "title": "Learning Complex Dexterous Manipulation with Deep Reinforcement Learning and Demonstrations",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "用少量人类示范（每个任务 25 条 VR 采集的轨迹）来引导 on-policy 策略梯度",
+          "problem": "这里把所有任务都概括成人类/VR 示范不够准确；原文在手内转笔任务中明确说因 VR 缺触觉难以人工示范，改用 shaped-reward RL 训练出的计算专家生成示范。总结后文虽有更正，因此判为轻微问题。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.813Z",
+      "backend": "codex"
+    }
+  }
+}

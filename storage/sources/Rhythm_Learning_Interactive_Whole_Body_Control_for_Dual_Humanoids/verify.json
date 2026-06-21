@@ -1,0 +1,41 @@
+{
+  "paper_id": "arxiv:2603.02856",
+  "slug": "Rhythm_Learning_Interactive_Whole_Body_Control_for_Dual_Humanoids",
+  "title": "Rhythm: Learning Interactive Whole-Body Control for Dual Humanoids",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "Hug 约 86.7% vs 26.7%(30 试)、Shoulder 约 80% vs 20%(30 试)、Greeting 约 82.2% vs 12.2%(90 试)",
+          "problem": "表 III 明确说每个任务 conducted 10 trials，30/90 是按每次试验的关键帧数累计得到的 Success/Total，不是试验次数；这里把关键帧判定点误写成试验次数。",
+          "severity": "major"
+        },
+        {
+          "quote": "去交互奖励则各项全崩",
+          "problem": "表 II 中 w/o Interaction Rew 并非所有指标都崩，例如 Collaborate 的 CSR/CER 仍为 100.0/0.000，Inter-X 的 CSR/CER 还优于 full；该说法过度概括。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:47:39.937Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "正文称去交互奖励“在 Collaborate 上 ISR 掉到 58.1”，而表 II 对应值是 51.3",
+          "problem": "表 II 中 Collaborate 的 w/o Interact Rew ISR 正是 58.1，51.3 属于 MAGIC: Intensive Contact，批评把不同任务组的数字张冠李戴。",
+          "severity": "minor"
+        },
+        {
+          "quote": "数据与代码“承诺发表时公开”",
+          "problem": "原文只承诺公开原始动捕数据和 IAMR 重定向参考/MAGIC 数据集，未核到代码公开承诺。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.132Z",
+      "backend": "codex"
+    }
+  }
+}

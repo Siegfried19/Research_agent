@@ -1,0 +1,24 @@
+{
+  "paper_id": "10.1038/s41598-026-44517-1",
+  "slug": "Self_Organizing_Dual_Buffer_Adaptive_Clustering_Experience_Replay_SODACER_for_safe",
+  "title": "Self-Organizing Dual-Buffer Adaptive Clustering Experience Replay (SODACER) for safe reinforcement learning in optimal control.",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "底层 RL = 在线 actor-critic 近似 HJB",
+          "problem": "原文实现部分只描述 single-layer adaptive critic/value approximation 和由 critic 权重给出的控制律，未把本方法表述为 actor-critic；“Actor Critic”只出现在前作引用标题中，称为 actor-critic 略有张冠李戴。",
+          "severity": "minor"
+        },
+        {
+          "quote": "重要性权重 `w_i=1/P(i)|C_i|`",
+          "problem": "PDF 算法第32行的权重为 `w_i = 1/(P(i)·|C|)`，不是按单个簇大小 `|C_i|`；方向“与采样概率成反比”对，但公式对象写错。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:14:43.282Z",
+      "backend": "codex"
+    }
+  }
+}

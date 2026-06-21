@@ -1,0 +1,52 @@
+{
+  "paper_id": "10.1145/3588432.3591525",
+  "slug": "Synthesizing_Physical_Character_Scene_Interactions",
+  "title": "Synthesizing Physical Character-Scene Interactions",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "训练中以 20 个 1.2kg 投射物随机击打角色，策略仍稳健并能被击中后恢复继续任务",
+          "problem": "原文是在评测鲁棒性时用投射物扰动角色，并非训练中加入该扰动；总结把实验/评测设定写成训练设定。",
+          "severity": "major"
+        },
+        {
+          "quote": "终止条件:除脚外任意关节触地(<20cm)或箱子落地(<30cm)则提前终止该集",
+          "problem": "原文早停条件是除脚和手以外的任意关节距地面20cm内；总结漏掉了手也被排除在早停触地判断之外。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.133Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "坐/躺分别在 16、5 个未见过物体上测,搬在 21 个新箱子上测",
+          "problem": "21 个新物体对应的是坐/躺测试物体总数（16+5），搬运评测是缩放原始箱子，并非 21 个新箱子，属于对象/设定张冠李戴。",
+          "severity": "major"
+        },
+        {
+          "quote": "早停条件(训练):除脚和头外任意关节落到离地 20 cm 内",
+          "problem": "原文写的是 except the feet and hands，不是“脚和头”；把 hands 写成 head。",
+          "severity": "minor"
+        },
+        {
+          "quote": "在坐与躺任务上,本文成功率高于运动学方法 NSM、SAMP 及分层物理方法 Chao et al. 2019",
+          "problem": "表3的躺下任务只报告 SAMP 与 Ours，没有报告 NSM 或 Chao et al. 的躺下结果；该句把坐任务的基线覆盖范围扩展到了躺下任务。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.811Z",
+      "backend": "codex"
+    },
+    "3": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T20:22:55.119Z",
+      "backend": "codex"
+    }
+  }
+}

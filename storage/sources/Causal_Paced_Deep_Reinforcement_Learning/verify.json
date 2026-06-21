@@ -1,0 +1,19 @@
+{
+  "paper_id": "arxiv:2507.02910",
+  "slug": "Causal_Paced_Deep_Reinforcement_Learning",
+  "title": "Causal-Paced Deep Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "奖励分量的分歧信号在稀疏奖励 + 随机采样下不可靠(玩具实验已显示无趋势),这也是 PM 直接把 reward 权重设为 0 的现实原因。",
+          "problem": "原文确实显示奖励分歧无清晰趋势、且表1中PM的reward权重为0，但没有说明PM这样设权重的原因就是奖励分歧不可靠；这是总结者的因果解释。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.813Z",
+      "backend": "codex"
+    }
+  }
+}

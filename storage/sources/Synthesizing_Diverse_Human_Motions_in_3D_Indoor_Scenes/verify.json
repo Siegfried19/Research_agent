@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.1109/iccv51070.2023.01354",
+  "slug": "Synthesizing_Diverse_Human_Motions_in_3D_Indoor_Scenes",
+  "title": "Synthesizing Diverse Human Motions in 3D Indoor Scenes",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "40 FPS、每片 10 帧",
+          "problem": "原文说序列先降采样到 40 FPS，然后切成 10 帧和 100 帧片段；总结写成“每片 10 帧”漏掉了 100 帧片段，表述过窄。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.812Z",
+      "backend": "codex"
+    }
+  }
+}

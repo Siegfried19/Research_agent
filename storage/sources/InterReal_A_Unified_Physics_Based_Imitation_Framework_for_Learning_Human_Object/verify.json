@@ -1,0 +1,31 @@
+{
+  "paper_id": "arxiv:2603.07516",
+  "slug": "InterReal_A_Unified_Physics_Based_Imitation_Framework_for_Learning_Human_Object",
+  "title": "InterReal: A Unified Physics-Based Imitation Framework for Learning Human-Object Interaction Skills",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "式9 ... 即一个时间窗内“关节位置误差 + 物体位置误差 + link 位置误差”之和的变化量（误差下降得快 → 奖励高）",
+          "problem": "原文式(9)写的是误差和的 Δ/Δt，Fig.2 还标注 meta goal 为最小化位置误差梯度；原文没有把“误差下降越快”定义为“奖励越高”，该处把梯度/奖励方向解释反了或至少擅自补了符号。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T19:47:39.937Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "图2 把元目标标注为\"最小化位置误差梯度 `min ∇pos_error/v_t`\"",
+          "problem": "Fig.2 原文标注为 `Meta goal: min ∇pos_error / ∇t`，不是除以 `v_t`；这是公式转写错误，虽然后文“变化率/梯度”的解释方向基本正确。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.132Z",
+      "backend": "codex"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.1109/cdc51059.2022.9992926",
+  "slug": "Predictive_Control_Barrier_Functions_for_Online_Safety_Critical_Control",
+  "title": "Predictive Control Barrier Functions for Online Safety Critical Control",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "把 H* 渲染为始终非正，就等价于让真实轨迹始终留在安全集 S 内(Theorem 1：S*_H ⊆ S)",
+          "problem": "原文 Theorem 1 只证明 H*≤0 的集合是安全集的子集，即充分条件，不是与留在 S 内等价；总结的“等价于”略强。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:28:20.829Z",
+      "backend": "codex"
+    }
+  }
+}

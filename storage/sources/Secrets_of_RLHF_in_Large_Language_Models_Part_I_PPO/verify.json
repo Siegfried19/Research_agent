@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.48550/arxiv.2307.04964",
+  "slug": "Secrets_of_RLHF_in_Large_Language_Models_Part_I_PPO",
+  "title": "Secrets of RLHF in Large Language Models Part I: PPO",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:14:43.282Z",
+      "backend": "codex"
+    }
+  }
+}

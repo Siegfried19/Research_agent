@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.1145/3680528.3687683",
+  "slug": "PDP_Physics_Based_Character_Animation_via_Diffusion_Policy",
+  "title": "PDP: Physics-Based Character Animation via Diffusion Policy",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T20:02:08.133Z",
+      "backend": "codex"
+    }
+  }
+}

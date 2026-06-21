@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.48550/arxiv.2310.05858",
+  "slug": "Distributional_Soft_Actor_Critic_with_Three_Refinements",
+  "title": "Distributional Soft Actor-Critic with Three Refinements",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "所有验证都在仿真(实机那段也是\"仿真训练→部署\")",
+          "problem": "原文第6节确实说策略在仿真中训练后部署到 Geekplus M200 实机，并展示实机轨迹/快照；因此“所有验证都在仿真”表述过度，准确说应是系统性基准/对比主要在仿真，实机部分是单案例部署验证。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:14:43.282Z",
+      "backend": "codex"
+    }
+  }
+}

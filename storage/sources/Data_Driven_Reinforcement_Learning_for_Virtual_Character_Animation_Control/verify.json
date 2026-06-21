@@ -1,0 +1,19 @@
+{
+  "paper_id": "arxiv:2104.06358",
+  "slug": "Data_Driven_Reinforcement_Learning_for_Virtual_Character_Animation_Control",
+  "title": "Data-Driven Reinforcement Learning for Virtual Character Animation Control",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "完整 RLAnimate 在挥手/指点/二者兼学三种设定下，得分与平滑度均为各对照中最高（Table 3，三任务得分接近满分、平滑度均超 98.5% 阈值）",
+          "problem": "Table 3 中 RLAnimate 的 Wave smoothness 为 98.5，等于作者设定的 98.5% 阈值，并非“超”过该阈值；其余方向和最高对照关系成立。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:47:39.938Z",
+      "backend": "codex"
+    }
+  }
+}

@@ -1,1 +1,150 @@
-{}
+{
+ "10.1561/2300000053": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "arxiv:2603.09170": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "arxiv:2603.07516": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "arxiv:2502.13134": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "arxiv:2603.02856": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "arxiv:2601.03607": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2509.26633": {
+  "verdict": "minor",
+  "version": 3
+ },
+ "10.48550/arxiv.2509.16757": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2510.05070": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2512.03028": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.2511.04679": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2509.14353": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "arxiv:2104.06358": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.2601.12799": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.2508.14120": {
+  "verdict": "minor",
+  "version": 2
+ },
+ "10.48550/arxiv.1707.02201": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.48550/arxiv.2505.19463": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.48550/arxiv.2406.06005": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "10.1145/3528223.3530110": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "10.1145/3588432.3591525": {
+  "verdict": "pass",
+  "version": 3
+ },
+ "10.1145/3450626.3459670": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1145/3680528.3687683": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1145/3480148": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1145/3721238.3730616": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "10.1145/3272127.3275048": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1145/3528223.3530067": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "10.1145/3550469.3555391": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1109/iccv51070.2023.01354": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1109/iccv51701.2025.01228": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1109/cyber67662.2025.11168186": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "arxiv:2602.06643": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "arxiv:2511.11218": {
+  "verdict": "pass",
+  "version": 2
+ },
+ "arxiv:2411.01349": {
+  "verdict": "pass",
+  "version": 1
+ },
+ "arxiv:2507.02910": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.3389/fnbot.2013.00025": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.15607/rss.2018.xiv.049": {
+  "verdict": "minor",
+  "version": 1
+ },
+ "10.1109/lra.2021.3076955": {
+  "verdict": "pass",
+  "version": 1
+ }
+}

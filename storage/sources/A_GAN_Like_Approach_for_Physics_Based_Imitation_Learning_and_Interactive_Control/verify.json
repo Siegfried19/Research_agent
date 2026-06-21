@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.1145/3480148",
+  "slug": "A_GAN_Like_Approach_for_Physics_Based_Imitation_Learning_and_Interactive_Control",
+  "title": "A GAN-Like Approach for Physics-Based Imitation Learning and Interactive Control",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "单个判别器太强会在训练早期把智能体样本一眼识破、永远给极低奖励 → 奖励消失、智能体“自满”学不动",
+          "problem": "原文中“self-satisfied”指的是判别器欠优化、不能有效区分样本的相反情形；低奖励/奖励消失对应的是判别器过强或过度优化，术语被误套了。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.133Z",
+      "backend": "codex"
+    }
+  }
+}

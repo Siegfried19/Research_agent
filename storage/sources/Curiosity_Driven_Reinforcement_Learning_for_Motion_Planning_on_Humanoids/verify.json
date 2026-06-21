@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.3389/fnbot.2013.00025",
+  "slug": "Curiosity_Driven_Reinforcement_Learning_for_Motion_Planning_on_Humanoids",
+  "title": "Curiosity Driven Reinforcement Learning for Motion Planning on Humanoids",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "AC 大约用 LT 三分之一的时间就试遍所有状态-动作",
+          "problem": "原文第3.1节和图4页面写的是 AC 用约 LT 的 1/2 时间试遍所有 state-actions，不是三分之一；方向正确但夸大了效率差距。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.813Z",
+      "backend": "codex"
+    }
+  }
+}

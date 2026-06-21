@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.1145/3721238.3730616",
+  "slug": "PARC_Physics_based_Augmentation_with_Reinforcement_Learning_for_Character_Controllers",
+  "title": "PARC: Physics-based Augmentation with Reinforcement Learning for Character Controllers",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T20:02:08.133Z",
+      "backend": "codex"
+    }
+  }
+}

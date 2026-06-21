@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.48550/arxiv.2505.19463",
+  "slug": "SMAP_Self_supervised_Motion_Adaptation_for_Physically_Plausible_Humanoid_Whole_body",
+  "title": "SMAP: Self-supervised Motion Adaptation for Physically Plausible Humanoid Whole-body Control",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "消融（表1）：去掉 Humanoid-Adapter / 师生蒸馏 / 渐进课程 / 解耦奖励，性能均变差",
+          "problem": "表1整体支持各模块有效，但并非每个单项指标都变差：例如 novel motion 下 SAMP w/o Humanoid-Adapter 的 Empjpe=0.1442 略低于完整 SAMP 的 0.1458，因此“均变差”表述过满。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.133Z",
+      "backend": "codex"
+    }
+  }
+}

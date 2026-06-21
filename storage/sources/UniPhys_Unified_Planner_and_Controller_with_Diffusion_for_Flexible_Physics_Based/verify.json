@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.1109/iccv51701.2025.01228",
+  "slug": "UniPhys_Unified_Planner_and_Controller_with_Diffusion_for_Flexible_Physics_Based",
+  "title": "UniPhys: Unified Planner and Controller with Diffusion for Flexible Physics-Based Character Control",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "提出 UniPhys：首个把规划与控制统一进单一扩散模型的物理角色控制行为克隆框架",
+          "problem": "原文说提出并统一 planner/controller、且区别于此前分离式方法，但未明确宣称“首个”，该新颖性表述略强。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.812Z",
+      "backend": "codex"
+    }
+  }
+}

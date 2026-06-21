@@ -1,0 +1,30 @@
+{
+  "paper_id": "10.1145/3528223.3530110",
+  "slug": "ASE",
+  "title": "ASE",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "仿真 120Hz、低层 6Hz",
+          "problem": "原文写的是低层策略 30Hz、高层策略 6Hz；这里把高层频率错安到了低层策略上。",
+          "severity": "major"
+        },
+        {
+          "quote": "高层动作空间用“未归一化”潜空间 Z̃(Eq 14 投影前的 z̃)",
+          "problem": "未归一化潜空间作为高层动作空间是在 §7.1/Fig.3 说明，Eq.14 实际是判别器梯度惩罚目标，不是该投影关系。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.133Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T20:14:45.811Z",
+      "backend": "codex"
+    }
+  }
+}

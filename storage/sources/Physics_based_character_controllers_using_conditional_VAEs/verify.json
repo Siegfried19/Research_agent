@@ -1,0 +1,25 @@
+{
+  "paper_id": "10.1145/3528223.3530067",
+  "slug": "Physics_based_character_controllers_using_conditional_VAEs",
+  "title": "Physics-based character controllers using conditional VAEs",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "仿真层/VAE 最大 epoch 各 300/600；仿真层训练约 1 天，只用 CPU。",
+          "problem": "训练耗时对象写错：原文说仿真层训练通常 3–4 小时，整个 conditional VAE 结构训练约 1 天；不是仿真层约 1 天。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.812Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T20:22:55.119Z",
+      "backend": "codex"
+    }
+  }
+}

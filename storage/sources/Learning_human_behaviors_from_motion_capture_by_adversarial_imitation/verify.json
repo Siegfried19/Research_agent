@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.48550/arxiv.1707.02201",
+  "slug": "Learning_human_behaviors_from_motion_capture_by_adversarial_imitation",
+  "title": "Learning human behaviors from motion capture by adversarial imitation",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T20:02:08.133Z",
+      "backend": "codex"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "paper_id": "10.1016/j.apenergy.2021.117164",
+  "slug": "Experimental_evaluation_of_model_free_reinforcement_learning_algorithms_for_continuous",
+  "title": "Experimental evaluation of model-free reinforcement learning algorithms for continuous HVAC control",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "多地天气训练提升鲁棒性：用来自多个地点的气象数据训练，比单地训练在测试集上能耗与控温都更好",
+          "problem": "原文只明确说多地点训练显著提升 off-policy 算法的能耗和热稳定性；对 PPO 原文反而说能耗降低但室内气候变差，不能概括为所有算法能耗与控温都更好。",
+          "severity": "major"
+        },
+        {
+          "quote": "on-policy（PPO/TRPO）对梯形项斜率较敏感",
+          "problem": "原文说 λ₂（梯形惩罚斜率）不重要，on-policy 算法敏感的是温度范围选择；总结把敏感的超参对象写错且方向相反。",
+          "severity": "major"
+        },
+        {
+          "quote": "TD3 与 on-policy（PPO/TRPO）要约 60 episodes（≈近 60 年数据）才达到可比控温",
+          "problem": "原文中 PPO 在 60 episodes 后达到类似 TD3 的热稳定性，但 TRPO 仍差于其他三种算法；把 PPO/TRPO 一并说成 60 episodes 达到可比控温略有过度概括。",
+          "severity": "minor"
+        },
+        {
+          "quote": "TD3（确定性）即便加大训练，也未达到与 SAC（随机）相当的整体表现",
+          "problem": "原文同时指出 TD3 增加训练后策略更稳定且可在某些意义上 outperform SAC，但代价是近 60 年数据；总结把这一限定性结果压成“仍未达到相当表现”，措辞过强。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:14:43.282Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "对比四算法均用 Stable Baselines(PyTorch)实现",
+          "problem": "原文正文说使用 PyTorch 版 Stable Baselines，但脚注明确 TRPO 例外，是用 original version of Baselines 实现；总结把 TRPO 也归入 PyTorch 实现不准确。",
+          "severity": "minor"
+        },
+        {
+          "quote": "天气数据来自 EnergyPlus,北欧多城市(Table C.9,如 Oslo/Bergen/Helsinki/Copenhagen 等)",
+          "problem": "Table C.9 列的是北欧训练天气城市，不包含 Copenhagen；Copenhagen 是测试地点，放在这里容易把测试城市误说成表 C.9 的训练城市。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:28:20.829Z",
+      "backend": "codex"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.48550/arxiv.2601.12008",
+  "slug": "Extreme_Value_Policy_Optimization_for_Safe_Reinforcement_Learning",
+  "title": "Extreme Value Policy Optimization for Safe Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:14:43.283Z",
+      "backend": "codex"
+    }
+  }
+}

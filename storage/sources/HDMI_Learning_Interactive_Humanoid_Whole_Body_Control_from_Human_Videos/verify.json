@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.48550/arxiv.2509.16757",
+  "slug": "HDMI_Learning_Interactive_Humanoid_Whole_Body_Control_from_Human_Videos",
+  "title": "HDMI: Learning Interactive Humanoid Whole-Body Control from Human Videos",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:47:39.938Z",
+      "backend": "codex"
+    }
+  }
+}

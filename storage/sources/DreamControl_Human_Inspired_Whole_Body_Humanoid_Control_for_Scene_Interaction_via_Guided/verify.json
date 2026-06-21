@@ -1,0 +1,46 @@
+{
+  "paper_id": "10.48550/arxiv.2509.14353",
+  "slug": "DreamControl_Human_Inspired_Whole_Body_Humanoid_Control_for_Scene_Interaction_via_Guided",
+  "title": "DreamControl: Human-Inspired Whole-Body Humanoid Control for Scene Interaction via Guided Diffusion",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "Stage 2 — 带参考轨迹的 RL...再叠加稀疏 + 稠密的任务专属奖励显式鼓励完成任务",
+          "problem": "原文评测明确 DreamControl/Ours 是 tracking + task-specific sparse rewards；借鉴[8]的工程化 dense reward 属于 TaskOnly+ 基线， summary 把基线奖励成分安到了本文方法上。",
+          "severity": "major"
+        },
+        {
+          "quote": "稠密任务奖励 `r^dense_t = ...`(鼓励身体部位逐步逼近目标,借鉴[8])",
+          "problem": "该公式在附录小节标题为“Task-specific dense rewards for TaskOnly+”，不是 DreamControl 主方法的奖励项；属于张冠李戴。",
+          "severity": "major"
+        },
+        {
+          "quote": "生成的运动规划只隐式地通过奖励影响策略,不作为策略的显式输入——所以测试时无需参考轨迹即可自主执行",
+          "problem": "原文虽有高层表述说轨迹通过奖励隐式使用，但方法细节明确仿真策略观测包含 target trajectory reference；只有真机部署重训时移除该观测，因此把整个 Stage 2/rollout 概括为“不作为策略显式输入”过强且与具体实现不符。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T19:47:39.938Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "Open Drawer / Open Door 因数据集里相关样本太少(HumanML 里 drawer+open 仅 18 条),不直接用扩散生成",
+          "problem": "原文明确将“drawer+open 仅 18 条”和生成效果差用于解释 Open Drawer；Open Door 只是说按类似 drawer 的方式生成，未明确把该数据稀缺理由同样归因到 Open Door。",
+          "severity": "minor"
+        },
+        {
+          "quote": "展示同一策略稍作改造(去掉参考轨迹观测、去根线速度、去特权物理、加时间编码)即可 sim-to-real 部署到真 G1",
+          "problem": "原文说是真机部署前在修改观测后重新训练 policies，并非同一已训练策略简单改造后直接部署；这里措辞略易误导。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.132Z",
+      "backend": "codex"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "paper_id": "arxiv:2502.13134",
+  "slug": "RHINO_Learning_Real_Time_Humanoid_Human_Object_Interaction_from_Human_Demonstrations",
+  "title": "RHINO: Learning Real-Time Humanoid-Human-Object Interaction from Human Demonstrations",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "任何技能都能被人随时打断、切换",
+          "problem": "原文总体声称可随时打断，但方法细节写的是“most of the skills”可被另一技能打断，且只为“interruptible manipulation skill”配 reverse skill；“任何技能”措辞略强。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:47:39.937Z",
+      "backend": "codex"
+    }
+  }
+}

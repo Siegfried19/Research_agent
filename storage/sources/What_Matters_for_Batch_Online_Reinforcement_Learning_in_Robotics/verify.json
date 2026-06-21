@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.48550/arxiv.2505.08078",
+  "slug": "What_Matters_for_Batch_Online_Reinforcement_Learning_in_Robotics",
+  "title": "What Matters for Batch Online Reinforcement Learning in Robotics?",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:14:43.282Z",
+      "backend": "codex"
+    }
+  }
+}

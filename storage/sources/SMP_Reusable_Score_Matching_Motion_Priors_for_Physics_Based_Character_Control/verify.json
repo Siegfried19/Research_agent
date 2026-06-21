@@ -1,0 +1,29 @@
+{
+  "paper_id": "10.48550/arxiv.2512.03028",
+  "slug": "SMP_Reusable_Score_Matching_Motion_Priors_for_Physics_Based_Character_Control",
+  "title": "SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "训 SMP 单先验约 30 分钟",
+          "problem": "原文的 30 分钟指“用 SMP 训练一个单运动片段的策略”，不是训练 SMP 先验/扩散模型；先验模型训练在原文中是 400k–800k 迭代、约 5 小时内收敛。",
+          "severity": "minor"
+        },
+        {
+          "quote": "Table 2 任务回报均明显高于 AMP / AMP-Frozen / w/o Prior",
+          "problem": "方向总体正确，但“均明显高于”略强；Steering 中 SMP 0.914 vs w/o Prior 0.901、Target Speed 中 SMP 0.918 vs w/o Prior 0.905/AMP 0.904 只是小幅高出。",
+          "severity": "minor"
+        },
+        {
+          "quote": "作者把 SMP 更高的样本效率归因于此",
+          "problem": "原文表述是 may in part be attributed to fixed/stationary reward model，带有部分和可能的限定；总结此处措辞略显确定。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:47:39.938Z",
+      "backend": "codex"
+    }
+  }
+}

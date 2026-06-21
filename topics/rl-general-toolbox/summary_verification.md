@@ -1,24 +1,10 @@
 # Summary verification — rl-general-toolbox
-_generated: 2026-06-20T18:50:01.380Z  checked: 0/15  pass: 0  minor: 0  major: 0  unverifiable: 0  errors: 15_
+_generated: 2026-06-21T20:20:30.924Z  checked: 1/1  pass: 0  minor: 1  major: 0  unverifiable: 0  errors: 0_
 
 核查员=Codex(跨模型,不共享撰写者的幻觉模式)。只核数字与论断依据,不评文笔。
-⚠️ **本轮因 codex 侧问题（quota_exhausted）中止**,部分篇未核(已发 Telegram)——待恢复后重跑 verify 即从断点续核。
-本主题尚有 **16** 篇待核查。本报告由 escalate_verify 汇总(多轮升级抽检,major 自动整篇重新总结+复核;标注"需人工分诊"的为重做 2 次仍 major)。
+本主题尚有 **0** 篇待核查。本报告由 escalate_verify 汇总(多轮升级抽检,major 自动整篇重新总结+复核;标注"需人工分诊"的为重做 2 次仍 major)。
 
+## 🟠 [minor] Humanoid Whole-Body Badminton via Multi-Stage Reinforcement Learning
+`arxiv:2511.11218` v2  (quality: flag)
+- **[minor]** “筛出 19,653 条落入拦截区且过网时间≥0.8 s” — 原文说筛选条件是拦截点落入指定击球区且 trajectory traversal/interception time ≥0.8 s，并非“过网时间”；0.8 s 的对象被写错。
 
-## ⚙️ 未能核查 (15)
-- {"id": "10.1561/2300000053", "version": 2, "title": "An Algorithmic Perspective on Imitation Learning", "slug": "An_Algorithmic_Perspective_on_Imitati
-- {"id": "10.1609/aaai.v34i04.6144", "version": 1, "title": "Mastering Complex Control in MOBA Games with Deep Reinforcement Learning", "slug": "Masteri
-- {"id": "10.1016/j.neucom.2024.128033", "version": 1, "title": "Self-supervised network distillation: An effective approach to exploration in sparse re
-- {"id": "10.1016/j.neunet.2026.108865", "version": 1, "title": "Offline constrained policy optimization with safe anchoring.", "slug": "Offline_constra
-- {"id": "10.1016/j.apenergy.2021.117164", "version": 1, "title": "Experimental evaluation of model-free reinforcement learning algorithms for continuou
-- {"id": "10.1038/s41598-026-44517-1", "version": 1, "title": "Self-Organizing Dual-Buffer Adaptive Clustering Experience Replay (SODACER) for safe rein
-- {"id": "10.48550/arxiv.2310.05858", "version": 1, "title": "Distributional Soft Actor-Critic with Three Refinements", "slug": "Distributional_Soft_Act
-- {"id": "10.48550/arxiv.2307.04964", "version": 1, "title": "Secrets of RLHF in Large Language Models Part I: PPO", "slug": "Secrets_of_RLHF_in_Large_L
-- {"id": "10.48550/arxiv.2505.08078", "version": 1, "title": "What Matters for Batch Online Reinforcement Learning in Robotics?", "slug": "What_Matters_
-- {"id": "10.3389/fnbot.2022.1054239", "version": 1, "title": "Multimodal bipedal locomotion generation with passive dynamics via deep reinforcement lea
-- {"id": "10.48550/arxiv.2601.12008", "version": 1, "title": "Extreme Value Policy Optimization for Safe Reinforcement Learning", "slug": "Extreme_Value
-- {"id": "10.1016/j.automatica.2022.110684", "version": 1, "title": "Safe exploration in model-based reinforcement learning using control barrier functi
-- {"id": "10.1609/aaai.v37i6.25888", "version": 1, "title": "Augmented Proximal Policy Optimization for Safe Reinforcement Learning", "slug": "Augmented
-- {"id": "10.1109/lra.2021.3076955", "version": 1, "title": "On the Emergence of Whole-Body Strategies From Humanoid Robot Push-Recovery Learning", "slu
-- {"id": "10.1109/cdc51059.2022.9992926", "version": 1, "title": "Predictive Control Barrier Functions for Online Safety Critical Control", "slug": "Pre

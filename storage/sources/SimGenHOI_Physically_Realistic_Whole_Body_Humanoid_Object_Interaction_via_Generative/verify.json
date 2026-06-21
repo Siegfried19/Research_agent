@@ -1,0 +1,36 @@
+{
+  "paper_id": "10.48550/arxiv.2508.14120",
+  "slug": "SimGenHOI_Physically_Realistic_Whole_Body_Humanoid_Object_Interaction_via_Generative",
+  "title": "SimGenHOI: Physically Realistic Whole-Body Humanoid-Object Interaction via Generative Modeling and Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "在 Isaac Gym 里用 PPO 训练",
+          "problem": "原文只说在 Isaac Gym/物理仿真中用强化学习训练接触感知控制策略，没有提到 PPO；把具体 RL 算法写成 PPO 属于无原文依据的具体方法细节。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T19:47:39.938Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "图 2(b) 训练框图把三项奖励(`r^{obj}_t, r^g_t, r^{im}_t`)相加后送入标注为 PPO 的训练模块",
+          "problem": "图2(b)确有PPO和三项奖励相加，但图中三项标为 r_t^{obj}, r_t^c, r_t^{im}，不是 r_t^{obj}, r_t^g, r_t^{im}；正文Eq(10)又是两项加权奖励。",
+          "severity": "minor"
+        },
+        {
+          "quote": "但在 `E_pos`、`E_rot`、`TTR` 上 OmniGrasp 反而更优",
+          "problem": "表3中 OmniGrasp 更优的位置/旋转误差是物体指标 E_pos^{obj}/E_rot^{obj}，不是前文定义的人形 E_pos/E_rot；若按人形跟踪误差理解则对象绑定不准。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.132Z",
+      "backend": "codex"
+    }
+  }
+}

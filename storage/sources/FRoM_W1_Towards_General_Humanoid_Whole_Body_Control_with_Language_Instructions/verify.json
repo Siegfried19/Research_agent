@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.48550/arxiv.2601.12799",
+  "slug": "FRoM_W1_Towards_General_Humanoid_Whole_Body_Control_with_Language_Instructions",
+  "title": "FRoM-W1: Towards General Humanoid Whole-Body Control with Language Instructions",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "控制器:用 filtered 数据 + 教师-学生策略一致改善 H1/G1 的 MPJPE/VEL/ACCEL/SR",
+          "problem": "原文只明确说在教师-学生策略下使用 filtered AMASS 数据在 AMASS 评测上改善两台机器人指标；对 H-GPT generated dataset，原文反而说 filtered 数据不表现更好，且没有单独证明“教师-学生策略”相对非教师-学生一致改善。总结措辞范围略扩大、对象不够限定。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:47:39.938Z",
+      "backend": "codex"
+    }
+  }
+}

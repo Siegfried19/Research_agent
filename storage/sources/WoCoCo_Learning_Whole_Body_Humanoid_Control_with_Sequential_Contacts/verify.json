@@ -1,0 +1,30 @@
+{
+  "paper_id": "10.48550/arxiv.2406.06005",
+  "slug": "WoCoCo_Learning_Whole_Body_Humanoid_Control_with_Sequential_Contacts",
+  "title": "WoCoCo: Learning Whole-Body Humanoid Control with Sequential Contacts",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "本 PDF 未包含附录正文，只在正文引用了 Appendix A–I 与 Fig.7–10",
+          "problem": "与原文明确矛盾：该 PDF 共 18 页，正文后包含 Appendix A–L，并含 Fig.7–11、奖励权重、正则奖励、任务奖励、观测、好奇心细节、域随机化和部署细节等附录内容。",
+          "severity": "major"
+        },
+        {
+          "quote": "附录关键信息不在本 PDF：观测设计、域随机化范围、超参、好奇观测 o_curi 具体定义都引到 Appendix A–I，而本 PDF 仅含正文+参考文献(12 页),未包含附录",
+          "problem": "与原文明确矛盾：这些关键信息实际就在本 PDF 附录中，例如 Appendix H 给观测设计，Appendix I 给好奇观测定义，Appendix J 给域随机化范围，Appendix E/F/G 给奖励权重和公式。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.133Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T20:14:45.812Z",
+      "backend": "codex"
+    }
+  }
+}

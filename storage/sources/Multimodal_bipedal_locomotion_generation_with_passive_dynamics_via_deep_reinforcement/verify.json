@@ -1,0 +1,75 @@
+{
+  "paper_id": "10.3389/fnbot.2022.1054239",
+  "slug": "Multimodal_bipedal_locomotion_generation_with_passive_dynamics_via_deep_reinforcement",
+  "title": "Multimodal bipedal locomotion generation with passive dynamics via deep reinforcement learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "`f_leg=min(|φ_r−φ_l|, C_3)`(式6):奖励双腿有效张开摆动",
+          "problem": "原文式(6)是 `f_leg=min(|φ̇_r−φ̇_l|, C3)`，即左右腿角速度差/两腿夹角变化率，不是角度差；奖励项的对象被写错。",
+          "severity": "major"
+        },
+        {
+          "quote": "周期性 DS 在 ω_v≤约1.2 出现、周期性 F 仅在 ω_v∈[2.5,2.93] 出现",
+          "problem": "原文明确说周期性 DS 只在 `0≤ω_v≤0.1` 出现，`0.1≤ω_v≤1.2` 是带非周期 DS/F 的过渡步态；把周期性 DS 扩到约 1.2 是方向/分类错误。",
+          "severity": "major"
+        },
+        {
+          "quote": "LP1/LP2 全程固定 ω_v∈[0,2.5] 或抬高到[1.5,2.5] → 只学到跑、低速走不出来",
+          "problem": "原文 Figure 13C（LP1/LP2 设为 `[0,2.5]`）说 agent 只学到 walking gait，较大 `ω_v` 会摔；总结把它写成只学到跑，方向写反。",
+          "severity": "major"
+        },
+        {
+          "quote": "状态 s_t∈ℝ^14(含模型状态 + 指令 ω_v)；状态: ... d_r, d_l ...",
+          "problem": "原文控制器输入状态包含的是腿收缩率 `ḋ_r,ḋ_l`，不是收缩量 `d_r,d_l`；状态变量写错。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:14:43.283Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "走与过渡的 CoT 随速度呈下凸（U 形）、可用二次曲线拟合，跑的 VoE 随速度近似线性",
+          "problem": "原文和 Figure 8 的二次曲线拟合对象是 VoE（walking/transient），不是 CoT；这里把 VoE 的拟合结论张冠李戴到 CoT 上。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T19:28:20.828Z",
+      "backend": "codex"
+    },
+    "3": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "f_leg=min(|φ_r−φ_l|, C_3)(式6)鼓励两腿张开摆动",
+          "problem": "原文式(6)是 f_leg=min(|φ̇_r−φ̇_l|, C3)，惩罚/奖励项用的是左右腿角速度差（两腿夹角变化率），总结写成了腿角差，公式对象错置。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T19:33:31.458Z",
+      "backend": "codex"
+    },
+    "4": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "状态变量含 ẋ、θ(髋段朝向)、θ̇、腿角 φ_r/φ_l 及 φ̇、大腿段位移 h_j 及 ḣ、腿收缩量 d_j 及 ḋ,外加命令 ω_v(共 14 维)",
+          "problem": "原文的控制器输入状态 st∈R14 只包含腿收缩率 ḋ_r/ḋ_l，不包含腿收缩量 d_j；把模型变量描述混入了控制器状态。",
+          "severity": "minor"
+        },
+        {
+          "quote": "走与过渡步态的 VoE/CoT 随速度呈二次曲线、跑步态 VoE 近似线性",
+          "problem": "原文明确给出二次曲线拟合的是 VoE 的走/过渡步态，CoT 只是说趋势相似且有例外，并未被拟合为二次曲线。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:39:20.583Z",
+      "backend": "codex"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.1016/j.neunet.2026.108865",
+  "slug": "Offline_constrained_policy_optimization_with_safe_anchoring",
+  "title": "Offline constrained policy optimization with safe anchoring.",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:14:43.282Z",
+      "backend": "codex"
+    }
+  }
+}

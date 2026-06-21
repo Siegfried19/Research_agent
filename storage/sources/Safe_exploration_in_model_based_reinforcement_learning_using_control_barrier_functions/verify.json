@@ -1,0 +1,41 @@
+{
+  "paper_id": "10.1016/j.automatica.2022.110684",
+  "slug": "Safe_exploration_in_model_based_reinforcement_learning_using_control_barrier_functions",
+  "title": "Safe exploration in model-based reinforcement learning using control barrier functions",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "安全集 `h(x)=p·x₁²−x₁+1`，`p=−1`（凸）与 `p=1`（非凸）两种",
+          "problem": "原文非线性算例的安全集是 `h(x)=p x₂²−x₁+1`，总结把平方项变量从 `x₂` 写成 `x₁`，会改变安全集形状和凸/非凸设定。",
+          "severity": "major"
+        },
+        {
+          "quote": "CBF Penalty）初期仍会违反安全、要等策略收敛后才变安全（在该例中轨迹一度冲进非安全区，Fig 2 左下）",
+          "problem": "结论本身有原文依据，但违反安全对应的是 Fig. 2 的左上 h(x(t)) 曲线，不是左下参数估计曲线。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:14:43.283Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "PE 条件只挂在仿真外推轨迹上,可通过多取外推点满足,而无需激励真实系统",
+          "problem": "原文 Assumption 3 同时列出实际轨迹上的 PE 条件和外推轨迹上的 PE 条件；虽说明可通过外推轨迹避免激励真实系统，但“只挂在仿真外推轨迹上”表述略绝对。",
+          "severity": "minor"
+        },
+        {
+          "quote": "用 StaF(state-following)核做值函数的局部参数化逼近...避免全局逼近的维度灾难",
+          "problem": "原文明确说 StaF 核提供随状态移动的局部逼近，但未直接声称其避免全局逼近的“维度灾难”，该收益属于总结者外推。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:28:20.828Z",
+      "backend": "codex"
+    }
+  }
+}

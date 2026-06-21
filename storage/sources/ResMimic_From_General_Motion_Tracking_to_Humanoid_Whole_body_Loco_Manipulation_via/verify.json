@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.48550/arxiv.2510.05070",
+  "slug": "ResMimic_From_General_Motion_Tracking_to_Humanoid_Whole_body_Loco_Manipulation_via",
+  "title": "ResMimic: From General Motion Tracking to Humanoid Whole-body Loco-Manipulation via Residual Learning",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:47:39.938Z",
+      "backend": "codex"
+    }
+  }
+}

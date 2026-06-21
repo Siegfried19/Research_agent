@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.1145/3550469.3555391",
+  "slug": "PADL_Language_Directed_Physics_Based_Character_Control",
+  "title": "PADL: Language-Directed Physics-Based Character Control",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "语言编码器 = 预训练 CLIP 文本编码器 + 两层全连接头并微调",
+          "problem": "原文说 CLIP 文本编码器加两层全连接输出头，但“only this output head is fine-tuned”，不是微调整个语言编码器/CLIP 文本编码器；总结措辞容易误导。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.812Z",
+      "backend": "codex"
+    }
+  }
+}

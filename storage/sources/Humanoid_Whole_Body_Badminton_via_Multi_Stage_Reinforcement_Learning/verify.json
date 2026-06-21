@@ -1,0 +1,30 @@
+{
+  "paper_id": "arxiv:2511.11218",
+  "slug": "Humanoid_Whole_Body_Badminton_via_Multi_Stage_Reinforcement_Learning",
+  "title": "Humanoid Whole-Body Badminton via Multi-Stage Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "真机：1.28 m 人形、缩放单打半场（半场长 4.0 m、半宽 1.75 m、网高 1.524 m）；发球机置于 x≈5.2 m。",
+          "problem": "半场长 4.0 m、半宽 1.75 m、网高 1.524 m 是仿真 two-robot rally 的 scaled court 设置，原文未说这是硬件真机实验场地设置，属设定张冠李戴。",
+          "severity": "major"
+        },
+        {
+          "quote": "训练时按步随机化空气动力参数（\"aerodynamic patch\"）",
+          "problem": "原文说空气动力参数是 per shot 随机化，不是按每个控制/仿真步随机化。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.813Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T20:22:55.120Z",
+      "backend": "codex"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.48550/arxiv.2511.04679",
+  "slug": "GentleHumanoid_Learning_Upper_body_Compliance_for_Contact_rich_Human_and_Object",
+  "title": "GentleHumanoid: Learning Upper-body Compliance for Contact-rich Human and Object Interaction",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:47:39.938Z",
+      "backend": "codex"
+    }
+  }
+}

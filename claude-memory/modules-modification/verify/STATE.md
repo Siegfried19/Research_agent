@@ -4,6 +4,17 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-21 14:40 EDT · tnnls 卡死篇回滚 v1 重核 + 揪出"14 篇 major 悄悄标已核"系统问题
+- 用户令：把审查卡死的 `10.1109/tnnls.2026.3688045`(Input-to-State Safety)**回滚到 v1、清掉后续审查状态**=恢复成"刚总结完待核"。已做：DB 删 v2/v3/v4(留 v1)、磁盘删 v2-v4.md、`verified/verify_status/verify_skip.json` 三档移除本篇。备份在 `logs/temporary-log/tnnls-reset-20260621-1440/`(含库快照+三档+被删 md)。现该篇=v1 summarized、零核查记录 → daemon 起来会当待核重新核。
+- **顺带揪出系统问题(重要)**:rl-general-toolbox 84 篇"已核到最新版"里 ≈37 pass/33 minor/**14 major 未解决**。根因——`escalate` 里 `record_verified(ok)` 在 quota 中止判断**之前**执行:一批"核出 major + 同批撞配额"时,major 篇被标已核 v1,但其后的 `resummarize` 重做被 `break` 跳过 → 下轮 daemon 见"已核到当前版本"认为完事、永不重做。这 14 篇里仅 tnnls 进过 verify_skip,**其余 13 篇是悄悄挂 major 没人管**(attempts=0、未触发重做,非"重做仍顽固")。
+- 13 篇清单见 claude_log(本日条)。待用户定怎么处理(候选:清 verified.json 让其重核 / 同 tnnls 回滚)。**修向建议(未做)**:`record_verified` 应只记 pass/minor,或 major 篇即便中止也不写 verified、留作待核——否则中止永远漏掉同批 major 的重做。
+
+## 2026-06-21 14:37 EDT · daemon 被旧配额信号长睡 → 重启唤醒(配额已恢复)
+- 现象：用户问"codex 自动验证不是关了吗"。查实——daemon 进程活着(旧 pid 2422420),但**在空睡到 06-24 22:06(~90h)**：之前几批 codex 全 `quota_exhausted`,error_classify 解析出的"重试时刻"是 06-24,daemon 据此长睡,所以看着像"关了"。
+- 实测 `codex exec "Reply OK"` → exit 0、返回 OK(烧 22.6k tokens),**配额其实早恢复了**,只是 daemon 不知道、要睡到 06-24 才会重试。
+- 处置：`kill` 旧 daemon + 删 `logs/verify_daemon.stop`/`logs/codex_quota.json` + 重起新 daemon(pid 3827926)。新进程立刻重探积压(rl-general-toolbox 待核 16),跑出真判决(`MAJOR Self-supervised network distillation`...) → 自动验证恢复正常。无代码改动。
+- 留意：这是 daemon 已知行为的副作用——一旦 codex 报个远期重试时刻,daemon 会照睡到那天,期间配额提前恢复也不会自醒。**配额恢复后想立刻续核 = 重启 daemon**(touch stop 只停不续)。是否要给 daemon 加"定期轻探活、提前醒"逻辑,待议。
+
 ## 2026-06-21 03:24 EDT · 指针：修好导致 verify 全断的 summary_versions.path stale（详见 claude_log）
 - 改名(storage/papers→storage/sources)漏更新 `summary_versions.path`,致 `verify_summaries.py:237` 开文件全失败、**每篇报 "summary file missing"、verify 实际一篇都核不了**。已 `UPDATE ... REPLACE` 修正生产库 128 行(文件本就在新位置,纯路径修正),复核 verify 取数 0 missing。详见 `../../../claude_log.md`(03:24 条)。
 

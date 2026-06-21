@@ -1,0 +1,13 @@
+{
+  "paper_id": "arxiv:2603.09170",
+  "slug": "ZeroWBC_Learning_Natural_Whole_Body_Humanoid_Interaction_from_Human_Egocentric_Data",
+  "title": "ZeroWBC: Learning Natural Whole-Body Humanoid Interaction from Human Egocentric Data",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:47:39.937Z",
+      "backend": "codex"
+    }
+  }
+}

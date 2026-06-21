@@ -1,0 +1,31 @@
+{
+  "paper_id": "10.1016/j.neucom.2024.128033",
+  "slug": "Self_supervised_network_distillation_An_effective_approach_to_exploration_in_sparse",
+  "title": "Self-supervised network distillation: An effective approach to exploration in sparse reward environments",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "在平均累计外部奖励上，SND 系列在 10 个环境中除一个外都优于 RND 与基线（唯一例外 Venture，RND 与最佳 SND-VIC 相当）",
+          "problem": "表4显示 Pitfall 中 Baseline、RND 和所有 SND 都是 0，SND 并未优于 RND/基线；因此“唯一例外 Venture”漏掉了 Pitfall，夸大了平均外部奖励结果。",
+          "severity": "major"
+        }
+      ],
+      "checked_at": "2026-06-21T19:14:43.282Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "外部奖励定义：分数每增加一次给 +1，不区分增量大小、无其它奖惩。",
+          "problem": "原文这一定义出现在 Atari 环境段落中；Procgen 段落只说明所选 seeds 是末端单奖励的 hard-exploration 环境，总结把该奖励定义写成全体实验设置，范围略有扩大。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:28:20.828Z",
+      "backend": "codex"
+    }
+  }
+}

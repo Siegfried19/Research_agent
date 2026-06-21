@@ -1,0 +1,19 @@
+{
+  "paper_id": "10.1109/cyber67662.2025.11168186",
+  "slug": "Reinforcement_Learning_Based_Whole_Body_Skill_Behavior_Generation_and_Control_for",
+  "title": "Reinforcement Learning-Based Whole Body Skill Behavior Generation and Control for Humanoid Robots",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "即平均跟踪误差小于关节量程的 2%",
+          "problem": "原文式(19)是平均平方范数误差 ≤ 0.02×关节量程平方范数，不能等同解释为误差本身小于关节量程的2%。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:14:45.812Z",
+      "backend": "codex"
+    }
+  }
+}

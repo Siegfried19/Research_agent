@@ -1,0 +1,13 @@
+{
+  "paper_id": "10.1609/aaai.v37i6.25888",
+  "slug": "Augmented_Proximal_Policy_Optimization_for_Safe_Reinforcement_Learning",
+  "title": "Augmented Proximal Policy Optimization for Safe Reinforcement Learning",
+  "versions": {
+    "1": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:14:43.283Z",
+      "backend": "codex"
+    }
+  }
+}

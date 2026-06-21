@@ -1,0 +1,63 @@
+{
+  "paper_id": "10.1007/s10994-021-05961-4",
+  "slug": "Challenges_of_real_world_reinforcement_learning_definitions_benchmarks_and_analysis",
+  "title": "Challenges of real-world reinforcement learning: definitions, benchmarks and analysis",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "stuck sensor 比 dropped sensor 伤害更大（尽管二者底层信息相同），小剂量 dropped 影响不大",
+          "problem": "方向写反：原文结论说小剂量 stuck sensors 比 outright dropped signals 问题更小，且实验段只说两者都会显著降低性能，并未支持 stuck 更糟或小剂量 dropped 影响不大。",
+          "severity": "major"
+        },
+        {
+          "quote": "九个相互独立、可形式化、可复现的挑战，每个都给出...可调参数化实现，并用两个 SOTA 算法...逐挑战做受控实验",
+          "problem": "概括过满：原文明确说 explainability 是剩下未处理的第 9 个挑战，除可解释性外才做实验；开源 suite 也主要是 7 个 challenge wrappers，不是九个挑战每个都有实现和 D4PG/DMPO 实验。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:28:20.829Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "humanoid 在 Easy 档就接近 0（见表7/表8）",
+          "problem": "表8中 DMPO 的 humanoid Easy 确实接近 0，但表7中 D4PG 的 humanoid Easy 是 102.92±22.47；该句把两个算法都概括为 Easy 档接近 0，和表7不符。",
+          "severity": "major"
+        },
+        {
+          "quote": "高维状态/动作（Ch3）... Gaussian 动作/观测噪声则会明显降性能。",
+          "problem": "Gaussian action/observation noise 的结果在原文是作为 Ch5 部分可观测/传感器噪声实验来讨论，不是 Ch3 高维状态/动作实验；该事实本身存在，但归属挑战有张冠李戴。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:33:31.458Z",
+      "backend": "codex"
+    },
+    "3": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "用两个 SOTA 算法(D4PG、DMPO)把每个挑战单独打开做实验",
+          "problem": "表述略过度：离线 RL 挑战的实验实际使用离线版 D4PG 与 CRR，不是 DMPO；可解释性也没有实验。总结后文虽有纠正，但这一总括句不严谨。",
+          "severity": "minor"
+        },
+        {
+          "quote": "D4PG(确定性策略梯度、actor-critic、分布式 critic)与 DMPO(EM 式策略迭代、随机策略、分布式值函数)",
+          "problem": "原文说的是 distributional critic/value function，应译为“分布式/分布型价值分布”之类；“分布式 critic/分布式值函数”容易误解为 distributed，并且本文实验明确未使用 distributed training。",
+          "severity": "minor"
+        },
+        {
+          "quote": "论文用机器人操纵、医疗(EHR 辅助诊断)、推荐系统三个例子,逐条对应说明这九个挑战如何同时出现在一个真实应用里",
+          "problem": "原文三个例子只是说明这些挑战会以不同方式出现在应用中，且机器人例子也只说 nearly all；并未逐条说明九个挑战都同时出现在每个真实应用里。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:39:20.582Z",
+      "backend": "codex"
+    }
+  }
+}

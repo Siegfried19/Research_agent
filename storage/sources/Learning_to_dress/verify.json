@@ -1,0 +1,24 @@
+{
+  "paper_id": "10.1145/3272127.3275048",
+  "slug": "Learning_to_dress",
+  "title": "Learning to dress",
+  "versions": {
+    "1": {
+      "verdict": "minor",
+      "issues": [
+        {
+          "quote": "Eq 13,w_mid=15、w_scale=0.14",
+          "problem": "原文 Eq.13 后明确写的是 w_mid=25、w_scale=0.14；总结把 w_mid 写成 15。",
+          "severity": "minor"
+        },
+        {
+          "quote": "f_tuck(Eq 19,肢体在抓手-双肩三角内为 1)",
+          "problem": "原文 Eq.19 图像中写的是 f_tuck=1 对应 “limb not contained”、0 otherwise；总结把该公式条件写成在三角内为 1，与公式方向不一致（虽然后文解释有支持“保持在抓手-双肩之间”的表述）。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T20:02:08.134Z",
+      "backend": "codex"
+    }
+  }
+}

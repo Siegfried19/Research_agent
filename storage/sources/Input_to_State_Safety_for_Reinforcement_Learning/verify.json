@@ -1,0 +1,74 @@
+{
+  "paper_id": "10.1109/tnnls.2026.3688045",
+  "slug": "Input_to_State_Safety_for_Reinforcement_Learning",
+  "title": "Input-to-State Safety for Reinforcement Learning.",
+  "versions": {
+    "1": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "只要在放大集上保持前向不变，叠加噪声后真实集 C 仍不变 → 数据采集期安全。",
+          "problem": "原文 Definition 6/Theorem 1/Lemma 2 证明的是噪声相关扩大集 C_{ξ,T} 前向不变，并不推出原始安全集 C 本身在探索噪声下仍前向不变；这里把保证对象从 C_{ξ,T} 换成 C，夸大了理论保证。",
+          "severity": "major"
+        },
+        {
+          "quote": "Theorem 5（适当选 RCBF 参数 λ 可把安全感知值函数最小值逼到任意接近 0）",
+          "problem": "原文 Theorem 5 说的是 safety-aware utility function / rsafe(33) 的最小值可逼近 0，不是安全感知值函数的最小值；定理对象被张冠李戴。",
+          "severity": "major"
+        },
+        {
+          "quote": "探测噪声为多正弦和（式68），频率梳 ζ、高斯随机相位/幅度",
+          "problem": "式(68)只有高斯随机变量 ω_k 作为正弦项系数/幅度，原文没有随机相位；“随机相位”无依据。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:14:43.282Z",
+      "backend": "codex"
+    },
+    "2": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "引理1(式(21)):建立 `γ_T(h,ξ) = α₄⁻¹(−ε(h)ξ²/4)`",
+          "problem": "原文式(21)为 `γ_T = -α₄⁻¹(−ε(h)ξ²/4)`，总结漏掉前导负号，会把放大项符号/集合放大方向写反。",
+          "severity": "major"
+        },
+        {
+          "quote": "频率梳 `ζ=[1,3,7,11,13,17,19,21,23,25,27,29]`",
+          "problem": "原文式(68)后的频率列表包含 `15`：`[1,3,7,11,13,15,17,19,21,23,25,27,29]`，总结漏了一项。",
+          "severity": "minor"
+        },
+        {
+          "quote": "值函数单调下降(Fig 6/7、Fig 11)",
+          "problem": "Fig.11 原文是喷气发动机三种滤波器轨迹对比，不是值函数或收敛图；把该图作为值函数单调下降依据属于图号绑定不当。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:28:20.828Z",
+      "backend": "codex"
+    },
+    "3": {
+      "verdict": "major",
+      "issues": [
+        {
+          "quote": "定理 5:通过选 CBF 参数 λ,可把“安全感知值函数(含 RCBF)的最小值”任意逼近 0",
+          "problem": "原文 Theorem 5 说的是安全感知效用/即时代价函数 rsafe(33) 的最小值可通过选择 λ 任意接近 0，不是安全感知值函数的最小值，属于对象张冠李戴。",
+          "severity": "major"
+        },
+        {
+          "quote": "只要在这个放大集上保持前向不变,原集 C 就在噪声下安全",
+          "problem": "原文探索定理保证的是放大集 Cξ,T 前向不变/ISSf-Exp，而不是直接证明原始集合 C 在扰动下前向不变；该表述把 ISSf 的放大集保证说得偏强。",
+          "severity": "minor"
+        }
+      ],
+      "checked_at": "2026-06-21T19:33:31.459Z",
+      "backend": "codex"
+    },
+    "4": {
+      "verdict": "pass",
+      "issues": [],
+      "checked_at": "2026-06-21T19:39:20.583Z",
+      "backend": "codex"
+    }
+  }
+}
