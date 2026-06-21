@@ -35,5 +35,11 @@
     "longctx-vs-retrieval 补强:'Long-Context LLMs Meet RAG'(arxiv:2410.05983?)、NoLiMa、RULER 等长上下文-检索权衡新作。",
     "corpus-qa 扩词:traceable/attributable scientific QA、evidence aggregation over corpus。",
     "翻已入库论文(GraphRAG/OpenScholar/PaperQA2/InfoDeepSeek)的被引/参考,捞反复被引却漏网的奠基作(本轮 citation 边稀疏,edges 仅 1)。"
-  ]
+  ],
+  "web": {
+    "last_discover": "2026-06-21T07:50:56.132Z",
+    "in_db": 12,
+    "last_found": 10,
+    "last_added": 10
+  }
 }

@@ -1,0 +1,71 @@
+{
+  "topic": {
+    "id": "agentic-knowledge-synthesis",
+    "title": "Agent 消费知识库与跨论文综合（长上下文时代）"
+  },
+  "generated_at": "2026-06-21T07:50:56.132Z",
+  "found": 10,
+  "newly_added": 10,
+  "candidates": [
+    {
+      "url": "https://allenai.org/blog/ai2-scholarqa",
+      "title": "Introducing Ai2 ScholarQA",
+      "relevance": 96,
+      "reason": "库上多文档科学问答的范式之作:8M全文检索+引文抽取/聚类/对比表三段生成,强调可溯源归因,正中agent+人双消费、跨论文综合主线"
+    },
+    {
+      "url": "https://www.futurehouse.org/research-announcements/engineering-blog-journey-to-superhuman-performance-on-scientific-tasks",
+      "title": "Engineering Blog: Journey to superhuman performance on scientific tasks",
+      "relevance": 95,
+      "reason": "PaperQA2工程拆解(agentic工具编排vs确定式、引文遍历、RCS重排消融),含跨论文综述与矛盾检测,实证扎实非软文"
+    },
+    {
+      "url": "https://allenai.org/blog/paper-finder",
+      "title": "Introducing Ai2 Paper Finder",
+      "relevance": 92,
+      "reason": "把『研究者如何迭代找文献』的思考过程做进agentic检索:意图分解+多源稠密检索+引文追踪+子标准打分,直击agent主动求知与何时/如何检索"
+    },
+    {
+      "url": "https://www.microsoft.com/en-us/research/blog/graphrag-new-tool-for-complex-data-discovery-now-on-github",
+      "title": "GraphRAG: New tool for complex data discovery now on GitHub",
+      "relevance": 90,
+      "reason": "引用图之外的跨文档结构方法学:LLM抽实体关系建图+层次社区摘要+map-reduce全局问答,正解决向量RAG做不了的跨语料综合"
+    },
+    {
+      "url": "https://deepmind.google/blog/co-scientist-a-multi-agent-ai-partner-to-accelerate-research",
+      "title": "Co-Scientist: A multi-agent AI partner to accelerate research",
+      "relevance": 89,
+      "reason": "基于文献的假设生成(LBD)代表系统:多agent生成-辩论-进化+排名锦标赛,跨文献核验论断,命中literature-based discovery方向且已发Nature"
+    },
+    {
+      "url": "https://storm-project.stanford.edu/research/storm",
+      "title": "STORM (Stanford OVAL) — Synthesis of Topic Outlines through Retrieval and Multi-perspective Question Asking",
+      "relevance": 86,
+      "reason": "自动综述/长文生成方法学:多视角提问+检索锚定模拟对话+grounded引文图,跨多源综合并保证引文准确,可落地有评测"
+    },
+    {
+      "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents",
+      "title": "Effective context engineering for AI agents",
+      "relevance": 85,
+      "reason": "长上下文时代的取舍指南:just-in-time按需检索vs全量入窗、注意力预算、压缩/笔记/多agent,直接对应长上下文vs检索这条强模型档侧面"
+    },
+    {
+      "url": "https://www.futurehouse.org/research-announcements/demonstrating-end-to-end-scientific-discovery-with-robin-a-multi-agent-system",
+      "title": "Demonstrating end-to-end scientific discovery with Robin: a multi-agent system",
+      "relevance": 83,
+      "reason": "把Crow/Falcon/Owl文献agent接入端到端发现闭环(假设→实验→分析),示范agent撞到问题去查文献而非闷想,真实跑通发Nature"
+    },
+    {
+      "url": "https://lilianweng.github.io/posts/2023-06-23-agent",
+      "title": "LLM Powered Autonomous Agents (Lil'Log)",
+      "relevance": 80,
+      "reason": "agent检索增强/工具增强的奠基性梳理:记忆(向量库MIPS)+工具调用+规划,作者权威、技术密度高,是agent主动求知侧面的标杆背景"
+    },
+    {
+      "url": "https://openai.com/index/introducing-deep-research",
+      "title": "Introducing deep research",
+      "relevance": 78,
+      "reason": "自治agent迭代检索并把上百来源综合成带行内引文报告的代表作,契合agentic retrieval+跨源综合;略偏通用网研而非科学库,故相关性稍降"
+    }
+  ]
+}
