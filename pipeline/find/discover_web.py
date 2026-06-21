@@ -1,16 +1,16 @@
-"""Agentic web discovery —— 按 topic 联网搜优质 blog/技术报告,prompt 软判①相关性②内容质量,
-收录的抓正文成 markdown 入库(kind='web')。复用 hunt 的 agent 联网外壳 + commit 的入库出口
-(store.upsert_paper/set_paper_topic);不打分(score)、不总结(worklist 按 kind!='web' 排除)。
+"""Agentic web discovery（只发现，不抓正文）—— 按 topic 联网搜优质 blog/技术报告/X 长贴,
+prompt 软判①相关性②内容质量,够格的**直接落库**(kind='web', status='discovered',不打分),
+并把这一轮的候选池写进主题状态档(topics/<id>/web_candidates.json + topic_state.json 的 web 段)。
 
-两阶段:①发现+软判 一次 run_claude 出收录清单;②逐条抓正文——**抓取工具箱交给 agent 自己挑**:
-静态页 WebFetch / 动态页·X·登录墙 用真 Chrome(Bash 跑 opencli browser open+screenshot,再 Read 截图)。
-"怎么抓、怎么看"由 claude 自己决定;脚本只管 Chrome 起停+独占锁(力气活,防越开越多)。
-设 WEB_NO_CHROME=1 可强制纯静态(不起 Chrome)。
+职责切分(对齐论文线):
+  - 本脚本 = find 的活:**找哪些 web 值得收**(agent 自己判断,不设数量上限,工具给它)。
+  - 抓正文 + 落盘 = fetch 的活:见 `fetch/fetch_web.py`(读 status='discovered' 的 web,
+    抓 source.md → source_ready)。`run.py` 的 fetch 阶段会顺带跑它。
 
-Usage: python3 pipeline/find/discover_web.py <topicId> [max_n]
+agent-first:相关性/质量/收几条全由 claude 软判(ARCHITECTURE §6.5);脚本只做入库+留痕的力气活。
+Usage: python3 pipeline/find/discover_web.py <topicId>
 """
 import json
-import os
 import sys
 from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 
@@ -20,8 +20,7 @@ _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)
 from lib.claude import run_claude
 from lib.db import open_db, ROOT, now_iso
 from lib.log import get_logger, run_log
-from lib.store import web_source_file
-from lib.topic import load_topic, all_queries
+from lib.topic import load_topic, all_queries, load_state, save_state
 from lib import store
 
 log = get_logger("discover_web")
@@ -37,39 +36,15 @@ DISCOVER_PROMPT = """你是科研资料策展员。研究方向:
 distill、各实验室官博,也包括 X(Twitter) 上研究者的高质量长贴)。对每个候选核实,判断两件事:
   ① 相关性:确实命中上面的研究方向?(软判断,够格才收)
   ② 内容质量:作者/机构权威、有实质技术内容,不是营销软文 / 泛科普水文?(软判断)
-两条都过才收录。合法公开来源即可。
+两条都过才收录。合法公开来源即可。**不设数量上限——把所有真正够格的都收进来**
+(宁缺毋滥:不够格的别凑数,但够格的别因为"已经够多了"而漏掉)。
 
 已在库(请勿重复推荐):
 {known}
 
 只输出一行严格 JSON 数组(无 markdown 围栏),每个收录项:
 [{{"url":"https://...","title":"原文标题","relevance":0-100,"reason":"为何相关且优质,一句话"}}]
-没有够格的就输出 []。最多 {max_n} 条。"""
-
-# 抓正文:把工具箱摆给 agent,怎么抓/怎么看它自己定(不替它写死判断)。
-FETCH_PROMPT = """把这个网址的正文提取成干净 markdown:
-{url}
-
-自己挑工具(按页面类型判断,不必问):
-- **静态页**(博客 / 文档 / 官网文章): 直接用 WebFetch。
-{chrome_section}
-
-去掉导航/广告/页脚/评论,保留标题、正文、代码块、列表、表格。
-只输出 markdown 正文本身,不要任何额外说明或围栏。抓不到就只输出一行: FAILED"""
-
-
-def _chrome_section(url, alias, shot, chrome_ok):
-    if not chrome_ok:
-        return "- (本机当前只有 WebFetch;动态/登录页抓不动就输出 FAILED)"
-    prof = f"--profile {alias} " if alias else ""
-    return (
-        "- **动态页 / X(Twitter) / 登录墙 / JS 重的页面**: WebFetch 抓不动,改用真 Chrome\n"
-        "  (已登录,通过 Bash 跑 opencli):\n"
-        f'      opencli {prof}browser tierb open "{url}"\n'
-        f"      opencli {prof}browser tierb screenshot {shot}\n"
-        f"  然后用 Read 读 {shot} 这张截图、把正文/帖子内容提取成 markdown。\n"
-        f"  (纯文字页也可试 `opencli {prof}browser tierb extract` 直接抓 DOM 文本。)"
-    )
+没有够格的就输出 []。"""
 
 
 def parse_items(out):
@@ -90,28 +65,11 @@ def norm_url(u):
     return urlunparse((pr.scheme, pr.netloc, pr.path.rstrip("/"), "", urlencode(q), ""))
 
 
-def start_chrome():
-    """尽量起真 Chrome(复用 fetch_tierb 的生命周期:独占锁 + ensure)。
-    返回 (chrome_ok, alias, lock_fp, tb_module)。起不来就降级 (False, ...)。"""
-    if os.environ.get("WEB_NO_CHROME"):
-        return False, None, None, None
-    try:
-        import fetch.fetch_tierb as tb
-        lock_fp = tb.chrome_lock()
-        tb.ensure_chrome()
-        log.info(f"  真 Chrome 就绪(profile {tb.ALIAS}) —— agent 可抓动态页/X")
-        return True, tb.ALIAS, lock_fp, tb
-    except Exception as e:  # noqa: BLE001
-        log.info(f"  真 Chrome 不可用,降级纯静态抓取: {e}")
-        return False, None, None, None
-
-
 def main():
     if len(sys.argv) < 2:
-        print("usage: discover_web.py <topicId> [max_n]", file=sys.stderr)
+        print("usage: discover_web.py <topicId>", file=sys.stderr)
         sys.exit(1)
     topic_id = sys.argv[1]
-    max_n = int(sys.argv[2]) if len(sys.argv) > 2 else 8
     topic = load_topic(topic_id)
     conn = open_db()
     known = [r[0] for r in conn.execute("SELECT id FROM sources WHERE kind='web'").fetchall()]
@@ -121,59 +79,62 @@ def main():
         title=topic.get("title") or topic_id, idea=topic.get("idea") or "",
         queries="; ".join(all_queries(topic)[:12]) or "(见想法)",
         preferences=topic.get("preferences") or "权威作者/机构、有实质技术内容",
-        known=known_block, max_n=max_n)
-    log.info(f"# web discover: topic={topic_id}, 已在库 web={len(known)}")
+        known=known_block)
+    log.info(f"# web discover: topic={topic_id}, 已在库 web={len(known)}(无上限,agent 自判)")
     out = run_claude(prompt, timeout=900, tools=["WebSearch", "WebFetch"])
     items = parse_items(out)
     log.info(f"  agent 收录候选: {len(items)} 条")
 
-    chrome_ok, alias, lock_fp, tb = start_chrome()
     added = 0
-    try:
-        for i, it in enumerate(items):
-            if not isinstance(it, dict) or not it.get("url"):
-                continue
-            url = norm_url(it["url"])
-            if not url:
-                continue
-            if conn.execute("SELECT 1 FROM sources WHERE id=?", (url,)).fetchone():
-                log.info(f"  skip(已在库): {url}")
-                continue
-            # 阶段2:抓正文 —— 工具箱给 agent,怎么抓/怎么看它自己定
-            shot = ROOT / "storage" / "dl_tmp" / f"web_shot_{i}.png"
-            shot.parent.mkdir(parents=True, exist_ok=True)
-            sec = _chrome_section(url, alias, shot, chrome_ok)
-            tools = ["WebFetch", "Bash", "Read"] if chrome_ok else ["WebFetch"]
-            md = run_claude(FETCH_PROMPT.format(url=url, chrome_section=sec), timeout=600, tools=tools)
-            if not md or md.strip() == "FAILED" or len(md.strip()) < 200:
-                log.info(f"  skip(抓取失败/过短): {url}")
-                continue
-            domain = urlparse(url).netloc
-            p = {"id": url, "title": (it.get("title") or url)[:300], "doi": None,
-                 "venue": domain, "language": "en", "sources": ["web", domain],
-                 "is_oa": True, "oa_url": url, "landing_url": url,
-                 "relevance": it.get("relevance"), "relevance_reason": it.get("reason"),
-                 "matched_queries": [], "is_edge": False}
-            store.upsert_paper(conn, p, kind="web")
-            slug = conn.execute("SELECT slug FROM sources WHERE id=?", (url,)).fetchone()[0]
-            sf = web_source_file(slug)
-            sf.parent.mkdir(parents=True, exist_ok=True)
-            sf.write_text(md.strip(), encoding="utf-8")
-            conn.execute("UPDATE sources SET source_path=?, status='source_ready', pdf_fetched_at=? WHERE id=?",
-                         (str(sf.relative_to(ROOT)), now_iso(), url))
-            store.set_paper_topic(conn, topic_id, p, 0)
-            conn.commit()
-            added += 1
-            log.info(f"  OK [rel {it.get('relevance')}|{len(md) // 1024}KB] {p['title'][:50]}  ({domain})")
-    finally:
-        if chrome_ok and tb:
-            tb.close_chrome()
-        if lock_fp:
-            lock_fp.close()
+    pool = []  # 写进主题状态档的本轮候选池(留痕)
+    for it in items:
+        if not isinstance(it, dict) or not it.get("url"):
+            continue
+        url = norm_url(it["url"])
+        if not url:
+            continue
+        rec = {"url": url, "title": (it.get("title") or url)[:300],
+               "relevance": it.get("relevance"), "reason": it.get("reason")}
+        pool.append(rec)
+        if conn.execute("SELECT 1 FROM sources WHERE id=?", (url,)).fetchone():
+            log.info(f"  skip(已在库): {url}")
+            continue
+        domain = urlparse(url).netloc
+        # 直接落库(不打分):身份+元数据入 sources(kind='web', status='discovered'),内容留给 fetch_web 抓。
+        p = {"id": url, "title": rec["title"], "doi": None,
+             "venue": domain, "language": "en", "sources": ["web", domain],
+             "is_oa": True, "oa_url": url, "landing_url": url,
+             "relevance": it.get("relevance"), "relevance_reason": it.get("reason"),
+             "matched_queries": [], "is_edge": False}
+        store.upsert_paper(conn, p, kind="web")   # 默认 status='discovered'
+        store.set_paper_topic(conn, topic_id, p, 0)
+        conn.commit()
+        added += 1
+        log.info(f"  + [rel {it.get('relevance')}] {p['title'][:55]}  ({domain})")
 
+    in_db_web = conn.execute(
+        """SELECT COUNT(*) FROM sources s JOIN source_topic pt ON pt.paper_id=s.id
+            WHERE pt.topic_id=? AND s.kind='web'""", (topic_id,)).fetchone()[0]
     conn.close()
-    log.info(f"\n# web discover done: +{added} 篇入库(kind=web, status=source_ready, 不进总结)")
-    run_log(topic_id, f"discover_web: +{added} web sources")
+
+    # 留痕①:本轮候选池 -> topics/<id>/web_candidates.json(对齐论文的 candidates.json)
+    d = ROOT / "topics" / topic_id
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "web_candidates.json").write_text(json.dumps({
+        "topic": {"id": topic_id, "title": topic.get("title")},
+        "generated_at": now_iso(), "found": len(pool), "newly_added": added,
+        "candidates": pool,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 留痕②:主题状态档 topic_state.json 加 web 段(每次 discover_web 都更新 → "web 确实更新了"可见)
+    st = load_state(topic_id)
+    st["web"] = {"last_discover": now_iso(), "in_db": in_db_web,
+                 "last_found": len(pool), "last_added": added}
+    save_state(topic_id, st)
+
+    log.info(f"\n# web discover done: 本轮候选 {len(pool)}, 新入库 +{added}, "
+             f"该主题 web 在库共 {in_db_web}(status=discovered → 待 fetch_web 抓正文)")
+    log.info(f"  -> topics/{topic_id}/web_candidates.json + topic_state.json[web]")
+    run_log(topic_id, f"discover_web: +{added} web (pool={len(pool)}, in_db={in_db_web})")
 
 
 if __name__ == "__main__":

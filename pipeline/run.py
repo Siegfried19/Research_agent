@@ -6,7 +6,8 @@ Stages:
   discover  multi-source search        -> topics/<id>/candidates.json
   score     relevance scoring (claude -p) -> scores/batch_*.json
   commit    select + write DB (additive on incremental)
-  fetch     download OA full text (+ arXiv fallback)
+  fetch     download OA full text (+ arXiv fallback) + pull web sources' text
+            (fetch_oa for papers, fetch_web for kind='web' discovered earlier)
   recover   free fallback: Unpaywall + arXiv (repository-first) + DBLP/PMLR
   hunt      agentic free-source hunt (claude -p + web search) for what's left
   tierb     paywall full text via browser + NYU OpenAthens (you click challenges)
@@ -59,8 +60,8 @@ def steps(stage, tid):
         "score":    [("find/score_auto.py", [tid])],
         "commit":   [("find/commit.py", [f"topics/{tid}"])],
         "find":     [("find/drive.py", [tid])],  # orchestrator-driven find = discover+score+commit by one Claude (default in AUTO since 2026-06-20)
-        "web":      [("find/discover_web.py", [tid])],  # agent 联网搜优质 blog/技术报告入库(kind='web');opt-in,不进 AUTO
-        "fetch":    [("fetch/fetch_oa.py", [tid])],
+        "web":      [("find/discover_web.py", [tid])],  # agent 联网搜优质 blog/技术报告入库(kind='web',status=discovered);opt-in,不进 AUTO。抓正文归 fetch
+        "fetch":    [("fetch/fetch_oa.py", [tid]), ("fetch/fetch_web.py", [tid])],  # 取全文:论文 PDF + web 正文(web 无待抓则空转)
         "recover":  [("fetch/recover_oa.py", [tid])],
         "hunt":     [("fetch/recover_agent.py", [tid])],
         "tierb":    [("fetch/fetch_tierb.py", [tid])],
