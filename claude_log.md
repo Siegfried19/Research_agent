@@ -1,3 +1,8 @@
+## 2026-06-22 01:33 EDT — agentic-knowledge-synthesis 确定性链跑完：+67 篇全文落盘
+- 走确定性链(discover→score→commit --keep)完成本轮增量：库 98→165(+67，全论文)。score 400 篇 0 失败；commit 守质量线 rel≥45(fresh 150 里够格 67，没凑 100 灌噪声)。
+- 下载全成：fetch 48 + recover 8 + hunt 2 + tierb 9 = 67，0 最终失败(tierb 撞 1 次 Cloudflare 已 cleared)。最终 165 全 source_ready、source_path 无缺失。153 论文 + 12 web。
+- 未跑总结(用户要求)。record_find bug 修复经此跑验证生效(状态档自动同步 165)。Telegram 已通知用户。
+
 ## 2026-06-22 00:25 EDT — 工作模式决定：增量 find 暂改"手动 Claude 驱动 + 用户在场"
 - 用户定：增量 find 暂时不走自主 orchestrator/cron，改由用户在场、手动让 Claude 逐步驱动确定性链(discover→score→commit→fetch)，find 与 fetch 一起跑。缘由=orchestrator 两次跑飞不可靠，用户反正都在场、手动更稳更透明。
 - 远程验证(tierb noVNC 手机看屏过验证, remote-access.md 已 MOTHBALLED)维持封存、列未来 todo——用户一般在场当面点。
