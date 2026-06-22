@@ -103,6 +103,7 @@ def main():
     win = {"fromYear": from_year, "toYear": today.year, "fromDate": f"{from_year}-01-01"}
     target = topic.get("target") or config["first_run_target"]
     pool_size = min(500, max(target * 2, 60))
+    pool_cap = target * 4  # 全局硬顶:不管 agent 怎么 facet 重搜/翻引用合并,candidates.json 非种子候选最多 4×target(防"无限联想"把打分量撑爆+撞超时)
 
     facet_note = f" facet={only_facet}" if only_facet else (f" faceted={len(facet_order)}" if topic["_faceted"] else "")
     log.info(f"# Discovery: {topic['title']} ({topic['id']}){facet_note}")
@@ -157,6 +158,16 @@ def main():
             seen |= poolmod.candidate_keys(c)
             added += 1
         merge_note = f"  (facet merge: +{added} new)"
+        # 全局硬顶:种子永留,非种子超出 4×target 的尾部砍掉(防无限联想撑爆打分);砍了就 log,不静默
+        if len(cands) > pool_cap:
+            seeded = [c for c in cands if c.get("seeded")]
+            rest = [c for c in cands if not c.get("seeded")]
+            room = max(pool_cap - len(seeded), 0)
+            dropped = len(rest) - room
+            if dropped > 0:
+                cands = seeded + rest[:room]
+                merge_note += f"  [pool cap {pool_cap}: 砍尾 {dropped} 非种子]"
+                log.info(f"  POOL-CAP: 池超 {pool_cap}(4×target),砍掉 {dropped} 个非种子尾部候选")
     else:
         cands = new_cands
 

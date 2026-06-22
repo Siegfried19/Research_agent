@@ -1,8 +1,37 @@
+## 2026-06-22 00:25 EDT — 工作模式决定：增量 find 暂改"手动 Claude 驱动 + 用户在场"
+- 用户定：增量 find 暂时不走自主 orchestrator/cron，改由用户在场、手动让 Claude 逐步驱动确定性链(discover→score→commit→fetch)，find 与 fetch 一起跑。缘由=orchestrator 两次跑飞不可靠，用户反正都在场、手动更稳更透明。
+- 远程验证(tierb noVNC 手机看屏过验证, remote-access.md 已 MOTHBALLED)维持封存、列未来 todo——用户一般在场当面点。
+- 已存私有记忆 incremental-find-manual-claude-driven.md。不动公开 README 路线图(那是高层大功能)。
+
+## 2026-06-22 00:13 EDT — find 健壮性三连 + orchestrator 跑飞改走确定性链
+- orchestrator(drive.py)再次翻车：启动 discover 后"挂后台等通知"自行停嘴，exit 0 但 0 commit，还把 Task 子 agent 丢成孤儿(已 kill)。改用户三条 directive：
+  1. `pipeline/find/discover.py` 加 `pool_cap=target*4`，merge 路径(原无上限)全局硬顶、非种子砍尾+log。
+  2. `pipeline/find/drive.py` 提示词加收敛约束(别无限联想/扩词/翻引用/开子 agent)。
+  3. `drive.py` 网络/限流/瞬时报错改为"agent 自己判断重试或跳过"，不写代码重试。
+- 本轮 agentic-knowledge-synthesis +100 改走确定性链(discover→score→commit --keep)，不再依赖 orchestrator。详见 find/STATE.md 00:13 条。
+
+## 2026-06-21 23:55 EDT — 修 bug：find 留痕改回代码驱动（commit 写库即同步状态档数字）
+- **bug**：find commit 进库后，`topic_state.json` 的 `in_db_total`/`last_find`/facet `committed` 不更新（用户报，实测 in_db_total=41 但 DB 已 98）。根因=数字留痕也交给了 orchestrator agent 自觉 Write（见 find/STATE 19:35 决策），漏写就脱节。
+- **修**：`pipeline/lib/topic.py` 加 `record_find()`；`pipeline/find/commit.py` 写库后强制调用，同步 3 个数字字段（DB 实际总数 / 当前时间 / per-facet committed 累加）。判断字段 coverage/note/turning_seeds 仍归 agent。`--plan` 不触发。自测 round-trip 通过。
+- 跨 lib+find 两文件、回调了 19:35 的设计决策 → 记全局 log；详见 find/STATE.md 23:55 条。
+
+## 2026-06-21 23:49 EDT — agentic-knowledge-synthesis: target 100→200，跑 find+下载（不总结）
+- 用户要"再来 100 个 source 并全部下载，不看总结"。把 topics/agentic-knowledge-synthesis/topic.json 的 target 100→200（库里已 98 篇，逼 find agent 再补 ~100）。
+- 后台跑 `run.py find`（drive.py agent 编排）；随后跑 fetch→recover→hunt 下载，tierb 待用户定。
+- 顺带发现：今天(06-20→06-21)find 的 facet 留痕没回写 topic_state.json（in_db_total 仍 41，实际 source_topic 98）。原因=状态档 facet 段是 find 编排 agent 用 Write 自己回写的、这轮漏写；commit.py/fetch 都不写状态档。仅 web 段由 discover_web.py 代码自动 save_state，所以只有 web 段是新的。跑完对齐状态档与 DB。
+
 # Claude Log — Research_agent
 
 > Claude 在本项目所做改动的时间线总账（最新在最上面）。每条带日期时间。
 > 约定见全局 `~/.claude/CLAUDE.md`：做了实质改动就记，不等人催。
 > 更丰富的来龙去脉见 `claude_memory/modules-modification/<x>/STATE.md`（各模块层积日志，取代旧 logs/SESSION-*.md）；机器流水账见 `logs/run.log`。本文件 = 雷打不动的改动账本。
+
+## 2026-06-21 19:31 EDT — 清理闲置代码：退役"老总结更新链" + 删 facet 半截写侧函数
+- **缘由**：版本定型前清库存。先做只读盘点（文件级可达性 + agent 跑函数级死代码扫描），分三档：真死代码=2 个一次性 migrate 脚本（用户决定留作历史，不动）；休眠功能=老总结更新链；半成品=facet 写侧函数。用户拍板删后两类、要"干净点"，金字塔(facet)以后重写。
+- **删 (A) 老总结更新链（4 文件，`git rm`）**：`tools/{suggest_updates,prepare_update,update_auto,register_updates}.py` + 残留数据 `storage/update_worklist.json`。这套是"因周边文献增长回头给老总结出 vN+1"的手动功能，完整但从没接进 auto/cron，长期没人跑；与主链 verify（"发现错才重做"）触发器不同、不撞。同步清引用：`pipeline/ARCHITECTURE.md`、`claude-memory/ARCHITECTURE.md`、`claude-memory/Prompt-structure-design/prompts.md`(去掉 #8 行、"5–8"→"5–7")。
+- **删 (B) facet 写侧死函数（`lib/topic.py`）**：`is_faceted`/`all_seed_ids`/`update_facet_state`/`add_turning_seed` —— 全仓库 0 调用。facet 状态写入路线已改为"orchestrator(那个 claude)用 Read/Write 直接写 `topic_state.json`"，这几个结构化 python 写入函数被绕过成死代码。随之去掉失效的 `now_iso` import。**保留**仍在用的读侧 `load_topic`/`facet_by_key`/`all_queries`/`load_state`/`save_state`，设计蓝图 `find-facet-rewrite-design.md` 也留着（以后重写依据）。
+- **验证**：`lib.topic` 及 find 全部消费者正常 import、被删函数确认消失、全 pipeline `py_compile` 通过、grep 无残留代码引用。
+- **未动**：`migrate_slugs.py`/`migrate_store_layout.py`（一次性历史，用户留）；三个 notify（库/设置CLI/orchestratorCLI 各司其职）；其余 tools 旁路工具均为按需用。
 
 ## 2026-06-21 19:27 EDT — ★ 记忆精简：全库文档对齐当前命名 + 蒸馏已落地的过程设计文档
 - **缘由**：版本暂定型，做一轮记忆精简——把过期没跟上的旧名统一到当前命名，并蒸馏老的历史设计资料（只留"设计逻辑 + 为什么"，砍已落地的过程细节）。用户拍板：历史日志里的旧名也一起改。

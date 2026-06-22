@@ -10,9 +10,10 @@ load_topic() normalizes topic.json into an ALWAYS-FACETED form so downstream cod
 (== current single-ruler behavior; existing gt/dhi topics keep working untouched).
 """
 import json
+from datetime import datetime
 from pathlib import Path
 
-from .db import ROOT, now_iso
+from .db import ROOT
 
 IMPLICIT_FACET_KEY = "_all"
 
@@ -69,10 +70,6 @@ def load_topic(ref):
     }
 
 
-def is_faceted(topic):
-    return topic["_faceted"]
-
-
 def facet_by_key(topic, key):
     return next((f for f in topic["facets"] if f["key"] == key), None)
 
@@ -89,11 +86,6 @@ def _union(lists):
 def all_queries(topic):
     """Union of every facet's queries (order-preserving, deduped)."""
     return _union(q for f in topic["facets"] for q in f["queries"])
-
-
-def all_seed_ids(topic):
-    """Union of every facet's seed_ids (order-preserving, deduped)."""
-    return _union(s for f in topic["facets"] for s in f["seed_ids"])
 
 
 # ---------------- topic_state.json ----------------
@@ -117,22 +109,23 @@ def save_state(topic_id, state):
     p.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def update_facet_state(topic_id, facet_key, *, in_db=None, coverage=None, last_run=None):
-    """Merge per-facet coverage/in_db/last_run into topic_state.json (additive)."""
-    state = load_state(topic_id)
-    fs = state["facets"].setdefault(facet_key, {})
-    if in_db is not None:
-        fs["in_db"] = in_db
-    if coverage is not None:
-        fs["coverage"] = coverage
-    fs["last_run"] = last_run or now_iso()[:10]
-    save_state(topic_id, state)
-    return state
+def record_find(topic_id, per_facet_added, topic_total):
+    """Code-driven 留痕: called by commit.py right after it writes the DB, so the
+    NUMERIC state (in_db_total / last_find / per-facet committed) is always synced
+    to the DB and never drifts — even if the find orchestrator forgets to Write it.
 
-
-def add_turning_seed(topic_id, seed):
-    """Append a turning seed: {hint|id, from, kind: 'query'|'id'}."""
+    Only touches numbers; the qualitative fields (coverage / note / turning_seeds)
+    stay agent-owned and are left untouched. per_facet_added counts THIS round's
+    newly-committed papers per facet; commit only adds fresh rows on incremental
+    runs, so accumulating is double-count-safe across idempotent re-runs.
+    """
     state = load_state(topic_id)
-    state["turning_seeds"].append(seed)
+    state["in_db_total"] = topic_total
+    state["last_find"] = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
+    facets = state.setdefault("facets", {})
+    for fkey, added in per_facet_added.items():
+        if not added:
+            continue
+        f = facets.setdefault(fkey, {})
+        f["committed"] = int(f.get("committed", 0)) + int(added)
     save_state(topic_id, state)
-    return state

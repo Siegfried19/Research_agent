@@ -12,6 +12,7 @@ from lib.db import open_db, load_config
 from lib import store
 from lib.log import get_logger, run_log
 from lib import quality
+from lib import topic as T
 
 config = load_config()
 log = get_logger("commit")
@@ -198,6 +199,13 @@ def main():
     topic_total = len(all_pt)
     conn.commit()
     conn.close()
+
+    # code-driven 留痕: sync numeric state to the DB so in_db_total/last_find/per-facet
+    # committed never drift (the bug where a find round wasn't recorded). Qualitative
+    # coverage/note/turning_seeds stay agent-owned. (skipped in --plan: returns earlier)
+    from collections import Counter
+    per_facet_added = Counter(p.get("facet", "_all") for p in selected)
+    T.record_find(topic["id"], dict(per_facet_added), topic_total)
 
     (topic_dir / "selected.json").write_text(json.dumps(
         [{"id": p["id"], "title": p["title"], "relevance": p["relevance"], "reason": p["relevance_reason"],

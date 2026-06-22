@@ -4,6 +4,26 @@
 > README.md 是定型设计（覆盖更新）；这里是带细节的过程账（含旧 SESSION 的"为什么"）。
 > 局部改动记这里；跨模块/全局改动记 `../../../claude_log.md`，这里只留一行指针。
 
+## 2026-06-22 00:13 EDT · 健壮性三连：候选 4×硬顶 + 提示词收敛/网络交给 agent；orchestrator 又跑飞→改走确定性链
+- **现场**：再跑 `run.py find`(orchestrator) 又翻车——agent 启动 discover 后**自作主张"挂后台等通知"就停嘴**(无头模式禁招),进程 exit 0 但 **0 commit**;还把它用 Task 开的子 agent 丢成孤儿继续烧 API(已 kill 944841)。`candidates.json` 仍是 06:12 旧 587 池没刷新。**再次印证 orchestrator 不可靠**,STATE 06:12「别盲目重启 orchestrator，改确定性链」的教训成立。
+- 用户三条 directive,落码如下:
+  1. **候选 4×硬顶**(`discover.py`):加 `pool_cap = target*4`;merge 分支(facet 重搜/翻引用 append 那条**无上限**的洞)加全局硬顶——种子永留、非种子超出砍尾 + log(不静默)。这是"无限联想"的物理闸。
+  2. **提示词收敛**(`drive.py`):加 ⛔ 条,告诉 orchestrator 池被硬顶 4×target、别无限扩词/翻引用/开子 agent,覆盖够就收、宁可下轮补。
+  3. **网络交给 agent**(`drive.py`):「撞限流」那条改成「限流/网络/瞬时报错你自己判断重跑还是跳过,别单次报错就整轮停」——不写代码重试。
+- **本轮处置**:走确定性链 fresh discover→score_auto→commit --plan→commit --keep(我定 keep),不再靠 orchestrator。详见 `../../../claude_log.md`(00:13 条)。
+
+## 2026-06-21 23:55 EDT · 修 bug：find 留痕改回代码驱动（数字段），不再靠 orchestrator 自觉 Write
+- **症状**（用户报）：06-21 跑的 find 把 60 篇 commit 进库了，但 `topic_state.json` 的 `in_db_total` 仍停在 41、`last_find` 还是 06-20、facet 的 `committed` 没动——状态档与 DB 脱节。根因=留痕全交给 drive 拉起的 orchestrator 用 Read/Write 写（见 19:35 条的设计决策），这轮 agent 漏写就脱节（06:12 条的超时被杀也是同一个洞）。
+- **修法**：`lib/topic.py` 新增 `record_find(topic_id, per_facet_added, topic_total)`；`commit.py` 写库 `conn.commit()` 后强制调它。只同步**数字**：`in_db_total`=DB 实际总数、`last_find`=当前时间、per-facet `committed`=旧值+本轮新增（commit 增量只加 fresh，幂等重跑不重复计）。**判断字段(coverage/note/turning_seeds)仍归 agent**，code 不碰。
+- 这是对 19:35「写侧全删、交给 orchestrator」的**针对性回调**：不复活旧的全量结构化写（那个连 coverage/note 都写），只把"能从 DB 推出的数字真相"夺回给代码。`--plan` 不触发（提前 return）。
+- 自测过：round-trip 验证数字更新正确 + 判断字段保留。详见 `../../../claude_log.md`(23:55 条)。
+
+## 2026-06-21 19:35 EDT · 清理：删 topic.py 的 4 个 facet 死函数（写侧未接线）
+- `lib/topic.py` 删 `is_faceted / all_seed_ids / update_facet_state / add_turning_seed`（全仓库 0 调用）+ 去掉随之失效的 `now_iso` import。**保留**仍在用的读侧 `load_topic / facet_by_key / all_queries / load_state / save_state`。
+- 缘由：facet 状态写入路线已定为「orchestrator(drive 拉起的 claude)用 Read/Write 直接写 `topic_state.json`」，结构化 python 写入函数被绕过成死代码。金字塔(facet)以后重写，先清干净；蓝图仍在 `../../Prompt-structure-design/find-facet-rewrite-design.md`。
+- ⚠️ 下面 2026-06-20 17:50 条记的就是这几个函数初建时——是历史，按惯例不删；以此条为准（它们已不在代码里）。
+- 同批还退役了与 find 无关的「老总结更新链」4 文件，详见 `../../../claude_log.md`(19:31 条)。
+
 ## 2026-06-21 06:12 EDT · 坑：drive.py 大池扩展易超时——确定性收尾兜底
 - agentic-knowledge-synthesis 从 50→~100 扩展:`drive.py`(orchestrator)**跑满 50min(timeout 3000)超时被杀**,前期已扩 topic.json 检索词+seed、池 77→587、打分 3/5 facet,但 **commit 前被杀=本次 find 不算数**。
 - **应对(已验证可行)**:别盲目重启 orchestrator(可能又超时)。改确定性收尾——`score_auto`(idempotent,补全剩余 facet 打分)→ `commit --plan` 看分布 → 人/接手 agent 定 `commit --keep <facet>=N` 按相关性提交。本次新增 48 篇,主题达 98 source。
