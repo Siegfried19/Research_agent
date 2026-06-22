@@ -70,8 +70,7 @@ pipeline/
 ├─ verify/       ✅ verify_summaries, escalate_verify
 ├─ retrieve/     🔎 understand, search, rerank, answer, readall, index, freshness
 ├─ tools/        旁路（手动跑，不在 run auto）：bot, notify, verify_daemon,
-│                cross_topic, export_corpus, similar, eval_retrieval, audit_quality,
-│                suggest_updates/prepare_update/update_auto/register_updates, init…
+│                cross_topic, export_corpus, similar, eval_retrieval, audit_quality, init…
 └─ lib/          共享工具箱：db, sources, merge, quality, store, slug, http, log, notify,
                  claude（写引擎）, codex（查引擎）, embed（坐标引擎，非 LLM）, envguard, error_classify
 ```

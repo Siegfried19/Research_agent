@@ -66,7 +66,6 @@ verify 段两件套(2026-06-18 起)：`escalate_verify.py`(升级阶梯驱动) �
 | `bot.py` | Telegram 常驻对话 bot |
 | `cross_topic.py` | 跨主题比较(需 ≥2 主题) |
 | `audit_quality.py` | 回溯审计已入库论文(拉撤稿/DOAJ) |
-| `suggest_updates`/`prepare_update`/`update_auto`/`register_updates` | 老总结增量更新链(一套) |
 | `notify.py` | Telegram CLI |
 | `init.py` | 建新主题脚手架 |
 | `migrate_slugs.py` | 一次性迁移工具(历史遗留) |

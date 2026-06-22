@@ -18,9 +18,8 @@
 | 5 | 免费源猎手(hunt) | `fetch/recover_agent.py` | claude -p + WebSearch | 联网找合法免费 PDF(禁 Sci-Hub 类) |
 | 6 | 检索精挑(RCS) | `retrieve/rerank.py` | claude -p | 从混合召回里精挑最相关 |
 | 7 | 带引用回答 | `retrieve/answer.py` | claude -p | 闭集综合命中、会说"库里没有" |
-| 8 | 老总结更新 | `tools/update_auto.py` | claude -p | 旁路:有新信息时更新已有总结 |
 
-下面只展开 1/3/4(核心三件套);2 与 5–8 直接看代码。
+下面只展开 1/3/4(核心三件套);2 与 5–7 直接看代码。
 
 ---
 
